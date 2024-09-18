@@ -6,4 +6,5 @@ https://discord.gg/yEGs5eV4
 ## Contributors
 
 Jason Spence
+
 Kuan Ming Wu
