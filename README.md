@@ -8,3 +8,5 @@ https://discord.gg/yEGs5eV4
 Jason Spence
 
 Kuan Ming Wu
+
+Nicholas Tait 
