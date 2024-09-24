@@ -13,11 +13,14 @@ if (NOT CMAKE_BUILD_TYPE)
         STRING "Build type (default Debug):" FORCE)
 endif()
 
+include(cmake/CPM.cmake)
+
 # _____________ {meaning of flags?}
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-rtti -Wall -Wextra -Wconversion")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-rtti -Wall -Wextra -Wconversion \
         -fno-omit-frame-pointer -fsanitize=address,undefined")
 
+# Save outputs to the appropriate subdirectories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
