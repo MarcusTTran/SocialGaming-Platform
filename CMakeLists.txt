@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.28.3)
 project(fahsa VERSION 0.1 LANGUAGES CXX)
 
-# These will be used _________ {where?}
+# Global variables accessible at compile time
 set(PACKAGE_NAME fahsa)
 set(PACKAGE_VERSION 0.1)
 set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
@@ -15,7 +15,7 @@ endif()
 
 include(cmake/CPM.cmake)
 
-# _____________ {meaning of flags?}
+# Set Flags for the built make call
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-rtti -Wall -Wextra -Wconversion")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-rtti -Wall -Wextra -Wconversion \
         -fno-omit-frame-pointer -fsanitize=address,undefined")
