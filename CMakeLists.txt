@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28.3)
-project(fahsa VERSION 0.1 LANGUAGES CXX)
+project(fahsa VERSION 0.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -17,6 +17,21 @@ endif()
 
 include(cmake/CPM.cmake)
 
+# Downloads SocialGaming file library and a wrapper API for it via GitHub
+# Makes them available to our project via the `cpp-tree-sitter` CMake library target.
+CPMAddPackage(
+  NAME cpp-tree-sitter
+  GIT_REPOSITORY https://github.com/nsumner/cpp-tree-sitter.git
+  GIT_TAG v0.0.1
+)
+
+# Downloads a tree-sitter grammar from github and makes it available as a
+# cmake library target.
+add_grammar_from_repo(tree-sitter-json                 # Defines the library name for a grammar
+  https://github.com/tree-sitter/tree-sitter-json.git  # Repository URL of a tree-sitter grammar
+  0.19.0                                               # Version tag for the grammar
+)
+
 # Set Flags for the built make call
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-rtti -Wall -Wextra -Wconversion")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-rtti -Wall -Wextra -Wconversion \
@@ -26,6 +41,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-rtti -Wall -Wextra -Wco
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+
+
+ # FOR DEMO DELETE LATER
+add_subdirectory(tree-sitter)
 
 add_subdirectory(lib)
 add_subdirectory(game)
