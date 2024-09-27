@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    networking::Client client(argv[1], argv[2]);
+    networking::Client client(argv[1], "../lib/web-socket-networking/webchat.html");
     bool done = false;
     while (!done && !client.isDisconnected()) {
         client.update();  

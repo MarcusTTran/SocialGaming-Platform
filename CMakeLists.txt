@@ -1,6 +1,8 @@
-
 cmake_minimum_required(VERSION 3.28.3)
 project(fahsa VERSION 0.1 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 
 # Global variables accessible at compile time
 set(PACKAGE_NAME fahsa)
@@ -25,9 +27,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
-#add_subdirectory(lib)
-
-add_executable(fahsa main.cpp)
+add_subdirectory(lib)
+add_subdirectory(game)
 
 if (BUILD_TESTING)
     enable_testing()
