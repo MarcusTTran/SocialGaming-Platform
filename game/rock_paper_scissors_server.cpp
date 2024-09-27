@@ -173,7 +173,7 @@ void processIncomingMessage(networking::Server& server, const deque<networking::
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 3) {
+    if (argc < 2) {
         cerr << "Usage: " << argv[0] << " <port> <html file>\n";
         return 1;
     }
@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
     unsigned short port = stoi(argv[1]);
 
     // Load the HTML file content
-    string htmlContent = getHTTPMessage(argv[2]);
+    string htmlContent = getHTTPMessage("../lib/web-socket-networking/webchat.html");
 
     // Create a server instance
     networking::Server server(port, htmlContent, 
