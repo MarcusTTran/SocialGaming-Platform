@@ -31,5 +31,4 @@ option(ENABLE_NCURSES_CLIENT "Build the NCurses client" ON)
 
 add_subdirectory(lib)
 add_subdirectory(tools)
-#add_subdirectory(game)
 
