@@ -1,3 +1,5 @@
+// author: kwa132, Mtt8
+
 #include "Player.h"
 
 Player::Player() : connection(), round(0), choice(""), id(0){}
