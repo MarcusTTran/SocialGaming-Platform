@@ -10,7 +10,7 @@ file(GLOB_RECURSE GAME_SOURCES "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
 # Create the game library
 add_library(game ${GAME_SOURCES} ${GAME_HEADERS})
 
-target_link_libraries(game cpp-tree-sitter networking)
+target_link_libraries(game cpp-tree-sitter networking tree-sitter-json)
 
 # Create the RockPaperScissors executable
 add_executable(RockPaperScissors
