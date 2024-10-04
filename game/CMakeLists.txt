@@ -1,15 +1,25 @@
-add_executable(game_server rock_paper_scissors_server.cpp Player.cpp)
+# Include directories for the game project
+include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../lib/web-socket-networking/lib/networking/include)  # Adjusted path to networking headers
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../cpp-tree-sitter/include)
 
-# Link the networking library
-target_link_libraries(game_server PRIVATE networking)
+# Collect all headers and source files
+file(GLOB_RECURSE GAME_HEADERS "${CMAKE_CURRENT_LIST_DIR}/include/*.h")
+file(GLOB_RECURSE GAME_SOURCES "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
 
-# Add include directories for the networking library
-target_include_directories(game_server PRIVATE ${PROJECT_SOURCE_DIR}/lib/web-socket-networking/lib/networking/include)
+# Create the game library
+add_library(game ${GAME_SOURCES} ${GAME_HEADERS})
 
-# Link directories where networking is located
-target_link_directories(game_server PRIVATE ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
+target_link_libraries(game cpp-tree-sitter networking tree-sitter-json)
 
-# Optionally link Boost if required
-find_package(Boost 1.72 REQUIRED)
-target_include_directories(game_server PRIVATE ${Boost_INCLUDE_DIRS})
+# Create the RockPaperScissors executable
+add_executable(RockPaperScissors
+    src/main.cpp               
+    src/rockPaperScissors.cpp
+    src/gameConfig.cpp
+    src/Player.cpp
+)
+
+# Link the game library to the executable
+target_link_libraries(RockPaperScissors game)
 
