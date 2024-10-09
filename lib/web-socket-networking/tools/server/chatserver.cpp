@@ -23,12 +23,18 @@ using networking::Message;
 
 
 std::vector<Connection> clients;
+Server *server_ptr = nullptr;
 
 
-void
-onConnect(Connection c) {
+void onConnect(Connection c) {
   std::cout << "New connection found: " << c.id << "\n";
   clients.push_back(c);
+  
+  // Send options to the connected client
+  std::string welcomeMessage = "Welcome! Type 'create' to start a new game or 'join' to join an existing game.";
+  std::deque<Message> outgoing;
+  outgoing.push_back({c, welcomeMessage});
+  server_ptr->send(outgoing); // Sending the message to the newly connected client
 }
 
 
@@ -56,7 +62,11 @@ processMessages(Server& server, const std::deque<Message>& incoming) {
     } else if (message.text == "shutdown") {
       std::cout << "Shutting down.\n";
       quit = true;
-    } else {
+    } else if(message.text == "create") {
+      result << message.connection.id << "> " << "Creating a new game.\n";
+    } else if(message.text == "join") {
+      result << message.connection.id << "> " << "Joining an existing game.\n";
+    }else {
       result << message.connection.id << "> " << message.text << "\n";
     }
   }
@@ -78,8 +88,8 @@ std::string
 getHTTPMessage(const char* htmlLocation) {
   if (access(htmlLocation, R_OK ) != -1) {
     std::ifstream infile{htmlLocation};
-    return std::string{std::istreambuf_iterator<char>(infile),
-                       std::istreambuf_iterator<char>()};
+    return std::string((std::istreambuf_iterator<char>(infile)),
+                       std::istreambuf_iterator<char>());
 
   }
 
@@ -98,7 +108,9 @@ main(int argc, char* argv[]) {
   }
 
   const unsigned short port = std::stoi(argv[1]);
-  Server server{port, getHTTPMessage(argv[2]), onConnect, onDisconnect};
+  Server server = {port, getHTTPMessage(argv[2]), onConnect, onDisconnect};
+  server_ptr = &server;
+
 
   while (true) {
     bool errorWhileUpdating = false;
