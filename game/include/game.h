@@ -6,6 +6,11 @@
 
 #include <string>
 #include <map>
+#include <vector>
+#include "GameConfiguration.h"
+#include "GameConstants.h"
+#include "GameVariables.h"
+#include "GameRules.h"
 #include "Player.h"
 
 using namespace std;
@@ -24,7 +29,6 @@ class Game {
     GameConfiguration configuration;
     GameConstants constants;
     GameVariables variables;
-    // GamePerAudience perAudience;
     GameRules rules;
     vector<Player> players;
 

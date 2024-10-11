@@ -16,7 +16,6 @@ class GameName {
        
 };
 
-// template <typename T>
 class SetupRules {
     public:
         class SetupRuleKind {
@@ -34,7 +33,6 @@ class SetupRules {
         // TODO: Perhaps add a default? It is used for range in professors example of RPS
 };
 
-template <typename T>
 class GameConfiguration {
     private:
         const GameName gameName;
@@ -46,9 +44,9 @@ class GameConfiguration {
     public:
         ~GameConfiguration() = default;  
         
-        string getGameName() const = 0; 
-        std::pair<size_t, size_t> getPlayerRange() const = 0;
-        bool hasAudience() const = 0;
-        std::vector<SetupRules> getSetup() const = 0;
+        std::string getGameName() const; 
+        std::pair<size_t, size_t> getPlayerRange() const;
+        bool hasAudience() const;
+        std::vector<SetupRules> getSetup();
 };
 
