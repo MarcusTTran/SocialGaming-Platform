@@ -1,5 +1,6 @@
 # Fahsa
 build/
+.vscode/
 
 # Prerequisites
 *.d
@@ -33,3 +34,5 @@ build/
 *.exe
 *.out
 *.app
+
+
