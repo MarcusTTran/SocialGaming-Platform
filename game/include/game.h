@@ -1,4 +1,6 @@
 // author: kwa132, Mtt8
+#ifndef GAME_H
+#define GAME_H
 
 #pragma once
 
@@ -18,24 +20,35 @@ using namespace std;
 //         virtual void sendingMessage(networking::Server&, networking::Connection, const string&) const = 0;
 // };
 
-class Game{
+class Game {
+    GameConfiguration configuration;
+    GameConstants constants;
+    GameVariables variables;
+    // GamePerAudience perAudience;
+    GameRules rules;
+    vector<Player> players;
+
     public:
-        virtual ~Game() = default;  // Default destructor
+        // Constructor (cannot be instantiated without all provided fields ie. no default constructor allowed)
+        Game(GameConfiguration& configuration, GameConstants& constants, GameVariables& variables, GamePerAudience& perAudience, GameRules & rules, vector<Player> players)
+            : configuration(configuration), constants(constants), variables(variables), perAudience(perAudience), rules(rules), players(players) {
+                //TODO: Perhaps deep copy Players vector?
+            }
+
+        ~Game() = default;  // Default destructor
 
         // Getters for important game data
-        virtual GameConfiguration& getConfiguration() const = 0;
-        virtual GameConstants& getConstants() const = 0;
-        virtual GameVariables& getVariables() const = 0;
-        virtual GamePerPlayer& getPerPlayer() const = 0;
-        virtual GamePerAudience& getPerAudience() const = 0;
-        virtual GameRules& getRules() const = 0;
-
-
-        // virtual string determineWinner() = 0;
+        GameConfiguration& getConfiguration();
+        GameConstants& getConstants();
+        GameVariables& getVariables();
+        GameRules& getRules();
+        vector<Player>& getPlayers();
 
 
         // TODO: I feel like we should move this code to a Manager class. 
-        virtual void sendingMessage(networking::Server&, networking::Connection, const string&) const = 0;
-        virtual void processPlayerChoice(networking::Connection, const string&, networking::Server&) = 0;
-        virtual void resetPlayerChoices() = 0;
+        // void sendingMessage(networking::Server&, networking::Connection, const string&);
+        // void processPlayerChoice(networking::Connection, const string&, networking::Server&);
+        // void resetPlayerChoices();
 };
+
+#endif

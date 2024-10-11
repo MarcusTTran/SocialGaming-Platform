@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <utility>
 #pragma once
 
 
@@ -39,6 +40,7 @@ class GameConfiguration {
         const GameName gameName;
         std::pair<size_t, size_t> playerRange;
         bool audience; 
+        // TODO: change
         std::vector<SetupRules> setup; // Contains a list of SetupRules (like the number of rounds to start from)
         
     public:
