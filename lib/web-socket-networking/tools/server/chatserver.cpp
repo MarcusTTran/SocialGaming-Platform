@@ -23,6 +23,8 @@ using networking::Message;
 
 
 std::vector<Connection> clients;
+
+//TODO: Tempory solution to allow the onConnect and onDisconnect to access the server object. refactor at a later date.
 Server *server_ptr = nullptr;
 
 
