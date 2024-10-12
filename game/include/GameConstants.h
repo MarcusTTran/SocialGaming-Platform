@@ -17,7 +17,6 @@ class GameConstants {
             return constants.at(key);
         }
         
-        
 };
 
 #endif // GAMECONSTANTS_H

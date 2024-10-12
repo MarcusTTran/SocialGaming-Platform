@@ -6,7 +6,7 @@
 
 
 template <typename T, typename M>
-Player<T, M>::Player() : connection(), round(0), choice(""), id(0) {
+Player<T, M>::Player() : connection(), choice(""), id(0) {
     audience = GamePerAudience<T>();
     player = GamePerPlayer<T>();
 }

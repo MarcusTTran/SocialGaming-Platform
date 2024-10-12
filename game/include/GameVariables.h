@@ -15,6 +15,9 @@ class GameVariables {
         std::unordered_map<std::string, T>& getVariables() {
             return variables;
         }
+        T& gameVariableGetter(const string&) const;
+        void gameVariableSetter(const string&);
+       
 };
 
 

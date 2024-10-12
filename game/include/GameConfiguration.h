@@ -16,6 +16,7 @@ class GameName {
        
 };
 
+template <typename T>
 class SetupRules {
     public:
         class SetupRuleKind {
@@ -25,17 +26,24 @@ class SetupRules {
             // TODO: create a validation function that checks if the Kind is valid (ie. 'integer')
             // TODO: perhaps make this a template? Would that work?
         };
-
+        
+        SetupRuleKind kindGetter();
+        std::string& promptGetter() const;
+        std::optional< std::pair<int, int> >& rangeGetter() const;
+        std::optional< std::map<std::string, std::string> >& choicesGetter() const;
+        std::optional< std::string>& defaultsGetter() const;
         SetupRuleKind kind;
         std::string prompt;
-        std::optional< std::pair<size_t, size_t> > range;
-        std::optional< std::vector<string> >  choices;
+        std::optional< std::pair<int, int> > range;
+        std::optional< std::map<std::string, std::string> >  choices;
+        std::optional< std::string> defaults;
         // TODO: Perhaps add a default? It is used for range in professors example of RPS
 };
 
 class GameConfiguration {
     private:
         const GameName gameName;
+
         std::pair<size_t, size_t> playerRange;
         bool audience; 
         // TODO: change
@@ -48,5 +56,10 @@ class GameConfiguration {
         std::pair<size_t, size_t> getPlayerRange() const;
         bool hasAudience() const;
         std::vector<SetupRules> getSetup();
+        void setupSetter(const SetupRuleKind& kind, const string& prompt, 
+            const std::optional< std::pair<int, int> >& range = {1, 10}, 
+            const std::optional< std::map<std::string, std::string> >& choices = {},
+            const std::optional< std::string>& defaults = "");
+        
 };
 

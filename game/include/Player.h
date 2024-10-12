@@ -13,12 +13,11 @@ template <typename T, typename M> // M is for player, T is for audience
 class Player{
     public:
         Player();
-        Player(networking::Connection, int round, int ID, T audienceVar, T playerVar);
+        Player(networking::Connection, int ID, T audienceVar, M playerVar);
         ~Player();
         void make_choice(const string&);
         networking::Connection getConnection();
-        int roundGetter();
-        void one_round_drop();
+        // int roundGetter();
         string getChoice() const;
         int getId() const;
 
@@ -28,7 +27,6 @@ class Player{
     
     private:
         networking::Connection connection;
-        int round;
         string choice;
         int id;
 

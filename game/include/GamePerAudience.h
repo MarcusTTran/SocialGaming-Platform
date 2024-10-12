@@ -14,6 +14,9 @@ class GamePerAudience {
         ~GamePerAudience() = default;
         std::unordered_map<std::string, std::string> getAudienceVariables();
         T& addPerAudienceVariable(std::string key, T value);
+        T& gamePerAudienceGetter(const string&) const;
+        void gamePerAudienceSetter(const string&);
+
 };
 
 #endif 
