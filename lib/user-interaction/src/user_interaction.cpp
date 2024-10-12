@@ -17,7 +17,7 @@ namespace user_interaction
         for (std::size_t i = 0; i < options.size(); ++i)
         {
             // Is there a way to use an iterator but still print the number?
-            io.print(std::to_string(i + 1) + ". " + options[i] + "\n");
+            io.print(std::to_string(i + 1) + ". " + options[i]);
         }
         io.print("Enter the number of your choice: ");
         while (true)
