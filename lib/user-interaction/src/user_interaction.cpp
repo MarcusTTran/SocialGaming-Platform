@@ -4,28 +4,25 @@
 namespace user_interaction
 {
     // Function to get free-form user input
-    std::string get_user_input_free_form(const std::string &prompt)
+    std::string get_user_input_free_form(const std::string &prompt, IOInterface &io)
     {
-        std::string input;
-        std::cout << prompt;
-        std::getline(std::cin, input);
-        return input;
+        io.print(prompt);
+        return io.get_input();
     }
 
     // Function to get specific user input from options
-    std::string get_user_input_from_options(const std::string &prompt, const std::vector<std::string> &options)
+    std::string get_user_input_from_options(const std::string &prompt, const std::vector<std::string> &options, IOInterface &io)
     {
-        std::string input;
-        std::cout << prompt << std::endl;
+        io.print(prompt);
         for (std::size_t i = 0; i < options.size(); ++i)
         {
             // Is there a way to use an iterator but still print the number?
-            std::cout << i + 1 << ". " << options[i] << std::endl;
+            io.print(std::to_string(i + 1) + ". " + options[i] + "\n");
         }
-        std::cout << "Enter the number of your choice: ";
+        io.print("Enter the number of your choice: ");
         while (true)
         {
-            std::getline(std::cin, input);
+            std::string input = io.get_input();
             try
             {
                 std::size_t choice = std::stoi(input);
@@ -38,7 +35,11 @@ namespace user_interaction
             {
                 // invalid, loop
             }
-            std::cout << "Invalid choice, please try again." << std::endl;
+            catch (std::out_of_range &)
+            {
+                // too big, loop
+            }
+            io.print("Invalid choice, please try again: ");
         }
     }
 }
