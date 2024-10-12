@@ -9,10 +9,11 @@
 #include <vector>
 using namespace std;
 
+template <typename T>
 class Player{
     public:
         Player();
-        Player(networking::Connection, int, int);
+        Player(networking::Connection, int round, int ID, T audienceVar, T playerVar);
         ~Player();
         void make_choice(const string&);
         networking::Connection getConnection();
@@ -22,8 +23,8 @@ class Player{
         int getId() const;
 
         bool isAudience();
-        // GamePerPlayer& getPerPlayer();
-        // GamePerAudience& getPerAudience();
+        GamePerPlayer<T>& getPerPlayer();
+        GamePerAudience<T>& getPerAudience();
     
     private:
         networking::Connection connection;
@@ -33,5 +34,7 @@ class Player{
 
         bool inAudience;
         // vector of perplayer things
+        GamePerAudience<T> audience; //maybe unique_ptr
         // vector of peraudience things
+        GamePerPlayer<T> player; //maybe unique_ptr
 };

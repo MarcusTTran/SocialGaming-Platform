@@ -7,7 +7,7 @@
 template <typename T>
 class GameConstants {
     // T can hold a list, a map, a string, or other data types. Further parsing may be needed
-    std::unordered_map<std::string, T> constants;
+    std::unordered_map<std::string, T> constants; // T might be vector<pair, pair> for RPS at least
     public:
         GameConstants() = default;
         GameConstants(std::unordered_map<std::string, T>& constants) : constants(constants) {}

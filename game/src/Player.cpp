@@ -2,9 +2,16 @@
 
 #include "Player.h"
 
-Player::Player() : connection(), round(0), choice(""), id(0){}
+template <typename T>
+Player::Player() : connection(), round(0), choice(""), id(0) {
+    audience = GamePerAudience<T>();
+    player = GamePerPlayer<T>();
+}
 
-Player::Player(networking::Connection conn, int r, int pId) : connection(conn), round(r), id(pId){}
+template <typename T>
+Player::Player(networking::Connection conn, int round, int ID, T audienceVar, T playerVar) : connection(conn), round(round), id(ID) {
+
+}
 
 Player::~Player(){}
 

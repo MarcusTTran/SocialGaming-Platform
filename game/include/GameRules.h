@@ -20,7 +20,15 @@ enum GameRuleType {
     LIST_OP,
     INPUT,
     OUTPUT,
+    ASSIGNMENT,
     STATEMENT
+};
+
+enum builtInFunctionName {
+    UPFROM,
+    SIZE,
+    CONTAINS,
+    COLLECT
 };
 
 /* Example of 1 rule maybe?
@@ -53,7 +61,11 @@ class Rule {
 
 class NestedRule: public Rule {
     GameRuleType type;
-    // - Perhaps nested rules within a rule? Recursive?
+    std::string statementBody;
+    std::optional<builtInFunctionName> builtinFunction;
+    std::optional<std::string> containerName;
+    std::optional<std::string> iteratorName;
+    std::vector<Rule> nestedRules;
     
     public:
         GameRuleType getType() const override {
@@ -63,6 +75,10 @@ class NestedRule: public Rule {
 
 class StatementRule: public Rule {
     GameRuleType type;
+    std::string statementBody;
+    std::optional<builtInFunctionName> builtinFunction;
+    std::optional<std::string> containerName;
+    std::optional<std::string> iteratorName;
     
     public:
         GameRuleType getType() const override {
@@ -75,7 +91,8 @@ class GameRules {
 
     public:
         // GameRules();
-        ~GameRules();
+        ~GameRules();   
+        std::vector<Rule> getRules();
 };
 
 #endif // GAMERULES_H
