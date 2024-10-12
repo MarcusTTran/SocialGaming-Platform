@@ -25,19 +25,28 @@ namespace user_interaction
             std::string input = io.get_input();
             try
             {
-                std::size_t choice = std::stoi(input);
-                if (choice > 0 && choice <= options.size())
+                std::size_t pos{};
+                std::size_t choice = std::stoi(input, &pos);
+                if (pos != input.length())
+                {
+                    io.print("Only include a whole number.");
+                }
+                else if (choice <= 0 || choice > options.size())
+                {
+                    io.print("You must choose between 1 and " + std::to_string(options.size()) + "!");
+                }
+                else
                 {
                     return options[choice - 1];
                 }
             }
             catch (const std::invalid_argument &)
             {
-                // invalid, loop
+                io.print("That's not a number!");
             }
             catch (std::out_of_range &)
             {
-                // too big, loop
+                io.print("That's wildly out of scope...");
             }
             io.print("Invalid choice, please try again: ");
         }
