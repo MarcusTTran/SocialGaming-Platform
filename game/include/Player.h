@@ -9,7 +9,7 @@
 #include <vector>
 using namespace std;
 
-template <typename T>
+template <typename T, typename M> // M is for player, T is for audience
 class Player{
     public:
         Player();
@@ -22,8 +22,8 @@ class Player{
         string getChoice() const;
         int getId() const;
 
-        bool isAudience();
-        GamePerPlayer<T>& getPerPlayer();
+        bool inAudience();
+        GamePerPlayer<M>& getPerPlayer();
         GamePerAudience<T>& getPerAudience();
     
     private:
@@ -33,8 +33,6 @@ class Player{
         int id;
 
         bool inAudience;
-        // vector of perplayer things
-        GamePerAudience<T> audience; //maybe unique_ptr
-        // vector of peraudience things
-        GamePerPlayer<T> player; //maybe unique_ptr
+        GamePerAudience<T> audience; 
+        GamePerPlayer<M> players; 
 };
