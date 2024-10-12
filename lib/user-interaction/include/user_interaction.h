@@ -9,6 +9,9 @@
 namespace user_interaction
 {
 
+    // Function to print a string to the user
+    void print_to_user(const std::string &message, IOInterface &io);
+
     // Function to get free-form user input
     std::string get_user_input_free_form(const std::string &, IOInterface &);
 

@@ -22,6 +22,9 @@ int main()
 
     // Interactive test
     IOCommandline io;
+
+    user_interaction::print_to_user("Welcome to some example prompts!", io);
+
     std::string free_form_input = user_interaction::get_user_input_free_form("Enter something: ", io);
     std::cout << "You entered: " << free_form_input << std::endl;
 

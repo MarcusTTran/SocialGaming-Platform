@@ -4,6 +4,13 @@
 
 namespace user_interaction
 {
+
+    // Function to print a string to the user
+    void print_to_user(const std::string &message, IOInterface &io)
+    {
+        io.print(message);
+    }
+
     // Function to get free-form user input
     std::string get_user_input_free_form(const std::string &prompt, IOInterface &io)
     {
@@ -11,7 +18,7 @@ namespace user_interaction
         return io.get_input();
     }
 
-    // Function to get specific user input from options
+    // Function to get specific user input from a choice of options
     std::string get_user_input_from_options(const std::string &prompt, const std::vector<std::string> &options, IOInterface &io)
     {
         io.print(prompt);
