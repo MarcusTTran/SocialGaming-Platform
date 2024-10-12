@@ -1,5 +1,6 @@
-#include "user_interaction.h"
 #include <iostream>
+
+#include "user_interaction.h"
 
 namespace user_interaction
 {
