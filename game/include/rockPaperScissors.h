@@ -3,7 +3,7 @@
 #pragma once
 
 #include "game.h"
-#include "gameConfig.h"
+#include "GameParser.h"
 #include "algorithm"
 #include "iostream"
 #include <queue>

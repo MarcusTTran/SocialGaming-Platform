@@ -1,10 +1,6 @@
 // author: kwa132, Mtt8
 
-#include "gameConfig.h"
-#include "algorithm"
-#include <iostream>
-#include <cassert>
-#include <sstream>
+#include "GameParser.h"
 
 extern "C" {
 TSLanguage* tree_sitter_json();
@@ -25,8 +21,16 @@ pair<int, int> GameConfig::getPlayerRange() const{
 bool GameConfig::hasAudience() const{
     return audience;
 }
-    
-map<string, string> GameConfig::getConstants(){
+
+map<string, string> GameConfig::getConfiguration(){
+    return configuration;
+}
+
+map<string, vector<map<string, string>>> GameConfig::getSetup(){
+    return setup;
+}
+
+map<string, vector<pair<pair<string, string>, pair<string, string>>>> GameConfig::getConstants(){
     return constants;
 }
 
@@ -34,36 +38,149 @@ map<string, string> GameConfig::getVariables(){
     return variables;
 }
 
-void GameConfig::gameNameSetter(const string& name){
-    gameName = name;
+map<string, string> GameConfig::getPerPlayer(){
+    return perPlayer;
 }
 
-void GameConfig::rangeSetter(const pair<int, int>& range){
-    playerRange = range;
+map<string, string> GameConfig::getPerAudience(){
+    return perAudience;
 }
 
-void GameConfig::audienceSetter(bool b){
-    audience = b;
+string GameConfig::extractStringValue(const ts::Node& node, const string& source){
+    if (node.getType() == "quoted_string") {
+        ts::Node textNode = node.getNamedChild(0);  
+        if (!textNode.isNull() && textNode.getType() == "string_text") {
+            return string(textNode.getSourceRange(source));  
+        }
+    }
+    for(auto child : ts::Children{node}){
+        auto type = string(child.getType());
+        if(find(begin(toSkip), end(toSkip), type) != end(toSkip)){
+            continue;
+        }
+        extractStringValue(child, source);
+    }
+    return string(node.getSourceRange(source));    
+}
+void GameConfig::extractStringValue2(const ts::Node& node, const std::string& source, pair<string, string> &str1, pair<string, string> &str2, std::string keyID){
+    if(!node.getNumNamedChildren()){
+        auto type = string(node.getType());
+        if(find(begin(toSkip), end(toSkip), type) == end(toSkip)){
+            auto curr = string(node.getSourceRange(source));
+            str1.first.empty() ? str1.first = curr : (str1.second.empty() ? str1.second = curr : 
+            (str2.first.empty() ? str2.first = curr : str2.second = curr));
+        }
+        return;
+    }
+
+    for(auto child : ts::Children{node}){
+        auto type = string(child.getType());
+        if(find(begin(toSkip), end(toSkip), type) != end(toSkip)){
+            continue;
+        }
+        extractStringValue2(child, source, str1, str2, keyID);
+    }
+    if(!str1.first.empty() && !str1.second.empty() && !str2.first.empty() && !str2.second.empty()){
+        constants[keyID].push_back({str1, str2});
+        str1 = {};
+        str2 = {};
+    }    
+}
+template <typename T>
+void GameConfig::parseValueMap(const ts::Node& node, const string& source, T& outputMap){
+    for (size_t i = 0; i < node.getNumNamedChildren(); ++i) {
+        ts::Node entryNode = node.getNamedChild(i);
+        if (entryNode.getType() == "map_entry") {
+            ts::Node keyNode = entryNode.getChildByFieldName("key");
+            ts::Node valueNode = entryNode.getChildByFieldName("value");
+            if (!keyNode.isNull() && !valueNode.isNull()) {
+                string key = string(keyNode.getSourceRange(source));
+                pair<string, string> str1;
+                pair<string, string> str2;
+                str1.first = "", str1.second = "";
+                str2.first = "", str2.second = "";
+                extractStringValue2(valueNode, source, str1, str2, key);   
+            }
+        }
+    }    
+}
+void GameConfig::setupHelper(const ts::Node& node, const string& source, string& str1, string& str2, const string& keyID){
+    auto type = string(node.getType());
+    if (node.getType() == "number_range") {
+        string rangeStr;
+        for (const auto& child : ts::Children{node}) {
+            if (child.getType() == "number") {
+                string res = string(child.getSourceRange(source));
+                rangeStr.empty() ? rangeStr = res : rangeStr += ", " + res;
+            }
+        }
+
+        str2 = rangeStr;
+        map<string, string> tempMap;
+        tempMap[str1] = str2;
+        setup[keyID].push_back(tempMap);
+
+        str1.clear();
+        str2.clear();
+        return;  
+    }
+
+    if (node.getNumChildren() == 0 && (find(begin(toSkip), end(toSkip), type) == end(toSkip))) {
+    std::string res = string(node.getSourceRange(source));
+        if (!res.empty()) {
+            size_t pos = res.find(":");
+            if (pos != std::string::npos && pos == res.size() - 1) {
+                res.erase(pos);  
+            }
+        }
+
+    str1.empty() ? str1 = res : str2 = res;
 }
 
-void GameConfig::constantsSetter(const string& key, const string& value){
-    constants[key] = value;
+    for (const auto& child : ts::Children{node}) {
+        setupHelper(child, source, str1, str2, keyID);
+    }
+
+    if (!str1.empty() && !str2.empty()) {
+        map<string, string> tempMap;
+        tempMap[str1] = str2;
+        setup[keyID].push_back(tempMap);
+
+        str1.clear();
+        str2.clear();
+    }    
 }
+void GameConfig::parseMapHelper(const ts::Node& node, const string& source, map<string, string>& output){
+    ts::Node mapNode = node.getChildByFieldName("map");
 
-void GameConfig::variablesSetter(const string& key, const string& value){
-    constants[key] = value;
+    if (!mapNode.isNull()) {
+        for (size_t i = 0; i < mapNode.getNumNamedChildren(); ++i) {
+            ts::Node entryNode = mapNode.getNamedChild(i);
+            if (entryNode.getType() == "map_entry") {
+                ts::Node keyNode = entryNode.getChildByFieldName("key");
+                ts::Node valueNode = entryNode.getChildByFieldName("value");
+                if (!keyNode.isNull() && !valueNode.isNull()) {
+                    string key = string(keyNode.getSourceRange(source));
+                    string value = string(valueNode.getSourceRange(source));
+                    output[key] = value;
+                }
+            }
+        }
+    }      
 }
+void GameConfig::parsePerPlayerSection(const ts::Node& node, const string& source){
+    parseMapHelper(node, source, perPlayer);
+}
+void GameConfig::parsePerAudienceSection(const ts::Node& node, const string& source){
+    parseMapHelper(node, source, perAudience);    
+}
+void GameConfig::printTree(const ts::Node& node, const string& source, int indent = 0){
+    for (int i = 0; i < indent; ++i) std::cout << "  ";
+    std::cout << node.getType() << " -> " << node.getSourceRange(source) << std::endl;
 
-std::pair<std::string, std::string> GameConfig::parserHelper(const ts::Node& node, size_t i, const std::string& source) {
-    ts::Node pairN = node.getNamedChild(static_cast<uint32_t>(i));
-    ts::Node key = pairN.getChildByFieldName("key");
-    ts::Node value = pairN.getChildByFieldName("value");
-    auto keyRange = key.getByteRange();
-    auto valueRange = value.getByteRange();
-
-    std::string keyText = source.substr(keyRange.start, keyRange.end - keyRange.start);
-    std::string valueText = source.substr(valueRange.start, valueRange.end - valueRange.start);
-    return {keyText, valueText};
+    for (size_t i = 0; i < node.getNumNamedChildren(); ++i) {
+        printTree(node.getNamedChild(i), source, indent + 1);
+    }    
 }
 
 /*
@@ -75,31 +192,42 @@ std::pair<std::string, std::string> GameConfig::parserHelper(const ts::Node& nod
     }
 */
 void GameConfig::parseConfigurationSection(const ts::Node& node, const string& source){
-    auto size = node.getNumNamedChildren();
-    for(size_t i = 0; i < size; ++i){
-        auto curr = parserHelper(node, i, source);
-        string keyText = curr.first;
-        string valueText = curr.second;
-        
-        if(keyText == "name"){
-            gameNameSetter(valueText);
-        }
-        else if(keyText == "player range"){
-            string_view input(valueText);
-            input.remove_prefix(1);
-            input.remove_suffix(1);
-            auto comma = input.find(",");
-            auto firstNumS = input.substr(0, comma);
-            auto secondNumS = input.substr(comma + 2);
-            auto firstNum = stoi(string(firstNumS));
-            auto secondNum = stoi(string(secondNumS));
-            rangeSetter({firstNum, secondNum});
-        }
-        else if(keyText == "audience"){
-            valueText == "true" ? audienceSetter(true) 
-                : audienceSetter(false);
+    ts::Node nameNode = node.getChildByFieldName("name");
+    if (!nameNode.isNull()) {
+        configuration["name"] = extractStringValue(nameNode, source);
+    }
+
+    ts::Node playerRangeNode = node.getChildByFieldName("player_range");
+    if (!playerRangeNode.isNull()) {
+        configuration["player_range"] = string(playerRangeNode.getSourceRange(source));
+    }
+
+    ts::Node audienceNode = node.getChildByFieldName("has_audience");
+    if (!audienceNode.isNull()) {
+        configuration["audience"] = string(audienceNode.getSourceRange(source));
+    }
+
+    ts::Node setupNode = node.getChild(10); // set_rule
+    auto size = setupNode.getNumChildren();
+    ts::Node nestedNode = setupNode.getChildByFieldName("name");
+    auto key = string(nestedNode.getSourceRange(source));
+
+    string str1 = "";
+    string str2 = "";
+    ts::Cursor cursor = nestedNode.getNextSibling().getCursor();
+    auto curr = cursor.getCurrentNode();
+    for(size_t i = 0; i < size - 1; ++i){
+        setupHelper(curr, source, str1, str2, key);
+        if(!curr.isNull()){
+            curr = curr.getNextSibling();
         }
     }
+
+    // for debugging
+    // std::cout << "Extracted Configuration Section:" << std::endl;
+    // for (const auto& [key, value] : configuration) {
+    //     std::cout << key << " : " << value << std::endl;
+    // }
 }
 
 /*
@@ -113,90 +241,49 @@ void GameConfig::parseConfigurationSection(const ts::Node& node, const string& s
 */
 
 void GameConfig::parseConstantsSection(const ts::Node& node, const string& source){
-    auto size = node.getNumNamedChildren();
-    for(size_t i = 0; i < size; ++i){
-        auto curr = parserHelper(node, i, source);
-        string keyText = curr.first;
-        string valueText = curr.second;
-        
-        if (keyText == "weapons") {
-            parseWeapons(valueText);
-        } else {
-            constantsSetter(keyText, valueText);
-        }
+    ts::Node mapNode = node.getChildByFieldName("map");
+
+    if (!mapNode.isNull()) {
+        parseValueMap(mapNode, source, constants);
     }
+    
+    // for debugging
+    // std::cout << "Extracted Constants Section:" << std::endl;
+    // for (const auto& [key, entries] : constants) {
+    //     std::cout << key << " :" << std::endl;
+    //     for (const auto& [subKey, subValue] : entries) {
+    //         std::cout << "  " << subKey << " : " << subValue << std::endl;
+    //     }
+    // }
 }
 
 void GameConfig::parseVariablesSection(const ts::Node& node, const string& source){
-    auto size = node.getNumNamedChildren();
-    for(size_t i = 0; i < size; ++i){
-        auto curr = parserHelper(node, i, source);
-        string keyText = curr.first;
-        string valueText = curr.second;
-        
-        variablesSetter(keyText, valueText);
-    }
+    parseMapHelper(node, source, variables);
 }
     
-void GameConfig::parseConfig(const string& config){
+void GameConfig::parseConfig(const string& fileContent){
     ts::Language language = tree_sitter_json();
     ts::Parser parser{language};
-    ts::Tree tree = parser.parseString(config);
-
+    ts::Tree tree = parser.parseString(fileContent);
     ts::Node root = tree.getRootNode();
-    
-    cout << "Tree: " << root.getSExpr().get() << endl;
-    auto size = root.getNumNamedChildren();
-    for(size_t i = 0; i < size; ++i){
+
+    // for debugging
+    // printTree(root, fileContent);
+
+    for (size_t i = 0; i < root.getNumNamedChildren(); ++i) {
         ts::Node curr = root.getNamedChild(i);
-        string currType = string(curr.getType());
-        
-        if(currType == "configuration"){
-            parseConfigurationSection(curr, config);
+        string sectionType = string(curr.getType());
+
+        if (sectionType == "configuration") {
+            parseConfigurationSection(curr, fileContent);
+        } else if (sectionType == "constants") {
+            parseConstantsSection(curr, fileContent);
+        } else if (sectionType == "variables") {
+            parseVariablesSection(curr, fileContent);
+        } else if (sectionType == "per_player") {
+            parsePerPlayerSection(curr, fileContent);
+        } else if (sectionType == "per_audience") {
+            parsePerAudienceSection(curr, fileContent);
         }
-        else if(currType == "constants"){
-            parseConstantsSection(curr, config);
-        }
-        else if(currType == "variables"){
-            parseVariablesSection(curr, config);
-        }
-    }
-}
-    
-map<string, string> GameConfig::getRules() const{
-    map<string, string> rules;
-    for (const auto& [weapon, beats] : weaponsRules) {
-        rules[weapon] = beats;
-    }
-    return rules;
-}
-
-void GameConfig::parseWeapons(const string& value){
-    stringstream input(value);
-    string weapon, beats;
-
-    // Simple parsing logic for demonstration (better to use a JSON parser if format changes)
-    while (input >> weapon >> beats) {
-        weapon = weapon.substr(weapon.find(":") + 2, weapon.find(",") - weapon.find(":") - 2);
-        beats = beats.substr(beats.find(":") + 2, beats.find("}") - beats.find(":") - 2);
-        weaponsRules.emplace(weapon, beats);
-    }   
-}
-
-void GameConfig::displayGameConfig(){
-    cout << "Game Name: " << getGameName() << endl;
-    cout << "Player range: " << "(" << getPlayerRange().first << ", " << 
-    getPlayerRange().second << ")" << endl;
-    cout << "Allowing audience: " << (hasAudience() ? "Yes" : "No") << endl;
-
-    auto constants = getConstants();
-    cout << "Constants:" << endl;
-    for (const auto& [key, value] : constants) {
-        cout << key << ": " << value << endl;
-    }
-    auto variables = getVariables();
-    cout << "Variables:" << endl;
-    for (const auto& [key, value] : variables) {
-        cout << key << ": " << value << endl;
     }
 }
