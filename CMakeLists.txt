@@ -46,6 +46,7 @@ add_subdirectory(tree-sitter)
 
 add_subdirectory(lib)
 add_subdirectory(game)
+add_subdirectory(tools)
 
 # Enable testing if BUILD_TESTING is enabled
 if (BUILD_TESTING)

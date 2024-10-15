@@ -4,7 +4,7 @@
 #include <random>
 
 
-void shuffleList(std::vector<char>& list){
+void shuffleList(std::vector<std::string>& list){
 
     //randome device used to seed mt19937, use mt due to performance issues from just using random_device.
     std::random_device rd;
