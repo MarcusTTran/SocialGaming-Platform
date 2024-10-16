@@ -15,6 +15,8 @@
 #include <unistd.h>
 #include <vector>
 #include <algorithm>
+#include <memory>
+#include "GameManager.h"
 
 
 using networking::Server;
@@ -26,7 +28,15 @@ std::vector<Connection> clients;
 
 //TODO: Tempory solution to allow the onConnect and onDisconnect to access the server object. refactor at a later date.
 Server *server_ptr = nullptr;
+GameManager gameManager;
 
+// Create a new game and add it to the game manager
+// Eventually this will create a game based on the user's selected game
+std::shared_ptr<Game> createGame() {
+  std::shared_ptr<Game> game = std::make_shared<Game>("Test");
+  gameManager.addGame(game);
+  return game;
+}
 
 void onConnect(Connection c) {
   std::cout << "New connection found: " << c.id << "\n";
@@ -48,6 +58,9 @@ onDisconnect(Connection c) {
 }
 
 
+
+
+
 struct MessageResult {
   std::string result;
   bool shouldShutdown;
@@ -59,19 +72,55 @@ processMessages(Server& server, const std::deque<Message>& incoming) {
   std::ostringstream result;
   bool quit = false;
   for (const auto& message : incoming) {
-    if (message.text == "quit") {
-      server.disconnect(message.connection);
-    } else if (message.text == "shutdown") {
-      std::cout << "Shutting down.\n";
-      quit = true;
-    } else if(message.text == "create") {
-      result << message.connection.id << "> " << "Creating a new game.\n";
-    } else if(message.text == "join") {
-      result << message.connection.id << "> " << "Joining an existing game.\n";
-    }else {
-      result << message.connection.id << "> " << message.text << "\n";
+        if (message.text == "quit") {
+            server.disconnect(message.connection);
+        } else if (message.text == "shutdown") {
+            std::cout << "Shutting down.\n";
+            quit = true;
+        } else if (message.text == "create") {
+
+          // TODO: list of games
+
+
+
+            std::shared_ptr<Game> game = createGame();
+            std::deque<Message> outgoing;
+            outgoing.push_back({message.connection, "New game created. Share the game code with others to join.\n"});
+            outgoing.push_back({message.connection, "Game code: " + gameManager.getGameCode(game) + "\n"});
+            server.send(outgoing);
+        } else if (message.text == "join") {
+            result << message.connection.id << "> Please enter 'join <game code>' to join a game.\n";
+        } else if (message.text.rfind("join ", 0) == 0) {
+            std::string gameCode = message.text.substr(5); // Extract the code after 'join '
+            std::shared_ptr<Game> game = gameManager.getGame(gameCode);
+            
+            if (game) {
+                Player player(message.connection, "Player");
+                game->addPlayer(player);
+                result << player.getDisplayName() << " joined game with code: " << gameCode << "\n";
+                
+                // Send a welcome message to the player
+                std::string welcomeMessage = "Welcome to the game!";
+                std::deque<Message> outgoing;
+                outgoing.push_back({message.connection, welcomeMessage});
+              
+
+                // Optionally, notify other players in the game
+                std::string notification = player.getDisplayName() + " has joined the game!";
+                auto players = game->getPlayers();
+                for (const auto& p : players) {
+                    if (p.getConnection().id != message.connection.id) { // Don't notify the joining player
+                        outgoing.push_back({p.getConnection(), notification});
+                    }
+                }
+                server.send(outgoing);
+            } else {
+                result << message.connection.id << "> Game not found with code: " << gameCode << "\n";
+            }
+        } else {
+            result << message.connection.id << "> " << message.text << "\n";
+        }
     }
-  }
   return MessageResult{result.str(), quit};
 }
 
@@ -112,6 +161,8 @@ main(int argc, char* argv[]) {
   const unsigned short port = std::stoi(argv[1]);
   Server server = {port, getHTTPMessage(argv[2]), onConnect, onDisconnect};
   server_ptr = &server;
+
+ 
 
 
   while (true) {

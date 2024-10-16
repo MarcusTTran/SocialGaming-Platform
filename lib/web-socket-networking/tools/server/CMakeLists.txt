@@ -1,3 +1,6 @@
+include_directories(${CMAKE_SOURCE_DIR}/game/include)
+
+
 
 add_executable(game_server
   chatserver.cpp
@@ -14,6 +17,7 @@ find_package(Threads REQUIRED)
 
 target_link_libraries(game_server
   networking
+  game
   ${CMAKE_THREAD_LIBS_INIT}
 )
 

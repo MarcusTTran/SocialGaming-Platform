@@ -10,10 +10,17 @@ using namespace std;
 
 class Game{
     public:
-        virtual ~Game() = default;
-        virtual string determineWinner() = 0;
-        virtual void processPlayerChoice(networking::Connection, const string&, networking::Server&) = 0;
-        virtual void resetPlayerChoices() = 0;
-        virtual string getGameName() const = 0;
-        virtual void sendingMessage(networking::Server&, networking::Connection, const string&) const = 0;
+        Game(string gameName) : gameName(gameName) {}
+        ~Game();
+        string determineWinner();
+        void processPlayerChoice(networking::Connection, const string&, networking::Server&);
+        void resetPlayerChoices(); 
+        string getGameName() const;
+        void sendingMessage(networking::Server&, networking::Connection, const string&) const;
+        void addPlayer(Player);
+        vector<Player> getPlayers() const;
+    private:
+        string gameName;
+        vector<Player> players;
 };
+

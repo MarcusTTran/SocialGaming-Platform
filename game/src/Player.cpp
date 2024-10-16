@@ -4,13 +4,13 @@
 
 Player::Player() : connection(), round(0), choice(""), id(0){}
 
-Player::Player(networking::Connection conn, int r, int pId) : connection(conn), round(r), id(pId){}
+Player::Player(networking::Connection conn, const string &displayName) : connection(conn), displayName(displayName){}
 
 Player::~Player(){}
 
 void Player::make_choice(const string& c) {this->choice = c;}
 
-networking::Connection Player::getConnection(){
+networking::Connection Player::getConnection() const{
     return connection;
 }
 
@@ -28,4 +28,8 @@ string Player::getChoice() const{
 
 int Player::getId() const{
     return id;
+}
+
+string Player::getDisplayName() const{
+    return displayName;
 }
