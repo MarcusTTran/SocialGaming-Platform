@@ -16,10 +16,11 @@ class GameManager {
         GameManager();
         void addGame(std::shared_ptr<Game>);
         void removeGame(std::shared_ptr<Game>);
-        std::shared_ptr<Game> getGame(std::string_view) const;
+        std::shared_ptr<Game> getGame(const std::string&) const;
         std::string getGameCode(std::shared_ptr<Game>) const;
     private:
-        std::string_view generateGameCode();
-        std::unordered_set<std::string_view> activeGameCodes;
-        std::unordered_map<std::string_view, std::shared_ptr<Game>> activeGames;      
+        std::string generateGameCode();
+        std::unordered_set<std::string> activeGameCodes;
+        std::unordered_map<std::string, std::shared_ptr<Game>> activeGames;
+
 };

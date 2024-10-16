@@ -103,7 +103,7 @@ processMessages(Server& server, const std::deque<Message>& incoming) {
                 std::string welcomeMessage = "Welcome to the game!";
                 std::deque<Message> outgoing;
                 outgoing.push_back({message.connection, welcomeMessage});
-                server.send(outgoing);
+              
 
                 // Optionally, notify other players in the game
                 std::string notification = player.getDisplayName() + " has joined the game!";
