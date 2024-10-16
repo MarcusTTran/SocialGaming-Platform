@@ -12,18 +12,19 @@ string readFileContent(const string& filePath) {
     return buffer.str();
 }
 
+
 int main() {
-    string filename = "../config.txt";
+    string filename = "config.txt";
     string configFileContent = readFileContent(filename);
-    GameConfig parser(configFileContent);
+    parseConfigFile(configFileContent);
 
     std::cout << "\nConfiguration Section:" << std::endl;
-    for (const auto& [key, value] : parser.getConfiguration()) {
+    for (const auto& [key, value] : configuration) {
         std::cout << key << " : " << value << std::endl;
     }
 
     std::cout << "\nSetup Section:" << std::endl;
-    for(const auto& [key, value] : parser.getSetup()){
+    for(const auto& [key, value] : setup){
         cout << key << ":" << endl;
         for(const auto& ele : value){
             for(const auto& [k, v] : ele){
@@ -33,7 +34,7 @@ int main() {
     }
     
     std::cout << "\nConstants Section:" << std::endl;
-    for (const auto& [key, entries] : parser.getConstants()) {
+    for (const auto& [key, entries] : constants) {
         std::cout << key << " :" << std::endl;
         for(const auto& ele : entries){
             auto pair1 = ele.first;
@@ -44,19 +45,40 @@ int main() {
         }   
     }
 
-    std::cout << "\nVariables Section:" << std::endl;
-    for (const auto& [key, value] : parser.getVariables()) {
-        std::cout << key << " : " << value << std::endl;
+    std::cout << "\nVariable Section:" << std::endl;
+    for (const auto& [key, entries] : variables) {
+        std::cout << key << " :" << std::endl;
+        for(const auto& ele : entries){
+            auto pair1 = ele.first;
+            auto pair2 = ele.second;
+            std::cout << pair1.first << ": " << pair1.second << " ";
+            std::cout << pair2.first << ": " << pair2.second;
+            cout << std::endl;
+        }   
     }
 
-    std::cout << "\nPer-Player Section:" << std::endl;
-    for (const auto& [key, value] : parser.getPerPlayer()) {
-        std::cout << key << " : " << value << std::endl;
+    std::cout << "\nPerPlayer Section:" << std::endl;
+    for (const auto&[key, entries] : perPlayer) {
+        std::cout << key << " :" << std::endl;
+        for(const auto& ele : entries){
+            auto pair1 = ele.first;
+            auto pair2 = ele.second;
+            std::cout << pair1.first << ": " << pair1.second << " ";
+            std::cout << pair2.first << ": " << pair2.second;
+            cout << std::endl;
+        }   
     }
 
-    std::cout << "\nPer-Audience Section:" << std::endl;
-    for (const auto& [key, value] : parser.getPerAudience()) {
-        std::cout << key << " : " << value << std::endl;
+    std::cout << "\nPerAudience Section:" << std::endl;
+    for (const auto& [key, entries] : perAudience) {
+        std::cout << key << " :" << std::endl;
+        for(const auto& ele : entries){
+            auto pair1 = ele.first;
+            auto pair2 = ele.second;
+            std::cout << pair1.first << ": " << pair1.second << " ";
+            std::cout << pair2.first << ": " << pair2.second;
+            cout << std::endl;
+        }   
     }
     
     return 0;
