@@ -47,10 +47,12 @@ add_subdirectory(tree-sitter)
 add_subdirectory(lib)
 add_subdirectory(game)
 
+# Enable testing by default
+option(BUILD_TESTING "Enable testing" ON)
 # Enable testing if BUILD_TESTING is enabled
 if (BUILD_TESTING)
     enable_testing()
-    # Uncomment the next line if you have tests to include
-    # add_subdirectory(test)
+    include(CTest)
+    add_subdirectory(test)
 endif()
 
