@@ -12,17 +12,19 @@ using namespace std;
 class Player{
     public:
         Player();
-        Player(networking::Connection, int, int);
+        Player(networking::Connection, const string&);
         ~Player();
         void make_choice(const string&);
-        networking::Connection getConnection();
+        networking::Connection getConnection() const;
         int roundGetter();
         void one_round_drop();
         string getChoice() const;
         int getId() const;
+        string getDisplayName() const;
     private:
-        networking::Connection connection;
+        const networking::Connection connection;
         int round;
         string choice;
         int id;
+        string displayName;
 };

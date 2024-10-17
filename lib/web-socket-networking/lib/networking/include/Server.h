@@ -99,7 +99,6 @@ public:
    *  The httpMessage is a string containing HTML content that will be sent
    *  in response to standard HTTP requests for any path ending in `index.html`.
    */
-  Server() {};
   template <typename C, typename D>
   Server(unsigned short port,
          std::string httpMessage,

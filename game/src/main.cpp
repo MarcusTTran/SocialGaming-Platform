@@ -2,10 +2,10 @@
 #include <iostream>
 
 int main() {
-    std::cout << "Starting Rock-Paper-Scissors game!" << std::endl;
+    // std::cout << "Starting Rock-Paper-Scissors game!" << std::endl;
 
-    GameConfig config("Rock-Paper-Scissors");  
-    RockPaperScissorsGame game(config, 3);     
+    // GameConfig config("Rock-Paper-Scissors");  
+    // RockPaperScissorsGame game(config, 3);     
 
-    return 0;
+    // return 0;
 }

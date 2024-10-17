@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <string>
 #include <unordered_set>
+#include <memory>
 
 
 /*
@@ -13,11 +14,13 @@
 class GameManager {
     public:
         GameManager();
-        void addGame(Game*);
-        void removeGame(Game*);
-        Game* getGame(std::string_view) const;
+        void addGame(std::shared_ptr<Game>);
+        void removeGame(std::shared_ptr<Game>);
+        std::shared_ptr<Game> getGame(const std::string&) const;
+        std::string getGameCode(std::shared_ptr<Game>) const;
     private:
-        std::string_view generateGameCode();
-        std::unordered_set<std::string_view> activeGameCodes;
-        std::unordered_map<std::string_view, Game*> activeGames;      
+        std::string generateGameCode();
+        std::unordered_set<std::string> activeGameCodes;
+        std::unordered_map<std::string, std::shared_ptr<Game>> activeGames;
+
 };
