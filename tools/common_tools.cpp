@@ -1,22 +1,30 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <concepts>
+#include <map>
+#include <span>
 
-std::string removeWhiteSpace(std::string s){
+void removeWhiteSpace(std::string &s){
     s.erase(std::remove(s.begin(), s.end(), ' '), s.end());
-    return s;
 }
 
+//Ensure that the span can use the at method
+template <typename T>
+concept AtMethod = requires(T span, const auto& key){
+    { span.at(key) };
+};
+
 //sorts in ascending order
-template <typename MapType>
-void sortList(std::vector <MapType>&list){
+template <typename T>
+void sortList(std::span <T> list){
     std::ranges::sort(list, std::less{});
 }
 
 //sorts in ascending order using a key
-template <typename MapType>
-void sortList(std::vector <MapType>&list, const auto &key){
-    std::ranges::sort(list, std::less{}, [&key](const MapType& mapElement) {
+template <AtMethod T>
+void sortList(std::span <T> list, const auto &key){
+    std::ranges::sort(list, std::less{}, [&key](const T& mapElement) {
         return mapElement.at(key);
     });
 }
