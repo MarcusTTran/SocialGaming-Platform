@@ -1,16 +1,17 @@
-cmake_minimum_required(VERSION 3.19)
-project(TreeSitterTry)
+add_executable(ts_test main.cpp)
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+target_link_libraries(ts_test 
+    tree-sitter-json
+    cpp-tree-sitter 
+)
 
-add_subdirectory(cpp-tree-sitter)
+# set_target_properties(ts_test
+#                       PROPERTIES
+#                       LINKER_LANGUAGE CXX
+#                       CXX_STANDARD 17
+#                       PREFIX ""
+# )
 
-add_subdirectory(tree-sitter-socialgaming)
-
-include_directories(${CMAKE_SOURCE_DIR}/cpp-tree-sitter/include)
-include_directories(${CMAKE_SOURCE_DIR}/tree-sitter-socialgaming/src)
-
-add_executable(main main.cpp)
-
-target_link_libraries(main cpp-tree-sitter tree-sitter-socialgaming)
+install(TARGETS ts_test
+  RUNTIME DESTINATION bin
+)

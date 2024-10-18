@@ -19,7 +19,7 @@ public:
     string getGameName() const;
     pair<int, int> getPlayerRange() const;
     bool hasAudience() const;
-    map<string, string> getConfiguration();
+    map<string, vector<pair<pair<string, string>, pair<string, string>>>> getConfiguration();
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> getConstants();
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> getVariables();
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> getPerPlayer();
@@ -30,14 +30,14 @@ private:
     pair<int, int> playerRange;
     bool audience;
     vector<string> toSkip = {"[", "]", ",", "{", "}", ":", "\"", "(", ")"};
-    map<string, string> configuration;
+    map<string, vector<pair<pair<string, string>, pair<string, string>>>> configuration;
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> variables;
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> perPlayer;
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> perAudience;
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> constants;  
     map<string, vector<map<string, string>>> setup;
 
-    void extractStringValue2(const ts::Node&, const std::string&, pair<string, string> &, pair<string, string> &, std::string, map<string, vector<pair<pair<string, string>, pair<string, string>>>>&);
+    void extractStringValue(const ts::Node&, const std::string&, pair<string, string> &, pair<string, string> &, std::string, map<string, vector<pair<pair<string, string>, pair<string, string>>>>&);
     template <typename T>
     void parseValueMap(const ts::Node&, const string&, T&);
     void setupHelper(const ts::Node&, const string&, string&, string&, const string&);

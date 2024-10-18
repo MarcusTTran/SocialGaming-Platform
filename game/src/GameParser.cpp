@@ -42,11 +42,11 @@ map<string, vector<map<string, string>>> GameConfig::getSetup(){
     return setup;
 }
 
-map<string, string> GameConfig::getPerAudience(){
+map<string, vector<pair<pair<string, string>, pair<string, string>>>> GameConfig::getPerAudience() {
     return perAudience;
 }
 
-void GameConfig::extractStringValue2(const ts::Node& node, const std::string& source, pair<string, string> &str1, pair<string, string> &str2, std::string keyID, map<string, vector<pair<pair<string, string>, pair<string, string>>>>& output){
+void GameConfig::extractStringValue(const ts::Node& node, const std::string& source, pair<string, string> &str1, pair<string, string> &str2, std::string keyID, map<string, vector<pair<pair<string, string>, pair<string, string>>>>& output){
     if(!node.getNumNamedChildren()){
         auto type = string(node.getType());
         if(find(begin(toSkip), end(toSkip), type) == end(toSkip)){
@@ -57,7 +57,7 @@ void GameConfig::extractStringValue2(const ts::Node& node, const std::string& so
         return;
     }
 
-    for(auto child : ts::Children{node}){
+    for(auto child : ts::Children{node} ){
             auto type = string(child.getType());
         if(find(begin(toSkip), end(toSkip), type) != end(toSkip)){
             continue;

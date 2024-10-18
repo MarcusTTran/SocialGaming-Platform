@@ -1,7 +1,8 @@
 # Fahsa
 build/
 .vscode/
-
+cpp-tree-sitter/
+tree-sitter-socialgaming/
 
 # Prerequisites
 *.d
