@@ -19,13 +19,6 @@ add_grammar_from_repo(tree-sitter-json                 # Defines the library nam
   0.19.0                                               # Version tag for the grammar
 )
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
-
-
-# Include directory for the game's header files
-# include_directories(${CMAKE_SOURCE_DIR}/game/include)
-#include_directories(${CMAKE_SOURCE_DIR}/tree-sitter/lib/include)
-
 # Enable sanitizer flags if using Clang or GNU compilers
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     set(SANITIZER_FLAGS "-fsanitize=address,undefined")
@@ -37,9 +30,6 @@ endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
-
-# # Create the main executable, including only the necessary source files
-# add_executable(main game/src/main.cpp)
 
 # Add the `game` subdirectory containing the game library configuration
 add_subdirectory(game)
@@ -53,7 +43,7 @@ if (BUILD_TESTING)
     add_subdirectory(test)
 endif()
 
-# testing subdirectory for parser
+# Add testing subdirectory for parser
 add_subdirectory(tree-sitter-test)
 
 # Link `game` with the tree-sitter library

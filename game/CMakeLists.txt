@@ -24,10 +24,6 @@
 # target_link_libraries(RockPaperScissors game)
 
 
-
-# Include directories for the game project
-include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
-
 # Specify only the headers and source files for testing
 set(GAME_HEADERS 
     ${CMAKE_CURRENT_LIST_DIR}/include/GameParser.h
@@ -37,12 +33,22 @@ set(GAME_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/src/GameParser.cpp
 )
 
-# Create the game library with the minimal set of files
-add_library(game_parser ${GAME_SOURCES} ${GAME_HEADERS})
+# Create the parser library
+add_library(game_parser STATIC ${GAME_SOURCES} ${GAME_HEADERS})
+
+# Include directories for the game project
+target_include_directories(
+    game_parser PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/include
+)
 
 target_link_libraries(game_parser
     tree-sitter-json
     cpp-tree-sitter  
+)
+
+set_target_properties(game_parser PROPERTIES
+    PUBLIC_HEADER "include/GameParser.h"
 )
 
 # For creating main.cpp in /src 
@@ -56,7 +62,9 @@ set(MAIN_SOURCES
 add_executable(main ${MAIN_SOURCES})
 
 # Link the main executable with the game_parser library
-target_link_libraries(main game_parser)
+target_link_libraries(main 
+    game_parser
+)
 
 
 

@@ -37,7 +37,8 @@ private:
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> constants;  
     map<string, vector<map<string, string>>> setup;
 
-    void extractStringValue(const ts::Node&, const std::string&, pair<string, string> &, pair<string, string> &, std::string, map<string, vector<pair<pair<string, string>, pair<string, string>>>>&);
+    //void extractStringValue(const ts::Node&, const std::string&, pair<string, string> &, pair<string, string> &, std::string, map<string, vector<pair<pair<string, string>, pair<string, string>>>>&);
+    void extractStringValue(const ts::Node& node, const std::string& source, pair<string, string> &str1, pair<string, string> &str2, std::string keyID, map<string, vector<pair<pair<string, string>, pair<string, string>>>>& output);
     template <typename T>
     void parseValueMap(const ts::Node&, const string&, T&);
     void setupHelper(const ts::Node&, const string&, string&, string&, const string&);
