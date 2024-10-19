@@ -14,6 +14,12 @@ string readFileContent(const string& filePath) {
 
 
 int main() {
+    // std::cout << "Starting Rock-Paper-Scissors game!" << std::endl;
+
+    // GameConfig config("Rock-Paper-Scissors");  
+    // RockPaperScissorsGame game(config, 3);     
+
+    // return 0;
     string filename = "config.txt";
     string configFileContent = readFileContent(filename);
     parseConfigFile(configFileContent);

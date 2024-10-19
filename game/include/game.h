@@ -33,6 +33,7 @@ class Game {
     vector<Player> players;
 
     public:
+<<<<<<< HEAD
         // Constructor (cannot be instantiated without all provided fields ie. no default constructor allowed)
         Game(GameConfiguration& configuration, GameConstants& constants, GameVariables& variables, GamePerAudience& perAudience, GameRules & rules, vector<Player> players)
             : configuration(configuration), constants(constants), variables(variables), perAudience(perAudience), rules(rules), players(players) {
@@ -56,3 +57,19 @@ class Game {
 };
 
 #endif
+=======
+        Game(string gameName) : gameName(gameName) {}
+        ~Game();
+        string determineWinner();
+        void processPlayerChoice(networking::Connection, const string&, networking::Server&);
+        void resetPlayerChoices(); 
+        string getGameName() const;
+        void sendingMessage(networking::Server&, networking::Connection, const string&) const;
+        void addPlayer(Player);
+        vector<Player> getPlayers() const;
+    private:
+        string gameName;
+        vector<Player> players;
+};
+
+>>>>>>> 464115116f301a5b027831865f208f0a785170c2

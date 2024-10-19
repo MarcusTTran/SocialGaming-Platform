@@ -238,7 +238,7 @@ void parseConfigFile(const string& fileContent) {
 
 
 int main() {
-    string filename = "config.txt";
+    string filename = "CopyRPSConfig.txt";
     string configFileContent = readFileContent(filename);
     parseConfigFile(configFileContent);
 

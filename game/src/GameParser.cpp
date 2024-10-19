@@ -56,7 +56,7 @@ void GameConfig::extractStringValue(const ts::Node& node, const std::string& sou
         }
         return;
     }
-
+        // TODO: perhaps change ts::Children to be defined outside of the loop?
     for(auto child : ts::Children{node} ){
             auto type = string(child.getType());
         if(find(begin(toSkip), end(toSkip), type) != end(toSkip)){

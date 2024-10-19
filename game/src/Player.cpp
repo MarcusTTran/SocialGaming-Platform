@@ -52,6 +52,10 @@ int Player<T, M>::getId() const{
     return id;
 }
 
+string Player::getDisplayName() const{
+    return displayName;
+}
+
 template <typename T, typename M>
 GamePerPlayer<M>& Player<T, M>::getPerPlayer() {
     return players;
