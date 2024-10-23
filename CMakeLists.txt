@@ -33,7 +33,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
 # Add the `game` subdirectory containing the game library configuration
 add_subdirectory(game)
-add_subdirectory(tools)
+#add_subdirectory(tools)
 
 # Enable testing by default
 option(BUILD_TESTING "Enable testing" ON)
@@ -46,6 +46,7 @@ endif()
 
 # Add testing subdirectory for parser
 add_subdirectory(tree-sitter-test)
+add_subdirectory(server)
 
 # Link `game` with the tree-sitter library
 # target_link_libraries(game cpp-tree-sitter tree-sitter-socialgaming tree-sitter-json)
