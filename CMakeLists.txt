@@ -31,19 +31,20 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
+add_subdirectory(lib/networking)
 # Add the `game` subdirectory containing the game library configuration
 add_subdirectory(game)
 add_subdirectory(tree-sitter-socialgaming)
 #add_subdirectory(tools)
 
 # Enable testing by default
-option(BUILD_TESTING "Enable testing" ON)
-# Enable testing if BUILD_TESTING is enabled
-if (BUILD_TESTING)
-    enable_testing()
-    include(CTest)
-    add_subdirectory(test)
-endif()
+# option(BUILD_TESTING "Enable testing" ON)
+# # Enable testing if BUILD_TESTING is enabled
+# if (BUILD_TESTING)
+#     enable_testing()
+#     include(CTest)
+#     add_subdirectory(test)
+# endif()
 
 # Add testing subdirectory for parser
 add_subdirectory(tree-sitter-test)

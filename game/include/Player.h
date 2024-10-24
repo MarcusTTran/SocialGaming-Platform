@@ -7,6 +7,8 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <variant>
+#include <string_view>
 #include <vector>
 using namespace std;
 
@@ -14,7 +16,8 @@ template <typename T, typename M> // M is for player, T is for audience
 class Player {
 public:
   Player();
-  Player(networking::Connection, int ID, T audienceVar, M playerVar);
+  Player(networking::Connection con, variant<int, string, string_view> ID);
+  Player(networking::Connection con, variant<int, string, string_view> ID, T audienceVar, M playerVar);
   ~Player();
   void make_choice(const string &);
   networking::Connection getConnection();
@@ -23,6 +26,7 @@ public:
   bool getAudience();
   GamePerPlayer<M> &getPerPlayer();
   GamePerAudience<T> &getPerAudience();
+
 
 private:
   networking::Connection connection;
@@ -42,7 +46,11 @@ Player<T, M>::Player() : connection(), choice(""), id(0) {
 }
 
 template <typename T, typename M>
-Player<T, M>::Player(networking::Connection conn, int ID, T audienceVar, M playerVar)
+Player<T, M>::Player(networking::Connection conn, variant<int, string, string_view> ID)
+    : connection(conn), id(ID), inAudience(false) {}
+
+template <typename T, typename M>
+Player<T, M>::Player(networking::Connection conn, variant<int, string, string_view> ID, T audienceVar, M playerVar)
     : connection(conn), id(ID), inAudience(false) {
     this->audience = audienceVar;
     this->players = playerVar;

@@ -15,7 +15,7 @@
 #include <vector>
 
 using namespace std;
-
+using variantType = variant<int, string>;
 // class Game{
 //     public:
 //         virtual ~Game() = default;
@@ -32,7 +32,7 @@ class Game {
   // GameConstants constants;
   // GameVariables variables;
   // GameRules rules;
-  // vector<Player> players;
+  vector<Player<variantType, variantType>> players;
 
 public:
   // Constructor (cannot be instantiated without all provided fields ie. no
@@ -53,8 +53,8 @@ public:
   // GameConstants &getConstants();
   // GameVariables &getVariables();
   // GameRules &getRules();
-  // vector<Player> &getPlayers();
-
+  vector<Player<variantType, variantType>> &getPlayers(){ return players;};
+  void addPlayer(const Player<variantType, variantType>& player){}
   // TODO: I feel like we should move this code to a Manager class.
   // void sendingMessage(networking::Server&, networking::Connection, const
   // string&); void processPlayerChoice(networking::Connection, const string&,
