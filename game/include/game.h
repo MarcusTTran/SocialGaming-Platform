@@ -28,32 +28,32 @@ using namespace std;
 // };
 
 class Game {
-  GameConfiguration configuration;
-  GameConstants constants;
-  GameVariables variables;
-  GameRules rules;
-  vector<Player> players;
+  // GameConfiguration configuration;
+  // GameConstants constants;
+  // GameVariables variables;
+  // GameRules rules;
+  // vector<Player> players;
 
 public:
   // Constructor (cannot be instantiated without all provided fields ie. no
   // default constructor allowed)
-  Game(GameConfiguration &configuration, GameConstants &constants,
-       GameVariables &variables, GamePerAudience &perAudience, GameRules &rules,
-       vector<Player> players)
-      : configuration(configuration), constants(constants),
-        variables(variables), perAudience(perAudience), rules(rules),
-        players(players) {
-    // TODO: Perhaps deep copy Players vector?
-  }
+  // Game(GameConfiguration &configuration, GameConstants &constants,
+  //      GameVariables &variables, GamePerAudience &perAudience, GameRules &rules,
+  //      vector<Player> players)
+  //     : configuration(configuration), constants(constants),
+  //       variables(variables), perAudience(perAudience), rules(rules),
+  //       players(players) {
+  //   // TODO: Perhaps deep copy Players vector?
+  // }
 
-  ~Game() = default; // Default destructor
+  // ~Game() = default; // Default destructor
 
   // Getters for important game data
-  GameConfiguration &getConfiguration();
-  GameConstants &getConstants();
-  GameVariables &getVariables();
-  GameRules &getRules();
-  vector<Player> &getPlayers();
+  // GameConfiguration &getConfiguration();
+  // GameConstants &getConstants();
+  // GameVariables &getVariables();
+  // GameRules &getRules();
+  // vector<Player> &getPlayers();
 
   // TODO: I feel like we should move this code to a Manager class.
   // void sendingMessage(networking::Server&, networking::Connection, const

@@ -8,7 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <cpp-tree-sitter.h>
-// #include "tree_sitter/api.h" 
+#include "tree_sitter/api.h" 
 
 using namespace std;
 
@@ -19,18 +19,23 @@ public:
     string getGameName() const;
     pair<int, int> getPlayerRange() const;
     bool hasAudience() const;
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>> getConfiguration();
+    string readFileContent(const string& filePath);
+    map<string, string> getConfiguration();
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> getConstants();
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> getVariables();
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> getPerPlayer();
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> getPerAudience();
     map<string, vector<map<string, string>>> getSetup();
+
+    // helper functions to print result to the console
+    void printKeyValuePair();
+    void printMap();
 private:
     string gameName;
     pair<int, int> playerRange;
     bool audience;
     vector<string> toSkip = {"[", "]", ",", "{", "}", ":", "\"", "(", ")"};
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>> configuration;
+    map<string, string> configuration;
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> variables;
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> perPlayer;
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> perAudience;

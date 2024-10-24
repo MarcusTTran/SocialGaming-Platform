@@ -33,6 +33,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
 # Add the `game` subdirectory containing the game library configuration
 add_subdirectory(game)
+add_subdirectory(tree-sitter-socialgaming)
 #add_subdirectory(tools)
 
 # Enable testing by default

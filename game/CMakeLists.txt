@@ -22,6 +22,7 @@ target_include_directories(
 target_link_libraries(game_parser
     tree-sitter-json
     cpp-tree-sitter
+    tree-sitter-socialgaming
     networking  
 )
 
@@ -34,13 +35,16 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
 )
 
-# Create the main executable
-add_executable(main ${MAIN_SOURCES})
+# Main executable
+add_executable(main_executable ${GAME_SRC_DIR}/main.cpp)
 
-# Link the main executable with the game_parser library
-target_link_libraries(main 
-    game_parser
-)
+# Link main_executable to game_parser and cpp-tree-sitter
+target_link_libraries(main_executable game_parser cpp-tree-sitter)
+
+# # Link the main executable with the game_parser library
+# target_link_libraries(main 
+#     game_parser
+# )
 
 # Ensure the include directory is available for the main executable
 target_include_directories(
