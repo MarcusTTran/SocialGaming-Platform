@@ -1,72 +1,33 @@
 // // author: kwa132, Mtt8
 
-// #include "Player.h"
+#include "Player.h"
 // #include "GamePerPlayer.h"
 // #include "GamePerAudience.h"
 
+Player::Player(networking::Connection con, variantType ID) :
+connection(con), id(ID), inAudience(false){}
 
-// template <typename T, typename M>
-// Player<T, M>::Player() : connection(), choice(""), id(0) {
-//     audience = GamePerAudience<T>();
-//     player = GamePerPlayer<T>();
-// }
+void Player::make_choice(const string & c){
+    this->choice = c;
+}
 
-// template <typename T, typename M>
-// Player<T, M>::Player(networking::Connection conn, int ID, T audienceVar, M playerVar) : connection(conn), round(round), id(ID) {
-//     this->audience = audienceVar;
-//     this->players = playerVar;
-// }
+networking::Connection Player::getConnection() const{
+    return connection;
+}
 
-// template <typename T, typename M>
-// Player<T, M>::~Player(){}
+string Player::getChoice() const{
+    return choice;
+}
 
-// template <typename T, typename M>
-// bool Player<T, M>::inAudience() {
-//     return inAudience;
-// }
+variantType Player::getId() const{
+    return id;
+}
 
-// template <typename T, typename M>
-// void Player<T, M>::make_choice(const string& c) {this->choice = c;}
+bool Player::getAudience(){
+    return inAudience;
+}
 
-// template <typename T, typename M>
-// networking::Connection Player<T, M>::getConnection(){
-//     return connection;
-// }
-
-// template <typename T, typename M>
-// int Player<T, M>::roundGetter(){
-//     return round;
-// }
-
-// template <typename T, typename M>
-// void Player<T, M>::one_round_drop(){
-//     round--;
-// }
-
-// template <typename T, typename M>
-// string Player<T, M>::getChoice() const{
-//     return choice;
-// }
-
-// template <typename T, typename M>
-// int Player<T, M>::getId() const{
-//     return id;
-// }
-
-// string Player<T, M>::getDisplayName() const{
-//     // return displayName;
-//     return "";
-// }
-
-// template <typename T, typename M>
-// GamePerPlayer<M>& Player<T, M>::getPerPlayer() {
-//     return players;
-// }
-
-// template <typename T, typename M>
-// GamePerAudience<T>& Player<T, M>::getPerAudience() {
-//     return audience;
-// }
-
-
+string Player::getDisplayName(){
+    return "";
+}
 
