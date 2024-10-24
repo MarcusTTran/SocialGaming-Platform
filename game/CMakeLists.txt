@@ -35,15 +35,10 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
 )
 
-# # Main executable
-# add_executable(main_executable ${GAME_SRC_DIR}/main.cpp)
+# Main executable
+add_executable(main ${MAIN_SOURCES})
 
-# # Link main_executable to game_parser and cpp-tree-sitter
-# target_link_libraries(main_executable game_parser cpp-tree-sitter)
-
-add_executable(main ${GAME_SRC_DIR}/main.cpp)
-
-# Link the main executable with the game_parser library
+# Link the main executable with the game_parser library and required dependencies
 target_link_libraries(main 
     game_parser
     cpp-tree-sitter
@@ -55,8 +50,7 @@ target_include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/include
 )
 
-
-
-
-
-
+# Set output directory for the main executable
+set_target_properties(main PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
