@@ -10,22 +10,21 @@
 #include <variant>
 #include <string_view>
 #include <vector>
-using namespace std;
-using variantType = variant<int, string, string_view, const char*>;
+
+using variantType = std::variant<int, std::string, std::string_view>;
+
 class Player{
     public:
         Player(networking::Connection con, variantType ID);
-        void make_choice(const string &);
+        void make_choice(const std::string &);
         networking::Connection getConnection() const;
-        string getChoice() const;
+        std::string getChoice() const;
         variantType getId() const;
-        bool getAudience();
-        string getDisplayName();
+        std::string getDisplayName();
     private:
         networking::Connection connection;
-        string choice;
+        std::string choice;
         variantType id;
-        bool inAudience; 
 };
 
 // template <typename T, typename M> // M is for player, T is for audience

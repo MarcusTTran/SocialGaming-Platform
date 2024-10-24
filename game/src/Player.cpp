@@ -5,9 +5,9 @@
 // #include "GamePerAudience.h"
 
 Player::Player(networking::Connection con, variantType ID) :
-connection(con), id(ID), inAudience(false){}
+connection(con), id(ID){}
 
-void Player::make_choice(const string & c){
+void Player::make_choice(const std::string & c){
     this->choice = c;
 }
 
@@ -15,7 +15,7 @@ networking::Connection Player::getConnection() const{
     return connection;
 }
 
-string Player::getChoice() const{
+std::string Player::getChoice() const{
     return choice;
 }
 
@@ -23,11 +23,7 @@ variantType Player::getId() const{
     return id;
 }
 
-bool Player::getAudience(){
-    return inAudience;
-}
-
-string Player::getDisplayName(){
+std::string Player::getDisplayName(){
     return "";
 }
 

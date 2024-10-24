@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
 // class Game{
 //     public:
 //         virtual ~Game() = default;
@@ -33,8 +32,8 @@ class Game {
   // GameConstants constants;
   // GameVariables variables;
   // GameRules rules;
-  vector<Player> players;
-  string gameName;
+  std::vector<Player> players;
+  std::string gameName;
 
 public:
   // Constructor (cannot be instantiated without all provided fields ie. no
@@ -47,7 +46,7 @@ public:
   //       players(players) {
   //   // TODO: Perhaps deep copy Players vector?
   // }
-  Game(const string& gameName);
+  Game(const std::string& gameName);
   ~Game() = default; // Default destructor
 
   // Getters for important game data
@@ -55,10 +54,10 @@ public:
   // GameConstants &getConstants();
   // GameVariables &getVariables();
   // GameRules &getRules();
-  string getGameName() const;
-  const vector<Player> &getPlayers() const;
+  std::string getGameName() const;
+  const std::vector<Player> &getPlayers() const;
   void addPlayer(const Player& player);
-  void sendingMessage(networking::Server& server, networking::Connection connection, const string& message) const;
+  void sendingMessage(networking::Server& server, networking::Connection connection, const std::string& message) const;
 
   // TODO: I feel like we should move this code to a Manager class.
   // void sendingMessage(networking::Server&, networking::Connection, const

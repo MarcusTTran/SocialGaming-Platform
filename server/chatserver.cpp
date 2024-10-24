@@ -95,7 +95,7 @@ processMessages(Server& server, const std::deque<Message>& incoming) {
             std::shared_ptr<Game> game = gameManager.getGame(gameCode);
             
             if (game) {
-                Player player(message.connection, "Player");
+                Player player(message.connection, std::string("Player"));
                 game->addPlayer(player);
                 result << player.getDisplayName() << " joined game with code: " << gameCode << "\n";
                 
