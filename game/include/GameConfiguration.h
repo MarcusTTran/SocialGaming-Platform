@@ -46,10 +46,11 @@ public:
 
 class GameConfiguration {
 // private:
-//   const GameName gameName;
+  // const GameName gameName;
 
-//   std::pair<size_t, size_t> playerRange;
-//   bool audience;
+  // std::pair<size_t, size_t> playerRange;
+  // bool audience;
+  // std::map<std::string, std::vector<std::map<std::string, std::string>>> setup;
 //   // TODO: change
 //   std::vector<SetupRules> setup; // Contains a list of SetupRules (like the
 //                                  // number of rounds to start from)
