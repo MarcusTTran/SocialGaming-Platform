@@ -19,12 +19,21 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/lib/networking/include
 )
 
+# Check if tree-sitter-socialgaming target exists
+if (NOT TARGET tree-sitter-socialgaming)
+    add_library(tree-sitter-socialgaming INTERFACE)
+    target_include_directories(tree-sitter-socialgaming INTERFACE ${tree-sitter-socialgaming_SOURCE_DIR}/src)
+    target_sources(tree-sitter-socialgaming INTERFACE ${tree-sitter-socialgaming_SOURCE_DIR}/src/parser.c)
+endif()
+
+# Link with required libraries
 target_link_libraries(game_parser
     tree-sitter-json
     cpp-tree-sitter
-    tree-sitter-socialgaming
+    tree-sitter-socialgaming  
     networking  
 )
+
 
 set_target_properties(game_parser PROPERTIES
     PUBLIC_HEADER "include/GameParser.h"

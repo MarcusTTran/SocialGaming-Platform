@@ -5,18 +5,28 @@ project(TreeSitterTry)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-
 include(cmake/CPM.cmake)
 
+# Add cpp-tree-sitter
 CPMAddPackage(
   NAME cpp-tree-sitter
   GIT_REPOSITORY https://github.com/nsumner/cpp-tree-sitter.git
-  GIT_TAG v0.0.1
+  GIT_TAG main
 )
 
-add_grammar_from_repo(tree-sitter-json                 # Defines the library name for a grammar
-  https://github.com/tree-sitter/tree-sitter-json.git  # Repository URL of a tree-sitter grammar
-  0.19.0                                               # Version tag for the grammar
+# Add tree-sitter-socialgaming
+CPMAddPackage(
+  NAME tree-sitter-socialgaming
+  GIT_REPOSITORY https://github.com/nsumner/tree-sitter-socialgaming.git
+  GIT_TAG main  # Or a specific tag/branch if needed
+)
+
+# Add tree-sitter-json
+CPMAddPackage(
+  NAME tree-sitter-json
+  GIT_REPOSITORY https://github.com/tree-sitter/tree-sitter-json.git
+  GIT_TAG master
+  OPTIONS "TREE_SITTER_CLI_EXECUTABLE=${TREE_SITTER_CLI_EXECUTABLE}"
 )
 
 # Enable sanitizer flags if using Clang or GNU compilers
@@ -31,28 +41,18 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
+# Add your other subdirectories as before
 add_subdirectory(lib/networking)
-# Add the `game` subdirectory containing the game library configuration
 add_subdirectory(game)
-add_subdirectory(tree-sitter-socialgaming)
-#add_subdirectory(tools)
-
-# Enable testing by default
-# option(BUILD_TESTING "Enable testing" ON)
-# # Enable testing if BUILD_TESTING is enabled
-# if (BUILD_TESTING)
-#     enable_testing()
-#     include(CTest)
-#     add_subdirectory(test)
-# endif()
-
-# Add testing subdirectory for parser
 add_subdirectory(tree-sitter-test)
 add_subdirectory(server)
 
-# Link `game` with the tree-sitter library
-# target_link_libraries(game cpp-tree-sitter tree-sitter-socialgaming tree-sitter-json)
-
-
+# Link `game_parser` with tree-sitter libraries
+target_link_libraries(game_parser
+    tree-sitter-json
+    cpp-tree-sitter
+    tree-sitter-socialgaming
+    networking
+)
 
 
