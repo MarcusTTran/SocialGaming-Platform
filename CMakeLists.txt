@@ -18,15 +18,20 @@ CPMAddPackage(
 CPMAddPackage(
   NAME tree-sitter-socialgaming
   GIT_REPOSITORY https://github.com/nsumner/tree-sitter-socialgaming.git
-  GIT_TAG main  # Or a specific tag/branch if needed
+  GIT_TAG main  
 )
 
-# Add tree-sitter-json
-CPMAddPackage(
-  NAME tree-sitter-json
-  GIT_REPOSITORY https://github.com/tree-sitter/tree-sitter-json.git
-  GIT_TAG master
-  OPTIONS "TREE_SITTER_CLI_EXECUTABLE=${TREE_SITTER_CLI_EXECUTABLE}"
+# # Add tree-sitter-json
+# CPMAddPackage(
+#   NAME tree-sitter-json
+#   GIT_REPOSITORY https://github.com/tree-sitter/tree-sitter-json.git
+#   GIT_TAG master
+#   OPTIONS "TREE_SITTER_CLI_EXECUTABLE=${TREE_SITTER_CLI_EXECUTABLE}"
+# )
+
+add_grammar_from_repo(tree-sitter-json                 # Defines the library name for a grammar
+  https://github.com/tree-sitter/tree-sitter-json.git  # Repository URL of a tree-sitter grammar
+  0.19.0                                               # Version tag for the grammar
 )
 
 # Enable sanitizer flags if using Clang or GNU compilers
@@ -54,5 +59,4 @@ target_link_libraries(game_parser
     tree-sitter-socialgaming
     networking
 )
-
 
