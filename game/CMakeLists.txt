@@ -1,73 +1,65 @@
-# # Include directories for the game project
-# include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
-# include_directories(${CMAKE_CURRENT_LIST_DIR}/../lib/web-socket-networking/lib/networking/include)  # Adjusted path to networking headers
-# include_directories(${CMAKE_CURRENT_LIST_DIR}/../cpp-tree-sitter/include)
+# Specify the include and source directories
+set(GAME_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
+set(GAME_SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
 
-# # Collect all headers and source files
-# file(GLOB_RECURSE GAME_HEADERS "${CMAKE_CURRENT_LIST_DIR}/include/*.h")
-# file(GLOB_RECURSE GAME_SOURCES "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
+# Specify the header and source files
+file(GLOB GAME_HEADERS "${GAME_INCLUDE_DIR}/*.h")
+file(GLOB GAME_SOURCES "${GAME_SRC_DIR}/*.cpp")
 
-# # Create the game library
-# add_library(game ${GAME_SOURCES} ${GAME_HEADERS})
-
-
-# target_link_libraries(game cpp-tree-sitter networking tree-sitter-json)
-
-# # Create the RockPaperScissors executable
-# add_executable(RockPaperScissors
-#     game/src/main.cpp               
-#     game/src/gameConfig.cpp
-#     game/src/Player.cpp
-# )
-
-# # Link the game library to the executable
-# target_link_libraries(RockPaperScissors game)
-
-
-# Specify only the headers and source files for testing
-set(GAME_HEADERS 
-    ${CMAKE_CURRENT_LIST_DIR}/include/GameParser.h
-)
-
-set(GAME_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/src/GameParser.cpp
-)
+include_directories(${GAME_INCLUDE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/lib/networking/include)
 
 # Create the parser library
-add_library(game_parser STATIC ${GAME_SOURCES} ${GAME_HEADERS})
+add_library(game_parser ${GAME_SOURCES} ${GAME_HEADERS})
 
 # Include directories for the game project
 target_include_directories(
     game_parser PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/include
+    ${CMAKE_SOURCE_DIR}/lib/networking/include
 )
 
+# Check if tree-sitter-socialgaming target exists
+if (NOT TARGET tree-sitter-socialgaming)
+    add_library(tree-sitter-socialgaming INTERFACE)
+    target_include_directories(tree-sitter-socialgaming INTERFACE ${tree-sitter-socialgaming_SOURCE_DIR}/src)
+    target_sources(tree-sitter-socialgaming INTERFACE ${tree-sitter-socialgaming_SOURCE_DIR}/src/parser.c)
+endif()
+
+# Link with required libraries
 target_link_libraries(game_parser
     tree-sitter-json
-    cpp-tree-sitter  
+    cpp-tree-sitter
+    tree-sitter-socialgaming  
+    networking  
 )
+
 
 set_target_properties(game_parser PROPERTIES
     PUBLIC_HEADER "include/GameParser.h"
 )
-
-# For creating main.cpp in /src 
 
 # Specify the source file for the main executable
 set(MAIN_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
 )
 
-# Create the main executable
+# Main executable
 add_executable(main ${MAIN_SOURCES})
 
-# Link the main executable with the game_parser library
+# Link the main executable with the game_parser library and required dependencies
 target_link_libraries(main 
     game_parser
+    cpp-tree-sitter
 )
 
+# Ensure the include directory is available for the main executable
+target_include_directories(
+    main PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/include
+)
 
-
-
-
-
+# Set output directory for the main executable
+set_target_properties(main PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)

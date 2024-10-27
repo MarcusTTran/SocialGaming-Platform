@@ -52,47 +52,47 @@ for round in configuration.rounds.upfrom(1) {
 
 // Make this an interface
 class Rule {
-    public:
-        virtual ~Rule() = default;
-        virtual GameRuleType getType() const = 0;
-        virtual bool isNested() const = 0;
+    // public:
+    //     virtual ~Rule() = default;
+    //     virtual GameRuleType getType() const = 0;
+    //     virtual bool isNested() const = 0;
 };
 
 
 class NestedRule: public Rule {
-    GameRuleType type;
-    std::string statementBody;
-    std::optional<builtInFunctionName> builtinFunction;
-    std::optional<std::string> containerName;
-    std::optional<std::string> iteratorName;
-    std::vector<Rule> nestedRules;
+    // GameRuleType type;
+    // std::string statementBody;
+    // std::optional<builtInFunctionName> builtinFunction;
+    // std::optional<std::string> containerName;
+    // std::optional<std::string> iteratorName;
+    // std::vector<Rule> nestedRules;
     
-    public:
-        GameRuleType getType() const override {
-            return type;
-        }
+    // public:
+    //     GameRuleType getType() const override {
+    //         return type;
+    //     }
 };
 
 class StatementRule: public Rule {
-    GameRuleType type;
-    std::string statementBody;
-    std::optional<builtInFunctionName> builtinFunction;
-    std::optional<std::string> containerName;
-    std::optional<std::string> iteratorName;
+    // GameRuleType type;
+    // std::string statementBody;
+    // std::optional<builtInFunctionName> builtinFunction;
+    // std::optional<std::string> containerName;
+    // std::optional<std::string> iteratorName;
     
-    public:
-        GameRuleType getType() const override {
-            return type;
-        }
+    // public:
+    //     GameRuleType getType() const override {
+    //         return type;
+    //     }
 };
 
 class GameRules {   
-    std::vector<Rule> rules;
+    // std::vector<Rule> rules;
 
-    public:
-        // GameRules();
-        ~GameRules();   
-        std::vector<Rule> getRules();
+    // public:
+    //     // GameRules();
+    //     ~GameRules();   
+    //     std::vector<Rule> getRules();
 };
 
 #endif // GAMERULES_H
