@@ -1,20 +1,18 @@
 #include "game.h"
 
-Game::Game(const std::string& name) : gameName(name){}
+Game::Game(const std::string &gameName) : gameName(gameName) {}
+void Game::addPlayer(const Player &player) { players.push_back(player); }
+std::string Game::getGameCode() const { return gameCode; }
 
-void Game::addPlayer(const Player& player) {
-    players.push_back(player);
+std::string Game::getGameName() const { return gameName; }
+
+const std::vector<Player> &Game::getPlayers() const { return players; }
+
+void Game::sendingMessage(networking::Server &server, const Player &player,
+                          const std::string &message) const {
+  server.send({{player.getConnection(), message}});
 }
 
-std::string Game::getGameName() const {
-    return gameName;
+void Game::setGameCode(const std::string &gameCode) {
+  this->gameCode = gameCode;
 }
-
-const std::vector<Player>& Game::getPlayers() const {
-    return players;
-}
-
-void Game::sendingMessage(networking::Server& server, networking::Connection connection, const std::string& message) const {
-    server.send({{connection, message}});
-}
-

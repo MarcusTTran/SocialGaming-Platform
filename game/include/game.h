@@ -34,19 +34,20 @@ class Game {
   // GameRules rules;
   std::vector<Player> players;
   std::string gameName;
+  std::string gameCode;
 
 public:
   // Constructor (cannot be instantiated without all provided fields ie. no
   // default constructor allowed)
   // Game(GameConfiguration &configuration, GameConstants &constants,
-  //      GameVariables &variables, GamePerAudience &perAudience, GameRules &rules,
-  //      vector<Player> players)
+  //      GameVariables &variables, GamePerAudience &perAudience, GameRules
+  //      &rules, vector<Player> players)
   //     : configuration(configuration), constants(constants),
   //       variables(variables), perAudience(perAudience), rules(rules),
   //       players(players) {
   //   // TODO: Perhaps deep copy Players vector?
   // }
-  Game(const std::string& gameName);
+  Game(const std::string &gameName);
   ~Game() = default; // Default destructor
 
   // Getters for important game data
@@ -56,8 +57,11 @@ public:
   // GameRules &getRules();
   std::string getGameName() const;
   const std::vector<Player> &getPlayers() const;
-  void addPlayer(const Player& player);
-  void sendingMessage(networking::Server& server, networking::Connection connection, const std::string& message) const;
+  void addPlayer(const Player &player);
+  void sendingMessage(networking::Server &server, const Player &player,
+                      const std::string &message) const;
+  std::string getGameCode() const;
+  void setGameCode(const std::string &gameCode);
 
   // TODO: I feel like we should move this code to a Manager class.
   // void sendingMessage(networking::Server&, networking::Connection, const
