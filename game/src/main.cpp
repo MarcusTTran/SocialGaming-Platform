@@ -2,7 +2,10 @@
 #include <iostream>
 
 int main() {
-  // this is my path to place txt file, correct it when you test it.
+  //////////////////////////////////////////////////////////////////
+  // This is for testing parsing result. Correct the file path and
+  // the result will be printed to console.
+  //////////////////////////////////////////////////////////////////
   std::string filename = "../config/rockPaperScissors.game";
   GameConfig parser(filename);
 
