@@ -7,7 +7,7 @@
 
 #include "Server.h"
 
-#include "GameManager.h"
+#include "LobbyManager.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -26,29 +26,19 @@ std::vector<Connection> clients;
 // TODO: Tempory solution to allow the onConnect and onDisconnect to access the
 // server object. refactor at a later date.
 Server *server_ptr = nullptr;
-GameManager gameManager;
-
-// Create a new game and add it to the game manager
-// Eventually this will create a game based on the user's selected game
-Game *createGame() {
-  std::string newGameCode = gameManager.generateGameCode();
-  std::unique_ptr<Game> newGame = std::make_unique<Game>("Game");
-  newGame->setGameCode(newGameCode);
-  gameManager.addGame(std::move(newGame));
-  return gameManager.getGame(newGameCode);
-}
+std::unique_ptr<LobbyManager> lobbyManager;
 
 void onConnect(Connection c) {
   std::cout << "New connection found: " << c.id << "\n";
   clients.push_back(c);
 
   // Send options to the connected client
-  std::string welcomeMessage = "Welcome! Type 'create' to start a new game or "
-                               "'join' to join an existing game.";
+  std::string welcomeMessage =
+      "Welcome! Type 'create' to start a new game or "
+      "'join' followed by the code of the game you would like to join to join an existing game.";
   std::deque<Message> outgoing;
   outgoing.push_back({c, welcomeMessage});
-  server_ptr->send(
-      outgoing); // Sending the message to the newly connected client
+  server_ptr->send(outgoing); // Sending the message to the newly connected client
 }
 
 void onDisconnect(Connection c) {
@@ -62,66 +52,41 @@ struct MessageResult {
   bool shouldShutdown;
 };
 
-MessageResult processMessages(Server &server,
-                              const std::deque<Message> &incoming) {
+MessageResult processMessages(Server &server, const std::deque<Message> &incoming) {
   std::ostringstream result;
   bool quit = false;
   for (const auto &message : incoming) {
-    if (message.text == "quit") {
-      server.disconnect(message.connection);
-    } else if (message.text == "shutdown") {
-      std::cout << "Shutting down.\n";
-      quit = true;
-    } else if (message.text == "create") {
+    const auto &text = message.text;
+    const auto &connection = message.connection;
 
-      // TODO: list of games
+    if (lobbyManager->isAwaitingDisplayName(connection)) { // Check if connection is awaiting display name
+      std::string displayName = text;
+      Player player(connection, displayName);
+      lobbyManager->addPlayerToLobbyWithDisplayName(connection, player);
+      lobbyManager->removeFromPendingDisplayNames(connection);
+    } else if (text == "create") {
 
-      Game *game = createGame();
-      std::deque<Message> outgoing;
-      outgoing.push_back(
-          {message.connection,
-           "New game created. Share the game code with others to join.\n"});
-      outgoing.push_back(
-          {message.connection, "Game code: " + game->getGameCode() + "\n"});
-      server.send(outgoing);
-    } else if (message.text == "join") {
-      result << message.connection.id
-             << "> Please enter 'join <game code>' to join a game.\n";
-    } else if (message.text.rfind("join ", 0) == 0) {
-      std::string gameCode =
-          message.text.substr(5); // Extract the code after 'join '
-      Game *game = gameManager.getGame(gameCode);
-      if (game) {
-        std::string playerName = "Player";
-        Player player(message.connection, playerName);
-        game->addPlayer(player);
-        result << player.getDisplayName()
-               << " joined game with code: " << gameCode << "\n";
-
-        // Send a welcome message to the player
-        std::string welcomeMessage = "Welcome to the game!";
+      // TODO: This is a temporary solution to create a game. This will be replaced with a user
+      // selected game with a game configuration file.
+      std::string gameName = "Rock Paper Scissors";
+      Game game(gameName);
+      lobbyManager->createLobby(game, connection);
+    } else if (text.find("join") == 0) {
+      if (text.length() <= 5) {
+        std::string errorMessage = "Lobby code is missing. Please provide a valid lobby code.";
         std::deque<Message> outgoing;
-        outgoing.push_back({message.connection, welcomeMessage});
-
-        // Optionally, notify other players in the game
-        std::string notification =
-            player.getDisplayName() + " has joined the game!";
-        auto players = game->getPlayers();
-        for (const auto &p : players) {
-          if (p.getConnection().id !=
-              message.connection.id) { // Don't notify the joining player
-            outgoing.push_back({p.getConnection(), notification});
-          }
-        }
+        outgoing.push_back({connection, errorMessage});
         server.send(outgoing);
       } else {
-        result << message.connection.id
-               << "> Game not found with code: " << gameCode << "\n";
+        std::string lobbyCode = text.substr(5);
+        lobbyManager->addPlayerToLobby(lobbyCode, connection);
       }
     } else {
-      result << message.connection.id << "> " << message.text << "\n";
+      std::cout << "Routing message to lobby manager\n";
+      lobbyManager->routeMessage(connection, text);
     }
   }
+
   return MessageResult{result.str(), quit};
 }
 
@@ -136,8 +101,7 @@ std::deque<Message> buildOutgoing(const std::string &log) {
 std::string getHTTPMessage(const char *htmlLocation) {
   if (access(htmlLocation, R_OK) != -1) {
     std::ifstream infile{htmlLocation};
-    return std::string((std::istreambuf_iterator<char>(infile)),
-                       std::istreambuf_iterator<char>());
+    return std::string((std::istreambuf_iterator<char>(infile)), std::istreambuf_iterator<char>());
   }
 
   std::cerr << "Unable to open HTML index file:\n" << htmlLocation << "\n";
@@ -154,6 +118,7 @@ int main(int argc, char *argv[]) {
   const unsigned short port = std::stoi(argv[1]);
   Server server = {port, getHTTPMessage(argv[2]), onConnect, onDisconnect};
   server_ptr = &server;
+  lobbyManager = std::make_unique<LobbyManager>(server);
 
   while (true) {
     bool errorWhileUpdating = false;

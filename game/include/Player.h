@@ -15,14 +15,15 @@ using variantType = std::variant<int, std::string, std::string_view>;
 
 class Player {
 public:
-  Player(const networking::Connection &con, variantType ID);
+  Player(const networking::Connection &con, std::string displayName);
   void make_choice(const std::string &);
   networking::Connection getConnection() const;
   std::string getChoice() const;
   variantType getId() const;
-  std::string getDisplayName();
+  std::string getDisplayName() const;
 
 private:
+  std::string displayName;
   networking::Connection connection;
   std::string choice;
   variantType id;
