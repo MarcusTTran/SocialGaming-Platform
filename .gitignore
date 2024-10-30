@@ -3,6 +3,7 @@ build/
 .vscode/
 cpp-tree-sitter/
 tree-sitter-socialgaming/
+.clang-format
 
 # Prerequisites
 *.d
