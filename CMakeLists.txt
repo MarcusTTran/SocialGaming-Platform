@@ -21,6 +21,12 @@ CPMAddPackage(
   GIT_TAG main  
 )
 
+CPMAddPackage(
+    NAME fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG 8.1.1  # Specify a compatible version, adjust if necessary
+)
+
 # # Add tree-sitter-json
 # CPMAddPackage(
 #   NAME tree-sitter-json
