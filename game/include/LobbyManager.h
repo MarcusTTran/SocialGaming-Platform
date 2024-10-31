@@ -18,6 +18,9 @@ public:
   void addPlayerToLobbyWithDisplayName(const networking::Connection &connection, const Player &player);
   void removeFromPendingDisplayNames(const networking::Connection &connection);
 
+  bool isInLobby(const networking::Connection &connection) const;
+  bool isLobbyCreator(const networking::Connection &connection) const;
+
 private:
   Lobby *findLobbyByCode(const std::string &lobbyCode);
   std::string generateLobbyCode();

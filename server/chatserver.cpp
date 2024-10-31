@@ -139,6 +139,8 @@ int main(int argc, char *argv[]) {
       break;
     }
 
+    // TODO: need to loop through each lobby and update the game state
+
     sleep(1);
   }
 

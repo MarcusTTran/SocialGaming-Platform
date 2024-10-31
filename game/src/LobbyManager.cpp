@@ -4,6 +4,14 @@
 
 void LobbyManager::createLobby(Game &game, const networking::Connection &lobbyCreator) {
 
+  // Check if the connection has already created a lobby
+  // Dont allow a player to create multiple lobbies
+  // Check if the connection is already in a lobby
+  // Dont allow a player to create a lobby if they are already in a lobby
+  if (isLobbyCreator(lobbyCreator) || isInLobby(lobbyCreator)) {
+    return;
+  }
+
   std::string lobbyCode = generateLobbyCode();
   lobbies.emplace(lobbyCode, std::make_unique<Lobby>(
                                  game, server, std::make_shared<networking::Connection>(lobbyCreator), lobbyCode));
@@ -34,6 +42,14 @@ std::string LobbyManager ::generateLobbyCode() {
 // This method is called when a player wants to join a lobby using a lobby code
 // The player is prompted to enter a display name if the lobby is found
 void LobbyManager::addPlayerToLobby(const std::string &lobbyCode, const networking::Connection &connection) {
+
+  // Check if the connection is already in a lobby
+  // Dont allow a player to join multiple lobbies
+  // Check if the connection is a lobby creator
+  // Dont allow a player to join a lobby if they are the creator of a lobby
+  if (isInLobby(connection) || isLobbyCreator(connection)) {
+    return;
+  }
 
   auto lobby = findLobbyByCode(lobbyCode);
   if (lobby) {
@@ -96,4 +112,12 @@ void LobbyManager::routeMessage(const networking::Connection &connection, const 
       lobby->processIncomingMessage(connection, message);
     }
   }
+}
+
+bool LobbyManager::isInLobby(const networking::Connection &connection) const {
+  return playersInLobbies.find(connection.id) != playersInLobbies.end();
+}
+
+bool LobbyManager::isLobbyCreator(const networking::Connection &connection) const {
+  return lobbyCreators.find(connection.id) != lobbyCreators.end();
 }
