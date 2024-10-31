@@ -1,13 +1,18 @@
 // author: kwa132, mtt8
+#pragma once
 
 #include <map>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
-#pragma once
+#include <variant>
+#include <ranges>
+#include "GameParser.h"
+
 
 // TODO: need to fix all logic for future API
+using NestedData = std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>>;
 
 class GameName {
 private:
@@ -18,53 +23,60 @@ public:
   GameName(const std::string &name) : name(name) {}
 };
 
-template <typename T> class SetupRules {
-public:
-  class SetupRuleKind {
-    // Configuration kinds can be 'boolean', 'integer', 'string', 'enum',
-    // 'question-answer', 'multiple-choice', 'json'.
-    // std::string name;
-    // SetupRuleKind(const std::string &name) : name(name) {}
-    // TODO: create a validation function that checks if the Kind is valid (ie.
-    // 'integer')
-    // TODO: perhaps make this a template? Would that work?
-  };
-
-  // SetupRuleKind kindGetter();
-  // std::string &promptGetter() const;
-  // std::optional<std::pair<int, int>> &rangeGetter() const;
-  // std::optional<std::map<std::string, std::string>> &choicesGetter() const;
-  // std::optional<std::string> &defaultsGetter() const;
-  // SetupRuleKind kind;
-  // std::string prompt;
-  // std::optional<std::pair<int, int>> range;
-  // std::optional<std::map<std::string, std::string>> choices;
-  // std::optional<std::string> defaults;
-  // // TODO: Perhaps add a default? It is used for range in professors example of
-  // // RPS
-};
+// Helper function to simplify access to variant data
+template <typename T>
+std::optional<T> getValue(const std::variant<std::map<std::string, std::string>, std::pair<int, int>>& data) {
+    if (std::holds_alternative<T>(data)) {
+        return std::get<T>(data);
+    }
+    return std::nullopt;
+}
 
 class GameConfiguration {
-// private:
-  // const GameName gameName;
+  public:
+    /*
+      Default:
+        expression: $ => choice(
+        $.boolean,
+        $.number,
+        $.quoted_string,
+        $.list_literal,
+        $.identifier,
+        $.value_map,
+    */
+   
+    struct Setup {
+        std::string name;
+        std::string kind;
+        std::string prompt;
+        
+        // Ensure this variant matches the one used in the function
+        std::vector<std::variant<std::map<std::string, std::string>, std::pair<int, int>>> value;
+        std::vector<std::variant<std::map<std::string, std::string>>> defaultValue;
 
-  // std::pair<size_t, size_t> playerRange;
-  // bool audience;
-  // std::map<std::string, std::vector<std::map<std::string, std::string>>> setup;
-//   // TODO: change
-//   std::vector<SetupRules> setup; // Contains a list of SetupRules (like the
-//                                  // number of rounds to start from)
-
-// public:
-//   ~GameConfiguration() = default;
-
-//   std::string getGameName() const;
-//   std::pair<size_t, size_t> getPlayerRange() const;
-//   bool hasAudience() const;
-//   std::vector<SetupRules> getSetup();
-//   void setupSetter(
-//       const SetupRuleKind &kind, const string &prompt,
-//       const std::optional<std::pair<int, int>> &range = {1, 10},
-//       const std::optional<std::map<std::string, std::string>> &choices = {},
-//       const std::optional<std::string> &defaults = "");
+        std::optional<std::pair<int, int>> getRange() const;
+        std::optional<std::vector<std::map<std::string, std::string>>> getDefault() const;
+    };
+    // constructor and destructor
+    GameConfiguration(const std::string& fileContent);
+    ~GameConfiguration() = default;
+    // Getter and setters
+    GameName getGameName() const;
+    std::pair<int, int> getPlayerRange() const;
+    bool hasAudience();
+    std::vector<Setup> getSetup();
+    void processParsingData();
+    Setup extractSetupFromEntry(const std::string& key, const std::vector<std::map<std::string, std::string>>& value);
+    void setSetupName(Setup& setup, const std::string& name);
+    void setSetupKind(Setup& setup,const std::string& kind);
+    void setSetupPrompt(Setup& setup,const std::string& prompt);
+    void setSetupValue(Setup& setup,
+                       std::vector<std::variant<std::map<std::string, std::string>, std::pair<int, int>>> value,
+                       std::vector<std::map<std::string, std::string>> defaultValue = {});
+  private: 
+    ParsedGameData config;
+    const GameName gameName;
+    std::pair<int, int> playerRange;
+    bool audience;
+    std::vector<Setup> setup;
 };

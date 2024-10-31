@@ -1,4 +1,5 @@
 // author: kwa132, Mtt8
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -20,9 +21,9 @@
 */
  
 
-class GameConfig {
+class ParsedGameData {
 public:
-    GameConfig(const std::string& configFileContent);
+    ParsedGameData(const std::string& configFileContent);
 
     std::string getGameName() const;
     std::pair<int, int> getPlayerRange() const;

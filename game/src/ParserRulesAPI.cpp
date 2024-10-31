@@ -1,6 +1,6 @@
 #include "ParserRulesAPI.h"
 
-ParserRulesAPI::ParserRulesAPI(const std::string& configFilePath) : parser(std::make_unique<GameConfig>(configFilePath)),
+ParserRulesAPI::ParserRulesAPI(const std::string& configFilePath) : parser(std::make_unique<ParsedGameData>(configFilePath)),
 rulesRunner(std::make_unique<RulesRunner>()){}
 
 void ParserRulesAPI::initialize(){

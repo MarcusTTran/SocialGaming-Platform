@@ -4,14 +4,14 @@
 
 extern "C" { TSLanguage *tree_sitter_socialgaming(); }
 
-GameConfig::GameConfig(const std::string& config){
+ParsedGameData::ParsedGameData(const std::string& config){
     std::string fileContent = readFileContent(config);
     if (!fileContent.empty()) {
         parseConfig(fileContent);
     }
 }
 
-std::string GameConfig::readFileContent(const std::string& filePath){
+std::string ParsedGameData::readFileContent(const std::string& filePath){
     std::ifstream inputFile(filePath);
     if (!inputFile) {
         std::cerr << "Failed to open file: " << filePath << std::endl;
@@ -22,47 +22,47 @@ std::string GameConfig::readFileContent(const std::string& filePath){
     return buffer.str();
 }
 
-std::string GameConfig::getGameName() const {
+std::string ParsedGameData::getGameName() const {
     return configuration.name;
 }
 
-std::pair<int, int> GameConfig::getPlayerRange() const {
+std::pair<int, int> ParsedGameData::getPlayerRange() const {
     return configuration.range;
 }
 
-bool GameConfig::hasAudience() const {
+bool ParsedGameData::hasAudience() const {
     return configuration.audience;
 }
 
-Configuration GameConfig::getConfiguration(){
+Configuration ParsedGameData::getConfiguration(){
     return configuration;
 }
 
-std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> GameConfig::getConstants(){
+std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> ParsedGameData::getConstants(){
     return constants;
 }
 
-std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> GameConfig::getVariables(){
+std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> ParsedGameData::getVariables(){
     return variables;
 }
 
-std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> GameConfig::getPerPlayer(){
+std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> ParsedGameData::getPerPlayer(){
     return perPlayer;
 }
 
-std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>> GameConfig::getSetup(){
+std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>> ParsedGameData::getSetup(){
     return setup;
 }
 
-std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> GameConfig::getPerAudience() {
+std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> ParsedGameData::getPerAudience() {
     return perAudience;
 }
 
-std::vector<Rule> GameConfig::getRules(){
+std::vector<Rule> ParsedGameData::getRules(){
     return rules;
 }
 
-void GameConfig::extractStringValue(const ts::Node& node, const std::string& source, 
+void ParsedGameData::extractStringValue(const ts::Node& node, const std::string& source, 
     std::pair<std::string, std::string>& str1, std::pair<std::string, std::string>& str2, std::string keyID, 
     std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>>& output) {
 
@@ -100,7 +100,7 @@ void GameConfig::extractStringValue(const ts::Node& node, const std::string& sou
 }
 
 template <typename T>
-void GameConfig::parseValueMap(const ts::Node& node, const std::string& source, T& outputMap) {
+void ParsedGameData::parseValueMap(const ts::Node& node, const std::string& source, T& outputMap) {
     for (size_t i = 0; i < node.getNumNamedChildren(); ++i) {
         ts::Node entryNode = node.getNamedChild(i);
         if (entryNode.getType() == "map_entry") {
@@ -117,7 +117,7 @@ void GameConfig::parseValueMap(const ts::Node& node, const std::string& source, 
     }
 }
 
-void GameConfig::setupHelper(const ts::Node& node, const std::string& source, std::string& str1, std::string& str2, const std::string& keyID
+void ParsedGameData::setupHelper(const ts::Node& node, const std::string& source, std::string& str1, std::string& str2, const std::string& keyID
     , std::map<std::string, std::vector<std::map<std::string, std::string>>> &inputSetup) {
     auto type = std::string(node.getType());
     if (node.getType() == "number_range") {
@@ -165,11 +165,11 @@ void GameConfig::setupHelper(const ts::Node& node, const std::string& source, st
     }
 }
 
-void GameConfig::parsePerPlayerSection(const ts::Node& node, const std::string& source) {
+void ParsedGameData::parsePerPlayerSection(const ts::Node& node, const std::string& source) {
     parseValueMap(node.getChildByFieldName("map"), source, perPlayer);
 }
 
-void GameConfig::parsePerAudienceSection(const ts::Node& node, const std::string& source) {
+void ParsedGameData::parsePerAudienceSection(const ts::Node& node, const std::string& source) {
     parseValueMap(node.getChildByFieldName("map"), source, perAudience);   
 }
 
@@ -188,7 +188,7 @@ void GameConfig::parsePerAudienceSection(const ts::Node& node, const std::string
     }
 */
 
-void GameConfig::parseConfigurationSection(const ts::Node& node, const std::string& source) {
+void ParsedGameData::parseConfigurationSection(const ts::Node& node, const std::string& source) {
     ts::Node nameNode = node.getChildByFieldName("name");
     if (!nameNode.isNull()) {
         configuration.name = std::string(nameNode.getChild(1).getSourceRange(source));
@@ -235,15 +235,15 @@ void GameConfig::parseConfigurationSection(const ts::Node& node, const std::stri
 }
 
 
-void GameConfig::parseConstantsSection(const ts::Node& node, const std::string& source) {
+void ParsedGameData::parseConstantsSection(const ts::Node& node, const std::string& source) {
     parseValueMap(node.getChildByFieldName("map"), source, constants);
 }
 
-void GameConfig::parseVariablesSection(const ts::Node& node, const std::string& source) {
+void ParsedGameData::parseVariablesSection(const ts::Node& node, const std::string& source) {
     parseValueMap(node.getChildByFieldName("map"), source, variables);
 }
 
-void GameConfig::parseConfig(const std::string& fileContent) {
+void ParsedGameData::parseConfig(const std::string& fileContent) {
     ts::Language language = tree_sitter_socialgaming();
     ts::Parser parser{language};
     ts::Tree tree = parser.parseString(fileContent);
@@ -274,7 +274,7 @@ void GameConfig::parseConfig(const std::string& fileContent) {
     }
 }
 
-std::string GameConfig::ruleTypeToString(Rule::Type type){
+std::string ParsedGameData::ruleTypeToString(Rule::Type type){
     switch (type) {
         case Rule::Type::For: return "For";
         case Rule::Type::Loop: return "Loop";
@@ -300,7 +300,7 @@ std::string GameConfig::ruleTypeToString(Rule::Type type){
     }
 }
 
-void GameConfig::DFS(const ts::Node& node, const std::string& source, Rule& rule){
+void ParsedGameData::DFS(const ts::Node& node, const std::string& source, Rule& rule){
     // Check if node is a leaf or an identifier
     if (!node.getNumNamedChildren() || node.getType() == "identifier") {
         auto content = std::string(node.getSourceRange(source));
@@ -319,7 +319,7 @@ void GameConfig::DFS(const ts::Node& node, const std::string& source, Rule& rule
                 rule.type = Rule::Type::Body;
             }
             if (std::all_of(identifier.begin(), identifier.end(), ::isdigit)) {
-                rule.parameters.emplace_back(stoi(std::string(identifier)));
+                rule.parameters.emplace_back(std::stoi(std::string(identifier)));
             } else {
                 rule.parameters.emplace_back(std::string(identifier));
             }
@@ -334,7 +334,7 @@ void GameConfig::DFS(const ts::Node& node, const std::string& source, Rule& rule
     }    
 }
 
-void GameConfig::handleForRule(const ts::Node& node, const std::string& source, Rule& outerRule){
+void ParsedGameData::handleForRule(const ts::Node& node, const std::string& source, Rule& outerRule){
 
     ts::Node elementNode = node.getChildByFieldName("element"); // round or weapon
     ts::Node listNode = node.getChildByFieldName("list");       // configuration.rounds or weapons
@@ -359,7 +359,7 @@ void GameConfig::handleForRule(const ts::Node& node, const std::string& source, 
     } 
 }
 
-void GameConfig::handleMessageSection(const ts::Node& node, const std::string& source, Rule& outerRule){
+void ParsedGameData::handleMessageSection(const ts::Node& node, const std::string& source, Rule& outerRule){
     if(!node.getNumNamedChildren()){
         auto currContent = std::string(node.getSourceRange(source));
         if(currContent != "\"" && currContent != ";"){
@@ -372,7 +372,7 @@ void GameConfig::handleMessageSection(const ts::Node& node, const std::string& s
     }    
 }
 
-void GameConfig::traverseHelper(const ts::Node& node, const std::string& source, Rule& rule){
+void ParsedGameData::traverseHelper(const ts::Node& node, const std::string& source, Rule& rule){
     if(node.getType() == "match_entry"){
         ts::Node guard = node.getChildByFieldName("guard");
         DFS(guard, source, rule);
@@ -385,7 +385,7 @@ void GameConfig::traverseHelper(const ts::Node& node, const std::string& source,
     }    
 }
 
-void GameConfig::handleMatchRule(const ts::Node& node, const std::string& source, Rule& outerRule){
+void ParsedGameData::handleMatchRule(const ts::Node& node, const std::string& source, Rule& outerRule){
     ts::Node targetNode = node.getChildByFieldName("target");  // True
     for(const auto& child : ts::Children{targetNode}){
         DFS(child, source, outerRule);
@@ -400,7 +400,7 @@ void GameConfig::handleMatchRule(const ts::Node& node, const std::string& source
 }
 
 // TODO: need to check node type or how to use in txt file.
-void GameConfig::handleWhileSection(const ts::Node& node, const std::string& source, Rule& outerRule){
+void ParsedGameData::handleWhileSection(const ts::Node& node, const std::string& source, Rule& outerRule){
     ts::Node condition = node.getChildByFieldName("condition");
     ts::Node loopBody = node.getChildByFieldName("body");
     if(!condition.isNull()){
@@ -417,7 +417,7 @@ void GameConfig::handleWhileSection(const ts::Node& node, const std::string& sou
     }     
 }
 
-void GameConfig::parseRuleSection(const ts::Node& node, const std::string& source, Rule& outerRule){
+void ParsedGameData::parseRuleSection(const ts::Node& node, const std::string& source, Rule& outerRule){
     for (const auto& child : ts::Children{node}) {
         std::string_view ruleType = child.getType();
 
@@ -446,7 +446,7 @@ void GameConfig::parseRuleSection(const ts::Node& node, const std::string& sourc
     }    
 }
 
-Rule::Type GameConfig::getRuleType(const std::string& type) {
+Rule::Type ParsedGameData::getRuleType(const std::string& type) {
     std::string sanitizedType = type;
     sanitizedType.erase(std::remove_if(sanitizedType.begin(), sanitizedType.end(), ::isspace), sanitizedType.end());
     std::transform(sanitizedType.begin(), sanitizedType.end(), sanitizedType.begin(), ::tolower);
@@ -482,7 +482,7 @@ Rule::Type GameConfig::getRuleType(const std::string& type) {
     }
 }
 
-void GameConfig::printTree(const ts::Node& node, const std::string& source, int indent){
+void ParsedGameData::printTree(const ts::Node& node, const std::string& source, int indent){
     for (int i = 0; i < indent; ++i) std::cout << "  ";
     std::cout << node.getType() << " -> " << node.getSourceRange(source) << std::endl;
 
@@ -491,7 +491,7 @@ void GameConfig::printTree(const ts::Node& node, const std::string& source, int 
     }
 }
 
-void GameConfig::printKeyValuePair() {
+void ParsedGameData::printKeyValuePair() {
     std::cout << "\nConfiguration Section:" << std::endl;
     std::cout << "name: " << configuration.name << std::endl;
     std::cout << "player range: (" << configuration.range.first << ", " << configuration.range.second << ")" << std::endl;
