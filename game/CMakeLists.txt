@@ -61,12 +61,6 @@ target_link_libraries(main
     fmt
 )
 
-# # Ensure the include directory is available for the main executable
-# target_include_directories(
-#     main PUBLIC
-#     ${CMAKE_CURRENT_LIST_DIR}/include
-# )
-
 # Ensure the include directory is available for the main executable
 target_include_directories(
     main PUBLIC

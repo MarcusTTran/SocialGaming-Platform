@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <variant>
 #include <cassert>
-#include "GameTypes.h"
+#include "RuleTypes.h"
 #include <span>
 
 
@@ -30,18 +30,19 @@ using loopVariableType = std::variant<
     std::pair<std::string, int>,
     std::pair<std::string, std::string>,
     std::map<std::string, std::variant<int, std::string>>,                 
-    std::shared_ptr<std::unordered_map<std::string, int>>                  
+    std::shared_ptr<std::unordered_map<std::string, int>>,
+    std::unordered_map<std::string, int>                
 >;
 
 
 class RulesRunner {
 public:
     RulesRunner() {}
-    void processRule(const std::vector<Rule>& rules);
-    std::unordered_map<std::string, std::string> extractPlaceholders(const Rule& rule);
-    void printMessageWithPlaceholders(const Rule& rule, const std::unordered_map<std::string, std::string>& values);
+    void processRule(const std::vector<Rule>& rules, std::unordered_map<std::string, std::string>& loopVariables);
+    std::string extractPlaceholders(const Rule& rule);
+    void printMessageWithPlaceholders(const Rule& rule, const std::string& key, const std::unordered_map<std::string, std::string>& loopVariables);
     std::string ruleTypeToString(Rule::Type type);
-    void implementForRule(const Rule& rule, std::vector<loopVariableType> loopVariables);
+    void implementForRule(const Rule& rule, std::unordered_map<std::string, std::string>& loopVariables);
     void printRule(const Rule& rule, int indent);
 
     // Setter functions

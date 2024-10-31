@@ -362,9 +362,7 @@ void GameConfig::handleForRule(const ts::Node& node, const std::string& source, 
 void GameConfig::handleMessageSection(const ts::Node& node, const std::string& source, Rule& outerRule){
     if(!node.getNumNamedChildren()){
         auto currContent = std::string(node.getSourceRange(source));
-        std::cout << "Message content: " << currContent << std::endl;
         if(currContent != "\"" && currContent != ";"){
-            std::cout << "actually in." << std::endl;
             outerRule.parameters.emplace_back(currContent);
         }
         return;
@@ -401,6 +399,7 @@ void GameConfig::handleMatchRule(const ts::Node& node, const std::string& source
     }  
 }
 
+// TODO: need to check node type or how to use in txt file.
 void GameConfig::handleWhileSection(const ts::Node& node, const std::string& source, Rule& outerRule){
     ts::Node condition = node.getChildByFieldName("condition");
     ts::Node loopBody = node.getChildByFieldName("body");

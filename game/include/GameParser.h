@@ -12,7 +12,7 @@
 #include <variant>
 #include <cpp-tree-sitter.h>
 #include "tree_sitter/api.h" 
-#include "GameTypes.h"
+#include "RuleTypes.h"
 
 /*
     This is game parser class, which is responsible for parsing data from txt input file

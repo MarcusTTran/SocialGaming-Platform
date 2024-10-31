@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <string>
-#include "GameTypes.h"
+#include "RuleTypes.h"
 
 // - Contains the structure of the game using a social gaming file language as pseudocode
 // - High-level control statements include: for, while, parallel for, in parallel, match

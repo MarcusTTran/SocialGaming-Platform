@@ -23,18 +23,17 @@ generalType RulesRunner::constantsGetter(){
 }
 
 
-void RulesRunner::processRule(const std::vector<Rule>& rules){
+void RulesRunner::processRule(const std::vector<Rule>& rules, std::unordered_map<std::string, std::string> &loopVariables){
     auto processRule = [&](const Rule& rule, const auto& self) -> void {
         std::for_each(rule.subRules.begin(), rule.subRules.end(), [&](const Rule& subRule) {
             self(subRule, self); // Recursive call
         });
-
+        if(rule.type == Rule::Type::For){
+            implementForRule(rule, loopVariables);
+        }
         if (rule.type == Rule::Type::Message) {
-            std::unordered_map<std::string, std::string> values = extractPlaceholders(rule);
-            
-            // Manually set placeholders for testing
-            values["round"] = "3";
-            printMessageWithPlaceholders(rule, values);
+            std::string key = extractPlaceholders(rule);
+            printMessageWithPlaceholders(rule, key, loopVariables);
         }
     };
 
@@ -43,70 +42,68 @@ void RulesRunner::processRule(const std::vector<Rule>& rules){
     });
 }
 
-std::unordered_map<std::string, std::string> RulesRunner::extractPlaceholders(const Rule& rule){
-    std::unordered_map<std::string, std::string> values;
-
+std::string RulesRunner::extractPlaceholders(const Rule& rule) {
+    std::string key;
     for (const auto& param : rule.parameters) {
         if (std::holds_alternative<std::string>(param)) {
             const std::string& str = std::get<std::string>(param);
-
-            // Look for placeholder pattern {key}
-            std::regex placeholderRegex(R"(\{(\w+)\})");
-            std::smatch match;
-            if (std::regex_search(str, match, placeholderRegex)) {
-                std::string key = match[1].str();
-                // Assigning placeholder value as an example; modify as per actual values needed
-                values[key] = "REPLACE_WITH_DYNAMIC_VALUE";
+            // Check if the string is a placeholder name (e.g., "round")
+            // TODO: a better way to find key
+            if (str == "round") {  
+                key = str;
+                break;  
             }
         }
     }
-    return values;
+    return key;  
 }
 
-void RulesRunner::printMessageWithPlaceholders(const Rule& rule, const std::unordered_map<std::string, std::string>& values){
+
+void RulesRunner::printMessageWithPlaceholders(const Rule& rule, const std::string& key, const std::unordered_map<std::string, std::string>& loopVariables) {
     std::string messageTemplate;
 
     for (const auto& param : rule.parameters) {
         if (std::holds_alternative<std::string>(param)) {
             const std::string& str = std::get<std::string>(param);
 
-            // Skip tokens that aren't part of the message
+            // Skip unnecessary tokens
+            // Skip all for now. TODO: need to add all to notice all players
             if (str == "message" || str == "all" || str == "\"" || str == ";" || str == "{" || str == "}") {
                 continue;
             }
 
-            // Replace "round" or other placeholders with the format "{round}"
-            if (values.count(str)) {
-                messageTemplate += "{" + str + "}";
+            // Use placeholder format for the loop variable key
+            if (str == key) {
+                messageTemplate += "{" + key + "}";
             } else {
-                messageTemplate += str;
+                messageTemplate += str + " ";
             }
         }
     }
 
-    // Use regex to replace placeholders in the format {key}
-    std::regex placeholderRegex(R"(\{(\w+)\})");
-    std::string outputMessage;
-    auto words_begin = std::sregex_iterator(messageTemplate.begin(), messageTemplate.end(), placeholderRegex);
-    auto words_end = std::sregex_iterator();
-
-    // Iterate over all matches in the messageTemplate
-    size_t lastPos = 0;
-    for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
-        std::smatch match = *i;
-        outputMessage += messageTemplate.substr(lastPos, match.position() - lastPos);
-
-        std::string key = match[1].str();  // Placeholder name without brackets
-        auto it = values.find(key);
-        outputMessage += (it != values.end() ? it->second : match.str());
-
-        lastPos = match.position() + match.length();
+    if (loopVariables.find(key) == loopVariables.end()) {
+        return;
     }
-    outputMessage += messageTemplate.substr(lastPos);
 
-    // Output the final message
+    // Replace placeholder `{key}` with `loopVariables[key]`
+    std::string placeholder = "{" + key + "}";
+    std::string outputMessage;
+    size_t pos = 0;
+    size_t lastPos = 0;
+
+    // Search for placeholders and replace them
+    while ((pos = messageTemplate.find(placeholder, lastPos)) != std::string::npos) {
+        outputMessage += messageTemplate.substr(lastPos, pos - lastPos); // Add text before placeholder
+        outputMessage += loopVariables.at(key); // Replace placeholder with actual value
+        lastPos = pos + placeholder.length(); // Move past the placeholder
+    }
+
+    outputMessage += messageTemplate.substr(lastPos);
     std::cout << outputMessage << std::endl;
 }
+
+
+
 
 std::string RulesRunner::ruleTypeToString(Rule::Type type){
     switch (type) {
@@ -134,7 +131,7 @@ std::string RulesRunner::ruleTypeToString(Rule::Type type){
     }
 }
 
-void RulesRunner::implementForRule(const Rule& rule, std::vector<loopVariableType> loopVariables) {
+void RulesRunner::implementForRule(const Rule& rule, std::unordered_map<std::string, std::string> &loopVariables) {
     if (rule.parameters.size() <= 1) {
         std::cerr << "Insufficient parameters for 'For' rule." << std::endl;
         return;
@@ -167,6 +164,7 @@ void RulesRunner::implementForRule(const Rule& rule, std::vector<loopVariableTyp
     }
 
     // Determine initial container
+    // targetPath = {"configuration", "rounds", "upfrom", 1}
     std::shared_ptr<void> currentContainer;
     const auto& rootKey = targetPath[0];
     if (rootKey == "configuration") currentContainer = std::make_shared<decltype(configuration.setup)>(configuration.setup);
@@ -184,7 +182,7 @@ void RulesRunner::implementForRule(const Rule& rule, std::vector<loopVariableTyp
     std::optional<std::vector<std::map<std::string, std::string>>> entryOpt;
 
     if (setupContainer && targetPath.size() > 1) {
-        const auto& target = targetPath[1];
+        const auto& target = targetPath[1];   // rounds
         entryOpt = std::find_if(setupContainer->begin(), setupContainer->end(),
             [&target](const auto& setupEntry) {
                 return setupEntry.count(target) > 0;
@@ -197,12 +195,12 @@ void RulesRunner::implementForRule(const Rule& rule, std::vector<loopVariableTyp
     }
 
     // Debugging output
-    std::cout << "Contents of '" << targetPath[1] << "' entry:" << std::endl;
-    for (const auto& mapEntry : *entryOpt) {
-        for (const auto& [key, value] : mapEntry) {
-            std::cout << "Key: " << key << ", Value: " << value << std::endl;
-        }
-    }
+    // std::cout << "Contents of '" << targetPath[1] << "' entry:" << std::endl;
+    // for (const auto& mapEntry : *entryOpt) {
+    //     for (const auto& [key, value] : mapEntry) {
+    //         std::cout << "Key: " << key << ", Value: " << value << std::endl;
+    //     }
+    // }
 
     // Process built-in function like `upfrom`
     if (builtinFunction && *builtinFunction == "upfrom") {
@@ -220,13 +218,10 @@ void RulesRunner::implementForRule(const Rule& rule, std::vector<loopVariableTyp
 
         if (end != -1) {
             std::cout << "Looping from " << start << " to " << end << " for " << *loopVariable << std::endl;
-            for (int i = start; i <= end; ++i) {
-                std::cout << "Round: " << i << std::endl;
-                std::unordered_map<std::string, int> vars;
-                vars[*loopVariable] = i;
-                loopVariables.emplace_back(std::make_shared<std::unordered_map<std::string, int>>(vars));
+            for (size_t i = start; i <= end; ++i) {
+                loopVariables[*loopVariable] = std::to_string(i);
                 if(!rule.subRules.empty()){
-                    processRule(rule.subRules);
+                    processRule(rule.subRules, loopVariables);
                 }
             }
         } else {
@@ -284,14 +279,10 @@ void RulesRunner::printRule(const Rule& rule, int indent){
 }
 
 void RulesRunner::processRules(){
-    for(const auto& rule : rules){
-        printRule(rule, 0);
-        if(rule.type == Rule::Type::For){
-            // TODO: need to figure out a better way to deal with passing loops variable
-            //       maybe a variant?
-            // TODO: also need to figure out which data strucuture is better to do this task
-            std::vector<loopVariableType> loopVariables;
-            implementForRule(rule, loopVariables);
-        }
-    }
+    std::for_each(begin(rules), end(rules), [this](const Rule& rule) {
+    this->printRule(rule, 0);});
+
+    // sth like index, round
+    std::unordered_map<std::string, std::string> loopVariables;
+    processRule(rules, loopVariables);
 }

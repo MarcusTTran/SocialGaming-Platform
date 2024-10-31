@@ -55,7 +55,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 # Add your other subdirectories as before
 add_subdirectory(lib/networking)
 add_subdirectory(game)
-add_subdirectory(tree-sitter-test)
 add_subdirectory(server)
 
 # Link `game_parser` with tree-sitter libraries
