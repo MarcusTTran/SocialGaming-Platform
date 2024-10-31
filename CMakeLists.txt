@@ -21,6 +21,12 @@ CPMAddPackage(
   GIT_TAG main  
 )
 
+CPMAddPackage(
+    NAME fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG 8.1.1  # Specify a compatible version, adjust if necessary
+)
+
 # # Add tree-sitter-json
 # CPMAddPackage(
 #   NAME tree-sitter-json
@@ -49,7 +55,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 # Add your other subdirectories as before
 add_subdirectory(lib/networking)
 add_subdirectory(game)
-add_subdirectory(tree-sitter-test)
 add_subdirectory(server)
 
 # Link `game_parser` with tree-sitter libraries

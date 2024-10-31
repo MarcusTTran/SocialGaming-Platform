@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include "RuleTypes.h"
 
 // - Contains the structure of the game using a social gaming file language as pseudocode
 // - High-level control statements include: for, while, parallel for, in parallel, match
@@ -11,25 +12,25 @@
 
 // IMPORTANT: KEEP VECTOR OF RULES IN-ORDER! IT REPRESENTS A LINEAR SEQUENCE OF OPERATIONS TO RUN THE GAME
 
-enum GameRuleType {
-    // FOR,
-    // WHILE,
-    // PARALLEL_FOR,
-    // IN_PARALLEL,
-    MATCH,
-    LIST_OP,
-    INPUT,
-    OUTPUT,
-    ASSIGNMENT,
-    STATEMENT
-};
+// enum GameRuleType {
+//     // FOR,
+//     // WHILE,
+//     // PARALLEL_FOR,
+//     // IN_PARALLEL,
+//     MATCH,
+//     LIST_OP,
+//     INPUT,
+//     OUTPUT,
+//     ASSIGNMENT,
+//     STATEMENT
+// };
 
-enum builtInFunctionName {
-    UPFROM,
-    SIZE,
-    CONTAINS,
-    COLLECT
-};
+// enum builtInFunctionName {
+//     UPFROM,
+//     SIZE,
+//     CONTAINS,
+//     COLLECT
+// };
 
 /* Example of 1 rule maybe?
 
@@ -51,12 +52,12 @@ for round in configuration.rounds.upfrom(1) {
 */
 
 // Make this an interface
-class Rule {
-    // public:
-    //     virtual ~Rule() = default;
-    //     virtual GameRuleType getType() const = 0;
-    //     virtual bool isNested() const = 0;
-};
+// class Rule {
+//     // public:
+//     //     virtual ~Rule() = default;
+//     //     virtual GameRuleType getType() const = 0;
+//     //     virtual bool isNested() const = 0;
+// };
 
 
 class NestedRule: public Rule {
