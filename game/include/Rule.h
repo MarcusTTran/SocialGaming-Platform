@@ -26,22 +26,36 @@ public:
     virtual ~Rule() = default;
 
     /*
+     * Set or reset the rule state to be run as if never ran before.
+     */
+    virtual void reset() = 0;
+
+    /*
      * Attempt to execute as much of the rule as possible.
      */
-    virtual RuleState runBurst() = 0;
+    virtual RuleState runBurst(Variables &context) = 0;
 };
 
 class ForRule : public Rule
 {
 public:
-    ForRule(Variables &context, std::string iterator_name, Variables list, std::vector<Rule> contents)
-        : variables_in_scope{context}, list_of_values{list}, iterator_name{iterator_name}, statement_list{contents}
+    ForRule(std::string iterator_name, Variables list, std::vector<Rule> contents)
+        : list_of_values{list}, iterator_name{iterator_name}, statement_list{contents}
+    {
+        reset();
+    }
+
+    void reset() override
     {
         value_for_this_loop = list_of_values.begin();
         current_statement = statement_list.begin();
+        if (list_of_values.size() > 0)
+        {
+            iterator = Variable{iterator_name, (*value_for_this_loop).value};
+        }
     }
 
-    RuleState runBurst() override
+    RuleState runBurst(Variables &context) override
     {
         if (list_of_values.size() < 1 || statement_list.size() < 1)
         {
@@ -52,7 +66,9 @@ public:
             assert(value_for_this_loop != list_of_values.end() && "The next iterator to run should always be valid");
             assert(current_statement != statement_list.end() && "The next statement to run should always be valid");
             // run the current sub-rule, and check whether it finished
-            auto rule_state = (*current_statement).runBurst();
+            // TODO: Pass in the loop iterator Variable along with the external context
+            //       and handle switching and removing the value as necessary
+            auto rule_state = (*current_statement).runBurst(context);
             if (rule_state == Rule::Incomplete)
             {
                 return Rule::Incomplete;
@@ -71,15 +87,17 @@ public:
                 continue;
             }
             // every iteration complete
+            reset();
             return Rule::Completed;
         }
     }
 
 private:
-    Variables variables_in_scope;
+    std::string iterator_name;
+    Variable iterator;
+
     Variables list_of_values;
     Variables::iterator value_for_this_loop;
-    std::string iterator_name;
 
     std::vector<Rule> statement_list;
     std::vector<Rule>::iterator current_statement;
