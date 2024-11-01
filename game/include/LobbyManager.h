@@ -16,7 +16,6 @@ public:
   // These methods are used for managing pending display names
   bool isAwaitingDisplayName(const networking::Connection &connection) const;
   void addPlayerToLobbyWithDisplayName(const networking::Connection &connection, const std::string &displayName);
-  void removeFromPendingDisplayNames(const networking::Connection &connection);
 
   bool isInLobby(const networking::Connection &connection) const;
   bool isLobbyCreator(const networking::Connection &connection) const;
@@ -24,6 +23,7 @@ public:
 
 private:
   Lobby *findLobbyByCode(const std::string &lobbyCode) const;
+  void removeFromPendingDisplayNames(const networking::Connection &connection);
   std::string generateLobbyCode();
 
   networking::Server &server;
