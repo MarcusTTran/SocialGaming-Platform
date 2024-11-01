@@ -19,6 +19,7 @@ public:
   void sendToPlayer(const Player &player, const std::string &message);
   void sendWelcomeMessage(const Player &player);
   void processIncomingMessage(const networking::Connection &connection, const std::string &message);
+  std::vector<Player> getPlayers() const;
 
 private:
   void sendCurrentListOfPlayers();

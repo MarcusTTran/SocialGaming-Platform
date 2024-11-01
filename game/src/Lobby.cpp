@@ -71,3 +71,5 @@ void Lobby::processIncomingMessage(const networking::Connection &connection, con
     sendToPlayer(*player, "You said: " + message);
   }
 }
+
+std::vector<Player> Lobby::getPlayers() const { return players; }

@@ -65,16 +65,21 @@ void LobbyManager::addPlayerToLobby(const std::string &lobbyCode, const networki
 }
 
 // This method is called when a player has entered a display name and is ready to join the lobby
-void LobbyManager::addPlayerToLobbyWithDisplayName(const networking::Connection &connection, const Player &player) {
+void LobbyManager::addPlayerToLobbyWithDisplayName(const networking::Connection &connection,
+                                                   const std::string &displayName) {
   std::string lobbyCode = pendingDisplayNames[connection.id];
   auto lobby = findLobbyByCode(lobbyCode);
-  if (lobby) {
+  if (lobby && isDisplayNameUnique(lobbyCode, displayName)) {
+    Player player{connection, displayName};
     lobby->addPlayer(player);
     playersInLobbies[connection.id] = lobbyCode;
+    removeFromPendingDisplayNames(connection);
+  } else {
+    server.send({{connection, "Display name is already taken. Please enter a different display name:"}});
   }
 }
 
-Lobby *LobbyManager::findLobbyByCode(const std::string &lobbyCode) {
+Lobby *LobbyManager::findLobbyByCode(const std::string &lobbyCode) const {
   auto it = lobbies.find(lobbyCode);
   if (it != lobbies.end()) {
     return it->second.get();
@@ -120,4 +125,14 @@ bool LobbyManager::isInLobby(const networking::Connection &connection) const {
 
 bool LobbyManager::isLobbyCreator(const networking::Connection &connection) const {
   return lobbyCreators.find(connection.id) != lobbyCreators.end();
+}
+
+bool LobbyManager::isDisplayNameUnique(const std::string &lobbyCode, const std::string &displayName) const {
+
+  auto lobby = findLobbyByCode(lobbyCode);
+  if (lobby) {
+    auto players = lobby->getPlayers();
+    return std::find_if(players.begin(), players.end(),
+                        [&](const Player &p) { return p.getDisplayName() == displayName; }) == players.end();
+  }
 }
