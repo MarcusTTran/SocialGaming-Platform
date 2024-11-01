@@ -30,7 +30,7 @@ public:
     bool hasAudience() const;
     std::string readFileContent(const std::string& filePath);
     Configuration getConfiguration();
-    std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> getConstants();
+    const std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>>& getConstants() const;
     std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> getVariables();
     std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> getPerPlayer();
     std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> getPerAudience();

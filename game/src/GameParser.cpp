@@ -38,7 +38,7 @@ Configuration ParsedGameData::getConfiguration(){
     return configuration;
 }
 
-std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> ParsedGameData::getConstants(){
+const std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>>& ParsedGameData::getConstants() const{
     return constants;
 }
 
