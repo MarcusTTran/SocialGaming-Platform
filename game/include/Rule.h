@@ -28,7 +28,7 @@ public:
     /*
      * Set or reset the rule state to be run as if never ran before.
      */
-    virtual void reset() = 0;
+    virtual void set() = 0;
 
     /*
      * Attempt to execute as much of the rule as possible.
@@ -36,17 +36,32 @@ public:
     virtual RuleState runBurst(Variables &context) = 0;
 };
 
+class MessageRule : public Rule
+{
+    MessageRule() {};
+
+    RuleState runBurst(Variables &context) override
+    {
+        for (auto person : recipients)
+        {
+            message(person, message);
+        }
+    }
+};
+
+template <typename T>
 class ForRule : public Rule
 {
 public:
-    ForRule(std::string iterator_name, Variables list, std::vector<Rule> contents)
+    ForRule(std::string iterator_name, Parsable list_expression, std::vector<Rule> contents)
         : list_of_values{list}, iterator_name{iterator_name}, statement_list{contents}
     {
         reset();
     }
 
-    void reset() override
+    void set() override
     {
+        list_of_values = list_expression.parse(context);
         value_for_this_loop = list_of_values.begin();
         current_statement = statement_list.begin();
         if (list_of_values.size() > 0)
@@ -57,6 +72,12 @@ public:
 
     RuleState runBurst(Variables &context) override
     {
+        // First time must run set()
+        if (!is_mid_run)
+        {
+            set();
+            is_mid_run = true;
+        }
         if (list_of_values.size() < 1 || statement_list.size() < 1)
         {
             return Rule::Completed;
@@ -87,16 +108,18 @@ public:
                 continue;
             }
             // every iteration complete
-            reset();
+            is_mid_run = false;
             return Rule::Completed;
         }
     }
 
 private:
+    bool is_mid_run = false;
+
     std::string iterator_name;
     Variable iterator;
 
-    Variables list_of_values;
+    std::vector<T> list_of_values;
     Variables::iterator value_for_this_loop;
 
     std::vector<Rule> statement_list;
