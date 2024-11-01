@@ -13,7 +13,6 @@ std::optional<std::pair<int, int>> GameConfiguration::Setup::getRange() const {
     return std::nullopt;
 }
 
-
 std::optional<std::vector<std::map<std::string, std::string>>> GameConfiguration::Setup::getDefault() const {
     auto findMap = std::find_if(defaultValue.begin(), defaultValue.end(), [](const auto& data) {
         return std::holds_alternative<std::map<std::string, std::string>>(data);
@@ -29,8 +28,18 @@ std::optional<std::vector<std::map<std::string, std::string>>> GameConfiguration
 }
 
 
-GameConfiguration::GameConfiguration(const std::string& fileContent)
-    : config(ParsedGameData(fileContent)), gameName(config.getGameName()) {}
+GameConfiguration::GameConfiguration(const ParsedGameData& parserObject)
+    : gameName(parserObject.getGameName()), 
+      playerRange(parserObject.getPlayerRange()),
+      audience(parserObject.hasAudience()) {
+        
+    auto setups = parserObject.getSetup();
+    for (const auto& subSetup : setups) {
+        for (const auto& [key, value] : subSetup) {
+            setup.push_back(extractSetupFromEntry(key, value));
+        }
+    }
+}
 
 GameConfiguration::Setup GameConfiguration::extractSetupFromEntry(
     const std::string& key, const std::vector<std::map<std::string, std::string>>& value) {
@@ -53,17 +62,6 @@ GameConfiguration::Setup GameConfiguration::extractSetupFromEntry(
     return setup;
 }
 
-void GameConfiguration::processParsingData() {
-    this->playerRange = config.getPlayerRange();
-    this->audience = config.hasAudience();
-    auto setups = config.getSetup();
-
-    for (const auto& subSetup : setups) {
-        for (const auto& [key, value] : subSetup) {
-            setup.push_back(extractSetupFromEntry(key, value));
-        }
-    }
-}
 
 GameName GameConfiguration::getGameName() const {
     return gameName;

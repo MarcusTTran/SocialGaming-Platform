@@ -34,7 +34,7 @@ public:
     std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> getVariables();
     std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> getPerPlayer();
     std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> getPerAudience();
-    std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>> getSetup();
+    const std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>>& getSetup() const;
     std::vector<Rule> getRules();
 
     // helper functions to print result to the console
@@ -48,6 +48,7 @@ private:
     std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> perPlayer;
     std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> perAudience;
     std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> constants;  
+    // might not need this setup here since it is definied in Configuration struct
     std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>> setup;
     std::vector<Rule> rules;
 

@@ -50,8 +50,8 @@ std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>,
     return perPlayer;
 }
 
-std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>> ParsedGameData::getSetup(){
-    return setup;
+const std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>>& ParsedGameData::getSetup() const{
+    return configuration.setup;
 }
 
 std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>> ParsedGameData::getPerAudience() {
