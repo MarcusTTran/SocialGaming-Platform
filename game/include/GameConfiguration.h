@@ -58,7 +58,7 @@ class GameConfiguration {
         std::optional<std::vector<std::map<std::string, std::string>>> getDefault() const;
     };
     // constructor and destructor
-    GameConfiguration(const std::string& fileContent);
+    GameConfiguration(const std::string& fileContent); // const ParsedGameData& parsedData
     ~GameConfiguration() = default;
     // Getter and setters
     GameName getGameName() const;
@@ -74,7 +74,7 @@ class GameConfiguration {
                        std::vector<std::variant<std::map<std::string, std::string>, std::pair<int, int>>> value,
                        std::vector<std::map<std::string, std::string>> defaultValue = {});
   private: 
-    ParsedGameData config;
+    ParsedGameData config; // Was thinking of deleting this
     const GameName gameName;
     std::pair<int, int> playerRange;
     bool audience;
