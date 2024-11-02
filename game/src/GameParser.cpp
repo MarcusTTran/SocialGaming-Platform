@@ -44,7 +44,8 @@ Configuration ParsedGameData::getConfiguration(){
     return configuration;
 }
 
-map<string, vector<pair<pair<string, string>, pair<string, string>>>> ParsedGameData::getConstants(){
+
+const std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>>& ParsedGameData::getConstants() const{
     return constants;
 }
 
@@ -56,8 +57,8 @@ map<string, vector<pair<pair<string, string>, pair<string, string>>>> ParsedGame
     return perPlayer;
 }
 
-vector<map<string, vector<map<string, string>>>> ParsedGameData::getSetup(){
-    return setup;
+const std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>>& ParsedGameData::getSetup() const{
+    return configuration.setup;
 }
 
 map<string, vector<pair<pair<string, string>, pair<string, string>>>> ParsedGameData::getPerAudience() {

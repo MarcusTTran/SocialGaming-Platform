@@ -10,13 +10,11 @@
 #include <ranges>
 #include "GameParser.h"
 
-
-// TODO: need to fix all logic for future API
 using NestedData = std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>>;
 
 class GameName {
 private:
-  const std::string &name;
+  std::string name;
 
 public:
   // We will not allow an instance to be create without an input string
@@ -57,15 +55,17 @@ class GameConfiguration {
         std::optional<std::pair<int, int>> getRange() const;
         std::optional<std::vector<std::map<std::string, std::string>>> getDefault() const;
     };
+
     // constructor and destructor
-    GameConfiguration(const std::string& fileContent); // const ParsedGameData& parsedData
+    
+    // GameConfiguration(const std::string& fileContent); // const ParsedGameData& parsedData
+    GameConfiguration(const ParsedGameData& parserObject);
     ~GameConfiguration() = default;
     // Getter and setters
     GameName getGameName() const;
     std::pair<int, int> getPlayerRange() const;
     bool hasAudience();
     std::vector<Setup> getSetup();
-    void processParsingData();
     Setup extractSetupFromEntry(const std::string& key, const std::vector<std::map<std::string, std::string>>& value);
     void setSetupName(Setup& setup, const std::string& name);
     void setSetupKind(Setup& setup,const std::string& kind);
@@ -74,7 +74,7 @@ class GameConfiguration {
                        std::vector<std::variant<std::map<std::string, std::string>, std::pair<int, int>>> value,
                        std::vector<std::map<std::string, std::string>> defaultValue = {});
   private: 
-    ParsedGameData config; // Was thinking of deleting this
+    // ParsedGameData config; // Was thinking of deleting this
     const GameName gameName;
     std::pair<int, int> playerRange;
     bool audience;
