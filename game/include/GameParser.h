@@ -34,12 +34,12 @@ public:
     bool hasAudience() const;
     string readFileContent(const string& filePath);
     Configuration getConfiguration();
-    map<string, vector<map<string,string> > >
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>> getConstants();
+    // map<string, vector<map<string,string> > >
+    const map<string, vector<pair<pair<string, string>, pair<string, string>>>>& getConstants() const;
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> getVariables();
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> getPerPlayer();
     map<string, vector<pair<pair<string, string>, pair<string, string>>>> getPerAudience();
-    vector<map<string, vector<map<string, string>>>> getSetup();
+    const vector<map<string, vector<map<string, string>>>>& getSetup() const;
     vector<Rule> getRules();
 
     // helper functions to print result to the console
