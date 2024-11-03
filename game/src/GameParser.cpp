@@ -44,81 +44,85 @@ Configuration ParsedGameData::getConfiguration(){
     return configuration;
 }
 
-
-const std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>>& ParsedGameData::getConstants() const{
+const DataValue::OrderedMapType& ParsedGameData::getConstants() const{
     return constants;
 }
 
-map<string, vector<pair<pair<string, string>, pair<string, string>>>> ParsedGameData::getVariables(){
+const DataValue::OrderedMapType& ParsedGameData::getVariables() const{
     return variables;
 }
 
-map<string, vector<pair<pair<string, string>, pair<string, string>>>> ParsedGameData::getPerPlayer(){
+const DataValue::OrderedMapType& ParsedGameData::getPerPlayer() const{
     return perPlayer;
+}
+
+const DataValue::OrderedMapType& ParsedGameData::getPerAudience() const{
+    return perAudience;
 }
 
 const std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>>& ParsedGameData::getSetup() const{
     return configuration.setup;
 }
 
-map<string, vector<pair<pair<string, string>, pair<string, string>>>> ParsedGameData::getPerAudience() {
-    return perAudience;
-}
-
 vector<Rule> ParsedGameData::getRules(){
     return rules;
 }
 
-void ParsedGameData::extractStringValue(const ts::Node& node, const string& source, 
-    pair<string, string>& str1, pair<string, string>& str2, string keyID, 
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>>& output) {
+DataValue ParsedGameData::handleExpression(const ts::Node& node, const std::string& source){
+    auto type = node.getType();
+    auto currContent = std::string(node.getSourceRange(source));  
 
-    if (!node.getNumNamedChildren()) {
-        auto byteRange = node.getByteRange();
-        auto curr = source.substr(byteRange.start, byteRange.end - byteRange.start);
-        if (find(begin(GameConstantsType::toSkip), end(GameConstantsType::toSkip), curr) == end(GameConstantsType::toSkip)) {
-            curr.erase(std::remove_if(curr.begin(), curr.end(), [](char c) {
-                return c == ':' || isspace(c);
-            }), curr.end());
-            str1.first.empty() ? str1.first = curr : (str1.second.empty() ? str1.second = curr :
-            (str2.first.empty() ? str2.first = curr : str2.second = curr));
+    if (std::find(GameConstantsType::toSkip.begin(), GameConstantsType::toSkip.end(), currContent) != GameConstantsType::toSkip.end()) {
+        return DataValue("");  
+    }
+
+    if (type == "boolean") {
+        bool curr = (currContent == "true");
+        return DataValue(curr);
+    } else if (type == "number") {
+        int curr = std::stoi(currContent);
+        return DataValue(curr);
+    } else if (type == "quoted_string" || type == "string_text" || type == "identifier") {
+        std::string curr = currContent;
+        if (curr.length() > 2 && type == "quoted_string") {
+            curr = curr.substr(1, curr.length() - 2);  // Remove quotes
         }
-        return;
-    }
-
-    for (size_t i = 0; i < node.getNumChildren(); ++i) {
-        ts::Node child = node.getChild(i);
-        auto type = string(child.getType());
-        if (find(begin(GameConstantsType::toSkip), end(GameConstantsType::toSkip), type) != end(GameConstantsType::toSkip)) {
-            continue;
+        return DataValue(curr);
+    } else if (type == "list_literal") {
+        std::vector<DataValue> list;
+        for (const auto& child : ts::Children{node.getChild(1)}) {
+            DataValue item = handleExpression(child, source);
+            if (!std::holds_alternative<std::string>(item.getValue()) || !std::get<std::string>(item.getValue()).empty()) {
+                list.emplace_back(std::move(item));
+            }
         }
-        extractStringValue(child, source, str1, str2, keyID, output);
+        return DataValue(std::move(list));
+    } else if (type == "value_map") {
+        DataValue::OrderedMapType subContent;
+        parseValueMap(node, source, subContent);
+        return DataValue(std::move(subContent));
     }
 
-    if (!str1.first.empty() && str1.second.empty() && str2.first.empty() && str2.second.empty()) {
-        output[keyID].push_back({{str1.first, ""}, {"", ""}});
-        str1 = {};
-        str2 = {};
-    } else if (!str1.first.empty() && !str1.second.empty() && !str2.first.empty()) {
-        output[keyID].push_back({str1, str2});
-        str1 = {};
-        str2 = {};
+    // Fallback: recursively handle any child nodes
+    for (const auto& child : ts::Children{node}) {
+        return handleExpression(child, source);
     }
+
+    return DataValue("");
 }
 
-template <typename T>
-void ParsedGameData::parseValueMap(const ts::Node& node, const string& source, T& outputMap) {
-    for (size_t i = 0; i < node.getNumNamedChildren(); ++i) {
-        ts::Node entryNode = node.getNamedChild(i);
-        if (entryNode.getType() == "map_entry") {
-            ts::Node keyNode = entryNode.getChildByFieldName("key");
-            ts::Node valueNode = entryNode.getChildByFieldName("value");
+void ParsedGameData::parseValueMap(const ts::Node& node, const std::string& source, 
+    DataValue::OrderedMapType& output){
+
+    for (const auto& child : ts::Children{node}) {
+        if (child.getType() == "map_entry") {
+            ts::Node keyNode = child.getChildByFieldName("key");
+            ts::Node valueNode = child.getChildByFieldName("value");
+
             if (!keyNode.isNull() && !valueNode.isNull()) {
-                auto byteRange = keyNode.getByteRange();
-                string key = source.substr(byteRange.start, byteRange.end - byteRange.start);
-                pair<string, string> str1;
-                pair<string, string> str2;
-                extractStringValue(valueNode, source, str1, str2, key, outputMap);   
+                auto key = std::string(keyNode.getSourceRange(source));
+                DataValue content = handleExpression(valueNode, source);
+                output.emplace_back(key, std::move(content));
             }
         }
     }
@@ -498,6 +502,44 @@ void ParsedGameData::printTree(const ts::Node& node, const string& source, int i
     }
 }
 
+void ParsedGameData::printDataValue(const DataValue::OrderedMapType& value, int indent) {
+    std::string indentStr(indent, ' ');
+
+    for (const auto& [key, dataValue] : value) {
+        std::cout << indentStr << "\"" << key << "\": ";
+        printSingleDataValue(dataValue, indent + 2); // Print each DataValue with increased indentation
+    }
+}
+
+// Helper function to print a single DataValue
+void ParsedGameData::printSingleDataValue(const DataValue& value, int indent) {
+    std::string indentStr(indent, ' ');
+
+    // Check the type of the DataValue and print accordingly
+    if (std::holds_alternative<std::string>(value.getValue())) {
+        std::cout << indentStr << "\"" << std::get<std::string>(value.getValue()) << "\"\n";
+    } else if (std::holds_alternative<int>(value.getValue())) {
+        std::cout << indentStr << std::get<int>(value.getValue()) << "\n";
+    } else if (std::holds_alternative<bool>(value.getValue())) {
+        std::cout << indentStr << (std::get<bool>(value.getValue()) ? "true" : "false") << "\n";
+    } else if (std::holds_alternative<std::vector<DataValue>>(value.getValue())) {
+        std::cout << indentStr << "[\n";
+        for (const auto& item : std::get<std::vector<DataValue>>(value.getValue())) {
+            printSingleDataValue(item, indent + 2); // Recursive call with increased indentation
+        }
+        std::cout << indentStr << "]\n";
+    } else if (std::holds_alternative<DataValue::OrderedMapType>(value.getValue())) {
+        std::cout << indentStr << "{\n";
+        for (const auto& [key, subValue] : std::get<DataValue::OrderedMapType>(value.getValue())) {
+            std::cout << indentStr << "  \"" << key << "\": ";
+            printSingleDataValue(subValue, indent + 2); // Recursive call for nested map values
+        }
+        std::cout << indentStr << "}\n";
+    } else {
+        std::cout << indentStr << "Unknown Type\n"; // Fallback for an unknown type
+    }
+}
+
 void ParsedGameData::printKeyValuePair() {
     std::cout << "\nConfiguration Section:" << std::endl;
     std::cout << "name: " << configuration.name << std::endl;
@@ -515,37 +557,5 @@ void ParsedGameData::printKeyValuePair() {
                 }
             }
         }
-    }
-
-    for (const auto& [key, entries] : variables) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
-    }
-
-    for (const auto& [key, entries] : perPlayer) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
-    }
-    for (const auto& [key, entries] : perAudience) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
     }
 }

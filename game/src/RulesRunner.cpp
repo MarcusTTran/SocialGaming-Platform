@@ -3,22 +3,22 @@
 void RulesRunner::configurationSetter(const Configuration& config) {
     this->configuration = config;
 }
-void RulesRunner::variablesSetter(const generalType& vars) {
+void RulesRunner::variablesSetter(const DataValue::OrderedMapType& vars) {
     variables = vars;
 }
-void RulesRunner::constantsSetter(const generalType& consts) {
+void RulesRunner::constantsSetter(const DataValue::OrderedMapType& consts) {
     constants = consts;
 }
-void RulesRunner::perPlayerSetter(const generalType& perPlayers) {
+void RulesRunner::perPlayerSetter(const DataValue::OrderedMapType& perPlayers) {
     perPlayer = perPlayers;
 }
-void RulesRunner::perAudienceSetter(const generalType& perAudiences) {
+void RulesRunner::perAudienceSetter(const DataValue::OrderedMapType& perAudiences) {
     perAudience = perAudiences;
 }
 void RulesRunner::rulesSetter(const std::vector<Rule>& r) {
     rules = r;
 }
-generalType RulesRunner::constantsGetter(){
+DataValue::OrderedMapType RulesRunner::constantsGetter(){
     return constants;
 }
 

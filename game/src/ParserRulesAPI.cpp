@@ -44,58 +44,16 @@ void ParserRulesAPI::printToConsole(){
     }
     
     std::cout << "\nConstants Section:" << std::endl;
-    for (const auto& [key, entries] : constants) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
-    }
+    parser->printDataValue(constants);
 
-    std::cout << "\nVariable Section:" << std::endl;
-    for (const auto& [key, entries] : variables) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
-    }
+    std::cout << "\nVariables Section:" << std::endl;
+    parser->printDataValue(variables);
 
     std::cout << "\nPerPlayer Section:" << std::endl;
-    for (const auto&[key, entries] : perPlayer) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
-    }
+    parser->printDataValue(perPlayer);
 
     std::cout << "\nPerAudience Section:" << std::endl;
-    for (const auto& [key, entries] : perAudience) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
-    }
-    
-    // std::cout << "\nRule Section:" << std::endl;
-    // for(const auto& rule : rules){
-    //     printRule(rule);
-    //     implementForRule(rule);
-    // }
+    parser->printDataValue(perAudience);
 }
 
 void ParserRulesAPI::runRules(){
