@@ -1,0 +1,83 @@
+[  3%] Building C object CMakeFiles/tree-sitter-json.dir/_deps/tree-sitter-json-src/src/parser.c.o
+[  6%] Linking C static library libtree-sitter-json.a
+[  6%] Built target tree-sitter-json
+[  9%] Building C object _deps/cpp-tree-sitter-build/CMakeFiles/tree-sitter.dir/__/tree-sitter-src/lib/src/lib.c.o
+In file included from /opt/work/tmp/_deps/tree-sitter-src/lib/src/lib.c:8:
+/opt/work/tmp/_deps/tree-sitter-src/lib/src/./parser.c: In function 'ts_parser__call_keyword_lex_fn':
+/opt/work/tmp/_deps/tree-sitter-src/lib/src/./parser.c:349:70: warning: unused parameter 'lex_mode' [-Wunused-parameter]
+  349 | static bool ts_parser__call_keyword_lex_fn(TSParser *self, TSLexMode lex_mode) {
+      |                                                            ~~~~~~~~~~^~~~~~~~
+[ 12%] Linking C static library libtree-sitter.a
+[ 12%] Built target tree-sitter
+[ 15%] Building CXX object _deps/fmt-build/CMakeFiles/fmt.dir/src/format.cc.o
+[ 18%] Building CXX object _deps/fmt-build/CMakeFiles/fmt.dir/src/os.cc.o
+[ 21%] Linking CXX static library libfmt.a
+[ 21%] Built target fmt
+[ 24%] Building CXX object lib/networking/CMakeFiles/networking.dir/src/Server.cpp.o
+[ 27%] Building CXX object lib/networking/CMakeFiles/networking.dir/src/Client.cpp.o
+[ 30%] Linking CXX static library ../libnetworking.a
+[ 30%] Built target networking
+[ 33%] Building CXX object game/CMakeFiles/game_parser.dir/src/GameConfiguration.cpp.o
+[ 36%] Building CXX object game/CMakeFiles/game_parser.dir/src/GameManager.cpp.o
+[ 39%] Building CXX object game/CMakeFiles/game_parser.dir/src/GameParser.cpp.o
+[ 42%] Building CXX object game/CMakeFiles/game_parser.dir/src/GamePerAudience.cpp.o
+[ 45%] Building CXX object game/CMakeFiles/game_parser.dir/src/Lobby.cpp.o
+[ 48%] Building CXX object game/CMakeFiles/game_parser.dir/src/LobbyManager.cpp.o
+[ 51%] Building CXX object game/CMakeFiles/game_parser.dir/src/ParserRulesAPI.cpp.o
+[ 54%] Building CXX object game/CMakeFiles/game_parser.dir/src/Player.cpp.o
+[ 57%] Building CXX object game/CMakeFiles/game_parser.dir/src/RulesRunner.cpp.o
+[ 60%] Building CXX object game/CMakeFiles/game_parser.dir/src/game.cpp.o
+[ 63%] Building CXX object game/CMakeFiles/game_parser.dir/src/main.cpp.o
+[ 66%] Building CXX object game/CMakeFiles/game_parser.dir/src/rockPaperScissors.cpp.o
+[ 69%] Building C object game/CMakeFiles/game_parser.dir/__/_deps/tree-sitter-socialgaming-src/src/parser.c.o
+[ 72%] Linking CXX static library ../lib/libgame_parser.a
+[ 72%] Built target game_parser
+[ 75%] Building CXX object game/CMakeFiles/main.dir/src/main.cpp.o
+[ 78%] Building CXX object game/CMakeFiles/main.dir/src/GameParser.cpp.o
+[ 81%] Building CXX object game/CMakeFiles/main.dir/src/ParserRulesAPI.cpp.o
+[ 84%] Building CXX object game/CMakeFiles/main.dir/src/RulesRunner.cpp.o
+[ 87%] Building C object game/CMakeFiles/main.dir/__/_deps/tree-sitter-socialgaming-src/src/parser.c.o
+[ 90%] Linking CXX executable ../bin/main
+[ 90%] Built target main
+[ 93%] Building CXX object server/CMakeFiles/game_server.dir/chatserver.cpp.o
+In file included from /opt/work/373-24-fahsa/game/include/GameParser.h:14,
+                 from /opt/work/373-24-fahsa/game/include/GameConfiguration.h:11,
+                 from /opt/work/373-24-fahsa/game/include/game.h:7,
+                 from /opt/work/373-24-fahsa/game/include/Lobby.h:2,
+                 from /opt/work/373-24-fahsa/game/include/LobbyManager.h:1,
+                 from /opt/work/373-24-fahsa/server/chatserver.cpp:10:
+/opt/work/tmp/_deps/cpp-tree-sitter-src/include/cpp-tree-sitter.h:443:20: error: 'input_iterator' is not a member of 'std'; did you mean 'insert_iterator'?
+  443 | static_assert(std::input_iterator<ChildIterator>);
+      |                    ^~~~~~~~~~~~~~
+      |                    insert_iterator
+/opt/work/tmp/_deps/cpp-tree-sitter-src/include/cpp-tree-sitter.h:443:48: error: expected primary-expression before '>' token
+  443 | static_assert(std::input_iterator<ChildIterator>);
+      |                                                ^
+/opt/work/tmp/_deps/cpp-tree-sitter-src/include/cpp-tree-sitter.h:443:49: error: expected primary-expression before ')' token
+  443 | static_assert(std::input_iterator<ChildIterator>);
+      |                                                 ^
+/opt/work/tmp/_deps/cpp-tree-sitter-src/include/cpp-tree-sitter.h:444:20: error: 'sentinel_for' is not a member of 'std'
+  444 | static_assert(std::sentinel_for<ChildIteratorSentinel, ChildIterator>);
+      |                    ^~~~~~~~~~~~
+/opt/work/tmp/_deps/cpp-tree-sitter-src/include/cpp-tree-sitter.h:444:54: error: expected primary-expression before ',' token
+  444 | static_assert(std::sentinel_for<ChildIteratorSentinel, ChildIterator>);
+      |                                                      ^
+/opt/work/tmp/_deps/cpp-tree-sitter-src/include/cpp-tree-sitter.h:444:56: warning: 'static_assert' with non-string message only available with '-std=c++2c' or '-std=gnu++2c' [-Wc++26-extensions]
+  444 | static_assert(std::sentinel_for<ChildIteratorSentinel, ChildIterator>);
+      |                                                        ^~~~~~~~~~~~~
+/opt/work/tmp/_deps/cpp-tree-sitter-src/include/cpp-tree-sitter.h:444:69: error: expected primary-expression before '>' token
+  444 | static_assert(std::sentinel_for<ChildIteratorSentinel, ChildIterator>);
+      |                                                                     ^
+/opt/work/tmp/_deps/cpp-tree-sitter-src/include/cpp-tree-sitter.h:444:70: error: expected primary-expression before ')' token
+  444 | static_assert(std::sentinel_for<ChildIteratorSentinel, ChildIterator>);
+      |                                                                      ^
+In file included from /opt/work/373-24-fahsa/game/include/game.h:9:
+/opt/work/373-24-fahsa/game/include/GamePerAudience.h:26:10: error: 'expected' in namespace 'std' does not name a template type
+   26 |     std::expected<string, string> getType(const std::string& key);
+      |          ^~~~~~~~
+/opt/work/373-24-fahsa/game/include/GamePerAudience.h:26:5: note: 'std::expected' is only available from C++23 onwards
+   26 |     std::expected<string, string> getType(const std::string& key);
+      |     ^~~
+make[2]: *** [server/CMakeFiles/game_server.dir/build.make:76: server/CMakeFiles/game_server.dir/chatserver.cpp.o] Error 1
+make[1]: *** [CMakeFiles/Makefile2:341: server/CMakeFiles/game_server.dir/all] Error 2
+make: *** [Makefile:136: all] Error 2

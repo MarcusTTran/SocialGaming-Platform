@@ -1,0 +1,68 @@
+-- The C compiler identification is GNU 14.2.0
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/g++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- CPM: Adding package cpp-tree-sitter@ (main)
+-- Downloading CPM.cmake to /opt/work/tmp/cmake/CPM_0.38.2.cmake
+-- CPM: Adding package tree-sitter@0.22.6 (v0.22.6)
+-- Populating tree-sitter
+-- Configuring done (0.5s)
+-- Generating done (0.3s)
+-- Build files have been written to: /opt/work/tmp/_deps/tree-sitter-subbuild
+[ 11%] Creating directories for 'tree-sitter-populate'
+[ 22%] Performing download step (git clone) for 'tree-sitter-populate'
+Cloning into 'tree-sitter-src'...
+HEAD is now at b40f3420 0.22.6
+[ 33%] Performing update step for 'tree-sitter-populate'
+[ 44%] No patch step for 'tree-sitter-populate'
+[ 55%] No configure step for 'tree-sitter-populate'
+[ 66%] No build step for 'tree-sitter-populate'
+[ 77%] No install step for 'tree-sitter-populate'
+[ 88%] No test step for 'tree-sitter-populate'
+[100%] Completed 'tree-sitter-populate'
+[100%] Built target tree-sitter-populate
+-- CPM: Adding package tree-sitter-socialgaming@ (main)
+-- CPM: Adding package fmt@8.1.1 (8.1.1)
+-- Module support is disabled.
+-- Version: 8.1.1
+-- Build type: 
+-- CXX_STANDARD: 23
+-- Performing Test SUPPORTS_USER_DEFINED_LITERALS
+-- Performing Test SUPPORTS_USER_DEFINED_LITERALS - Success
+-- Performing Test FMT_HAS_VARIANT
+-- Performing Test FMT_HAS_VARIANT - Success
+-- Required features: cxx_variadic_templates
+-- Looking for strtod_l
+-- Looking for strtod_l - not found
+-- CPM: Adding package tree-sitter-json@0.19.0 (v0.19.0)
+-- Populating tree-sitter-json
+-- Configuring done (0.8s)
+-- Generating done (0.3s)
+-- Build files have been written to: /opt/work/tmp/_deps/tree-sitter-json-subbuild
+[ 11%] Creating directories for 'tree-sitter-json-populate'
+[ 22%] Performing download step (git clone) for 'tree-sitter-json-populate'
+Cloning into 'tree-sitter-json-src'...
+HEAD is now at 8960792 0.19.0
+[ 33%] Performing update step for 'tree-sitter-json-populate'
+[ 44%] No patch step for 'tree-sitter-json-populate'
+[ 55%] No configure step for 'tree-sitter-json-populate'
+[ 66%] No build step for 'tree-sitter-json-populate'
+[ 77%] No install step for 'tree-sitter-json-populate'
+[ 88%] No test step for 'tree-sitter-json-populate'
+[100%] Completed 'tree-sitter-json-populate'
+[100%] Built target tree-sitter-json-populate
+-- Found Boost: /usr/local/lib/cmake/Boost-1.83.0/BoostConfig.cmake (found suitable version "1.83.0", minimum required is "1.72") found components: system 
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Configuring done (70.9s)
+-- Generating done (3.0s)
+-- Build files have been written to: /opt/work/tmp
