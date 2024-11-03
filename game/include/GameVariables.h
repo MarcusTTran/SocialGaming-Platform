@@ -1,24 +1,23 @@
-#ifndef GAMEVARIABLES_H
-#define GAMEVARIABLES_H
+#pragma once
 
-#include <unordered_map>
 #include <string>
+#include <algorithm>
+#include "CommonVariantTypes.h"
+#include "GameParser.h"
 
-template <typename T>
 class GameVariables {
+public:
+    GameVariables(const ParsedGameData& parserObject);
+    ~GameVariables() = default;
 
-    // std::unordered_map<std::string, T> variables;
-
-    // public:
-    //     GameVariables() = default;
-    //     ~GameVariables() = default;
-    //     std::unordered_map<std::string, T>& getVariables() {
-    //         return variables;
-    //     }
-    //     T& gameVariableGetter(const string&) const;
-    //     void gameVariableSetter(const string&);
-       
+    // Access variables by key
+    // vector<pair<string, DataValue>>
+    const DataValue& getVariable(const std::string& key) const;
+    void setVariable(const std::string& key, DataValue content);
+private:
+    DataValue::OrderedMapType variables;
+    auto findVariable(const std::string& key) const;
+    auto findVariable(const std::string& key);
 };
 
 
-#endif // GAMEVARIABLES_H
