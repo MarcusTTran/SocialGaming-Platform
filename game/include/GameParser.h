@@ -14,6 +14,7 @@
 #include <cpp-tree-sitter.h>
 #include "tree_sitter/api.h" 
 #include "RuleTypes.h"
+#include "CommonVariantTypes.h"
 
 /*
     This is game parser class, which is responsible for parsing data from txt input file
@@ -34,31 +35,34 @@ public:
     bool hasAudience() const;
     string readFileContent(const string& filePath);
     Configuration getConfiguration();
-    // map<string, vector<map<string,string> > >
-    const map<string, vector<pair<pair<string, string>, pair<string, string>>>>& getConstants() const;
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>> getVariables();
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>> getPerPlayer();
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>> getPerAudience();
+    // vector<pair<string, DataValue>>
+    const DataValue::OrderedMapType& getConstants() const;
+    const DataValue::OrderedMapType& getVariables() const;
+    const DataValue::OrderedMapType& getPerPlayer() const;
+    const DataValue::OrderedMapType& getPerAudience() const;
     const vector<map<string, vector<map<string, string>>>>& getSetup() const;
     vector<Rule> getRules();
 
     // helper functions to print result to the console
+    // Note that anything related to print out will be removed eventually
     void printKeyValuePair();
+    void printDataValue(const DataValue::OrderedMapType& value, int indent = 0);
 private:
     string gameName;
     pair<int, int> playerRange;
     bool audience;
     Configuration configuration;
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>> variables;
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>> perPlayer;
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>> perAudience;  // Note: constants, variables, perplayer, and peraudience all utilize
-    map<string, vector<pair<pair<string, string>, pair<string, string>>>> constants;    //       a vector of 2 pairs inside: { outerpair{pair1, pair2}, ... }
+
+    // using variant types to do a map-like data structure while preserving data order
+    DataValue::OrderedMapType variables;
+    DataValue::OrderedMapType perPlayer;
+    DataValue::OrderedMapType perAudience;
+    DataValue::OrderedMapType constants;    //       a vector of 2 pairs inside: { outerpair{pair1, pair2}, ... }
     vector<map<string, vector<map<string, string>>>> setup;
     vector<Rule> rules;
 
-    void extractStringValue(const ts::Node& node, const string& source, pair<string, string> &str1, pair<string, string> &str2, string keyID, map<string, vector<pair<pair<string, string>, pair<string, string>>>>& output);
-    template <typename T>
-    void parseValueMap(const ts::Node&, const string&, T&);
+    DataValue handleExpression(const ts::Node& node, const std::string& source);
+    void parseValueMap(const ts::Node& node, const std::string& source, DataValue::OrderedMapType& output);
     void setupHelper(const ts::Node& node, const string& source, string& str1, string& str2, const string& keyID
     , map<string, vector<map<string, string>>> &inputSetup);
     void parseConfig(const string&);
@@ -79,4 +83,5 @@ private:
 
     // print tree strucutre to console for debugging
     void printTree(const ts::Node& node, const string& source, int indent = 0);
+    void printSingleDataValue(const DataValue& value, int indent);
 };
