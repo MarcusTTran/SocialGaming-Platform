@@ -7,76 +7,53 @@
 #include <utility>
 #include <vector>
 #include <variant>
-#include <ranges>
 #include "GameParser.h"
-
-using NestedData = std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>>;
 
 class GameName {
 private:
-  std::string name;
+    std::string name;
 
 public:
-  // We will not allow an instance to be create without an input string
-  GameName(const std::string &name) : name(name) {}
+    GameName(const std::string& name) : name(name) {}
+    std::string getName() const { return name; }
 };
 
-// Helper function to simplify access to variant data
-template <typename T>
-std::optional<T> getValue(const std::variant<std::map<std::string, std::string>, std::pair<int, int>>& data) {
-    if (std::holds_alternative<T>(data)) {
-        return std::get<T>(data);
-    }
-    return std::nullopt;
-}
-
 class GameConfiguration {
-  public:
-    /*
-      Default:
-        expression: $ => choice(
-        $.boolean,
-        $.number,
-        $.quoted_string,
-        $.list_literal,
-        $.identifier,
-        $.value_map,
-    */
-   
+public:
     struct Setup {
         std::string name;
-        std::string kind;
-        std::string prompt;
-        
-        // Ensure this variant matches the one used in the function
-        std::vector<std::variant<std::map<std::string, std::string>, std::pair<int, int>>> value;
-        std::vector<std::variant<std::map<std::string, std::string>>> defaultValue;
+        std::optional<std::string> kind;
+        std::optional<std::string> prompt;
+        std::optional<std::pair<int, int>> range;
+        std::optional<DataValue::EnumDescriptionType> choices;
+        std::optional<DataValue::OrderedMapType> defaultValue;
 
         std::optional<std::pair<int, int>> getRange() const;
-        std::optional<std::vector<std::map<std::string, std::string>>> getDefault() const;
+        std::optional<DataValue::EnumDescriptionType> getChoices() const;
+        std::optional<DataValue::OrderedMapType> getDefault() const;
     };
 
-    // constructor and destructor
-    
-    // GameConfiguration(const std::string& fileContent); // const ParsedGameData& parsedData
+    // Constructor
     GameConfiguration(const ParsedGameData& parserObject);
     ~GameConfiguration() = default;
-    // Getter and setters
+
+    // Getter methods
     GameName getGameName() const;
     std::pair<int, int> getPlayerRange() const;
-    bool hasAudience();
-    std::vector<Setup> getSetup();
-    Setup extractSetupFromEntry(const std::string& key, const std::vector<std::map<std::string, std::string>>& value);
-    void setSetupName(Setup& setup, const std::string& name);
-    void setSetupKind(Setup& setup,const std::string& kind);
-    void setSetupPrompt(Setup& setup,const std::string& prompt);
-    void setSetupValue(Setup& setup,
-                       std::vector<std::variant<std::map<std::string, std::string>, std::pair<int, int>>> value,
-                       std::vector<std::map<std::string, std::string>> defaultValue = {});
-  private: 
-    // ParsedGameData config; // Was thinking of deleting this
-    const GameName gameName;
+    bool hasAudience() const;
+    std::vector<Setup> getSetup() const;
+    Setup* findSetupByName(const std::string& key);
+    void setKind(const std::string& key, const std::string& kindValue);
+    void setPrompt(const std::string& key, const std::string& promptValue);
+    void setRange(const std::string& key, const std::pair<int, int>& rangeValue);
+    void setChoices(const std::string& key, const DataValue::EnumDescriptionType& choicesValue);
+    void setDefaultValue(const std::string& key, const DataValue::OrderedMapType& defaultValue);
+
+private:
+    GameName gameName;
     std::pair<int, int> playerRange;
     bool audience;
     std::vector<Setup> setup;
+    // Helper function to extract Setup from OrderedMapType
+    Setup extractSetupFromOrderedMap(const DataValue::OrderedMapType& orderedMap) const;
 };

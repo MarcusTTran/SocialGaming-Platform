@@ -29,19 +29,6 @@ void ParserRulesAPI::printToConsole(){
     std::cout << "name: " << configuration.name << std::endl;
     std::cout << "player range: (" << configuration.range.first << ", " << configuration.range.second << ")" << std::endl;
     std::cout << "audience: " << (configuration.audience == true ? "true" : "false") << std::endl;
-
-
-    std::cout << "\nSetup Section:" << std::endl;
-    for(const auto& setup : configuration.setup){
-        for(const auto& [key, value] : setup){
-            std::cout << key << ":" << std::endl;
-            for(const auto& ele : value){
-                for(const auto& [k, v] : ele){
-                    std::cout << k << ": " << v << std::endl;
-                }
-            }
-        }
-    }
     
     std::cout << "\nConstants Section:" << std::endl;
     parser->printDataValue(constants);

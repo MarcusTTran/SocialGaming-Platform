@@ -35,12 +35,13 @@ public:
     bool hasAudience() const;
     string readFileContent(const string& filePath);
     Configuration getConfiguration();
-    // vector<pair<string, DataValue>>
+
+    // DataValue::OrderedMapType = vector<pair<string, DataValue>>
     const DataValue::OrderedMapType& getConstants() const;
     const DataValue::OrderedMapType& getVariables() const;
     const DataValue::OrderedMapType& getPerPlayer() const;
     const DataValue::OrderedMapType& getPerAudience() const;
-    const vector<map<string, vector<map<string, string>>>>& getSetup() const;
+    const std::vector<DataValue::OrderedMapType>& getSetup() const;
     vector<Rule> getRules();
 
     // helper functions to print result to the console
@@ -58,13 +59,11 @@ private:
     DataValue::OrderedMapType perPlayer;
     DataValue::OrderedMapType perAudience;
     DataValue::OrderedMapType constants;    //       a vector of 2 pairs inside: { outerpair{pair1, pair2}, ... }
-    vector<map<string, vector<map<string, string>>>> setup;
     vector<Rule> rules;
 
     DataValue handleExpression(const ts::Node& node, const std::string& source);
-    void parseValueMap(const ts::Node& node, const std::string& source, DataValue::OrderedMapType& output);
-    void setupHelper(const ts::Node& node, const string& source, string& str1, string& str2, const string& keyID
-    , map<string, vector<map<string, string>>> &inputSetup);
+    void parseValueMap(const ts::Node&, const std::string& source, DataValue::OrderedMapType& output);
+    DataValue::OrderedMapType handleSetup(const ts::Node& node, const std::string& source);
     void parseConfig(const string&);
     void parseConfigurationSection(const ts::Node&, const string&);
     void parseConstantsSection(const ts::Node&, const string&);

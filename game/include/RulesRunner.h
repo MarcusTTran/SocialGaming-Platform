@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <variant>
 #include <cassert>
+#include <optional>
 #include "RuleTypes.h"
 #include "CommonVariantTypes.h"
 #include <span>
@@ -59,7 +60,7 @@ private:
     DataValue::OrderedMapType perPlayer;
     DataValue::OrderedMapType perAudience;
     DataValue::OrderedMapType constants;
-    std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>> setup;
+    std::vector<DataValue::OrderedMapType> setup;
     std::vector<Rule> rules;
     Configuration configuration;  // instance of configuration struct
 };

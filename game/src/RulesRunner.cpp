@@ -23,17 +23,19 @@ DataValue::OrderedMapType RulesRunner::constantsGetter(){
 }
 
 
-void RulesRunner::processRule(const std::vector<Rule>& rules, std::unordered_map<std::string, std::string> &loopVariables){
+void RulesRunner::processRule(const std::vector<Rule>& rules, std::unordered_map<std::string, std::string>& loopVariables) {
     auto processRule = [&](const Rule& rule, const auto& self) -> void {
         std::for_each(rule.subRules.begin(), rule.subRules.end(), [&](const Rule& subRule) {
             self(subRule, self); // Recursive call
         });
-        if(rule.type == Rule::Type::For){
+        
+        if (rule.type == Rule::Type::For) {
             implementForRule(rule, loopVariables);
         }
+        
         if (rule.type == Rule::Type::Message) {
             std::string key = extractPlaceholders(rule);
-            printMessageWithPlaceholders(rule, key, loopVariables);
+            printMessageWithPlaceholders(rule, key, loopVariables); 
         }
     };
 
@@ -41,6 +43,7 @@ void RulesRunner::processRule(const std::vector<Rule>& rules, std::unordered_map
         processRule(rule, processRule);
     });
 }
+
 
 std::string RulesRunner::extractPlaceholders(const Rule& rule) {
     std::string key;
@@ -93,17 +96,14 @@ void RulesRunner::printMessageWithPlaceholders(const Rule& rule, const std::stri
 
     // Search for placeholders and replace them
     while ((pos = messageTemplate.find(placeholder, lastPos)) != std::string::npos) {
-        outputMessage += messageTemplate.substr(lastPos, pos - lastPos); // Add text before placeholder
-        outputMessage += loopVariables.at(key); // Replace placeholder with actual value
-        lastPos = pos + placeholder.length(); // Move past the placeholder
+        outputMessage += messageTemplate.substr(lastPos, pos - lastPos);
+        outputMessage += loopVariables.at(key); 
+        lastPos = pos + placeholder.length(); 
     }
 
     outputMessage += messageTemplate.substr(lastPos);
     std::cout << outputMessage << std::endl;
 }
-
-
-
 
 std::string RulesRunner::ruleTypeToString(Rule::Type type){
     switch (type) {
@@ -131,24 +131,23 @@ std::string RulesRunner::ruleTypeToString(Rule::Type type){
     }
 }
 
-void RulesRunner::implementForRule(const Rule& rule, std::unordered_map<std::string, std::string> &loopVariables) {
+void RulesRunner::implementForRule(const Rule& rule, std::unordered_map<std::string, std::string>& loopVariables) {
     if (rule.parameters.size() <= 1) {
         std::cerr << "Insufficient parameters for 'For' rule." << std::endl;
         return;
     }
 
-    // Extract loop variable
     auto loopVariable = std::get_if<std::string>(&rule.parameters[0]);
     if (!loopVariable) {
         std::cerr << "Invalid loop variable in 'For' rule." << std::endl;
         return;
     }
 
-    // Extract target path and built-in function
     std::vector<std::string> targetPath;
     std::optional<std::string> builtinFunction;
     auto it = std::find_if(rule.parameters.begin() + 1, rule.parameters.end(), [&](const auto& param) {
-        if (auto str = std::get_if<std::string>(&param); str && std::find(GameConstantsType::builtin.begin(), GameConstantsType::builtin.end(), *str) != GameConstantsType::builtin.end()) {
+        if (auto str = std::get_if<std::string>(&param); str && 
+            std::find(GameConstantsType::builtin.begin(), GameConstantsType::builtin.end(), *str) != GameConstantsType::builtin.end()) {
             builtinFunction = *str;
             return true;
         }
@@ -164,7 +163,6 @@ void RulesRunner::implementForRule(const Rule& rule, std::unordered_map<std::str
     }
 
     // Determine initial container
-    // targetPath = {"configuration", "rounds", "upfrom", 1}
     std::shared_ptr<void> currentContainer;
     const auto& rootKey = targetPath[0];
     if (rootKey == "configuration") currentContainer = std::make_shared<decltype(configuration.setup)>(configuration.setup);
@@ -177,55 +175,57 @@ void RulesRunner::implementForRule(const Rule& rule, std::unordered_map<std::str
         return;
     }
 
-    // Traverse setup container to find entry
+    // Traverse setup container to find the entry
     auto setupContainer = std::static_pointer_cast<decltype(configuration.setup)>(currentContainer);
-    std::optional<std::vector<std::map<std::string, std::string>>> entryOpt;
+    std::optional<DataValue> entryOpt;
 
     if (setupContainer && targetPath.size() > 1) {
-        const auto& target = targetPath[1];   // rounds
-        entryOpt = std::find_if(setupContainer->begin(), setupContainer->end(),
-            [&target](const auto& setupEntry) {
-                return setupEntry.count(target) > 0;
-            })->at(target);
+        const auto& target = targetPath[1];
+        for (const auto& setupEntry : *setupContainer) {
+            auto it = std::find_if(setupEntry.begin(), setupEntry.end(),
+                [&target](const std::pair<std::string, DataValue>& entry) {
+                    return entry.first == target;
+                });
+
+            if (it != setupEntry.end()) {
+                entryOpt = it->second;
+                break;
+            }
+        }
     }
 
-    if (!entryOpt) {
+    if (!entryOpt || entryOpt->getType() != "ORDERED_MAP") {
         std::cerr << "Failed to locate path " << targetPath.back() << " within " << rootKey << std::endl;
         return;
     }
 
-    // Debugging output
-    // std::cout << "Contents of '" << targetPath[1] << "' entry:" << std::endl;
-    // for (const auto& mapEntry : *entryOpt) {
-    //     for (const auto& [key, value] : mapEntry) {
-    //         std::cout << "Key: " << key << ", Value: " << value << std::endl;
-    //     }
-    // }
+    auto orderedMap = entryOpt->asOrderedMap();
 
     // Process built-in function like `upfrom`
     if (builtinFunction && *builtinFunction == "upfrom") {
         int start = std::get<int>(rule.parameters.back());
         int end = -1;
+        auto rangeIt = std::find_if(orderedMap.begin(), orderedMap.end(),
+            [](const std::pair<std::string, DataValue>& entry) {
+                return entry.first == "range";
+            });
 
-        auto rangeString = std::ranges::find_if(*entryOpt, [](const auto& mapEntry) {
-            return mapEntry.count("range") > 0;
-        })->at("range");
-
-        if (!rangeString.empty()) {
-            size_t commaPos = rangeString.find(',');
-            if (commaPos != std::string::npos) end = std::stoi(rangeString.substr(commaPos + 1));
+        if (rangeIt != orderedMap.end() && rangeIt->second.getType() == "RANGE") {
+            auto rangeValue = rangeIt->second.asRange();
+            end = rangeValue.second;
+        } else {
+            std::cerr << "'range' not found or is not a valid range type in " << targetPath.back() << " entry." << std::endl;
         }
 
         if (end != -1) {
             std::cout << "Looping from " << start << " to " << end << " for " << *loopVariable << std::endl;
-            for (size_t i = start; i <= end; ++i) {
+            for (int i = start; i <= end; ++i) {
+                std::cout << "Round: " << i << std::endl;
                 loopVariables[*loopVariable] = std::to_string(i);
-                if(!rule.subRules.empty()){
+                if (!rule.subRules.empty()) {
                     processRule(rule.subRules, loopVariables);
                 }
             }
-        } else {
-            std::cerr << "'range' not found in " << targetPath.back() << " entry." << std::endl;
         }
     }
 }
@@ -256,24 +256,20 @@ void RulesRunner::printRule(const Rule& rule, int indent){
         }
     };
 
-    // Print the rule type only if meaningful parameters exist
     bool hasParameters = !rule.parameters.empty();
     if (hasParameters) {
         std::cout << indentStr << "Main Rule:" << std::endl;
         std::cout << indentStr << "Rule Type: " << ruleTypeToString(rule.type) << std::endl;
 
-        // Print the parameters of the rule
         std::cout << indentStr << "Parameters:" << std::endl;
         for (const auto& param : rule.parameters) {
-            std::visit(visitor, param); // Use std::visit to apply the visitor to the variant
+            std::visit(visitor, param); 
         }
     }
 
-    // Recursively print subrules, with increased indentation
     if (!rule.subRules.empty()) {
-        // std::cout << indentStr << "Sub Rules:" << std::endl;
         for (const auto& subRule : rule.subRules) {
-            printRule(subRule, indent + 2); // Increase indentation for subrules
+            printRule(subRule, indent + 2); 
         }
     }
 }

@@ -1,67 +1,52 @@
 #include "GameConfiguration.h"
 #include <algorithm>
 #include <utility>
+#include <vector>  
 
 std::optional<std::pair<int, int>> GameConfiguration::Setup::getRange() const {
-    auto findPair = std::find_if(value.begin(), value.end(), [](const auto& data) {
-        return std::holds_alternative<std::pair<int, int>>(data);
-    });
-    
-    if (findPair != value.end()) {
-        return std::get<std::pair<int, int>>(*findPair);
-    }
-    return std::nullopt;
+    return range;
 }
 
-std::optional<std::vector<std::map<std::string, std::string>>> GameConfiguration::Setup::getDefault() const {
-    auto findMap = std::find_if(defaultValue.begin(), defaultValue.end(), [](const auto& data) {
-        return std::holds_alternative<std::map<std::string, std::string>>(data);
-    });
-
-    // Since `defaultValue` was defined to hold individual maps, we need to wrap it
-    if (findMap != defaultValue.end()) {
-        std::vector<std::map<std::string, std::string>> defaults;
-        defaults.push_back(std::get<std::map<std::string, std::string>>(*findMap));
-        return defaults;
-    }
-    return std::nullopt;
+std::optional<DataValue::EnumDescriptionType> GameConfiguration::Setup::getChoices() const {
+    return choices;
 }
 
+std::optional<DataValue::OrderedMapType> GameConfiguration::Setup::getDefault() const {
+    return defaultValue;
+}
 
 GameConfiguration::GameConfiguration(const ParsedGameData& parserObject)
     : gameName(parserObject.getGameName()), 
       playerRange(parserObject.getPlayerRange()),
       audience(parserObject.hasAudience()) {
-        
-    auto setups = parserObject.getSetup();
-    for (const auto& subSetup : setups) {
-        for (const auto& [key, value] : subSetup) {
-            setup.push_back(extractSetupFromEntry(key, value));
-        }
+
+    const auto& setupData = parserObject.getSetup();  
+    for (const auto& orderedMap : setupData) {
+        setup.push_back(extractSetupFromOrderedMap(orderedMap));
     }
 }
 
-GameConfiguration::Setup GameConfiguration::extractSetupFromEntry(
-    const std::string& key, const std::vector<std::map<std::string, std::string>>& value) {
-    Setup setup;
-    setup.name = key;
+GameConfiguration::Setup GameConfiguration::extractSetupFromOrderedMap(const DataValue::OrderedMapType& orderedMap) const {
+    Setup setupEntry;
 
-    for (const auto& ele : value) {
-        for (const auto& [k, v] : ele) {
-            if (k == "kind") {
-                setup.kind = v;
-            } else if (k == "prompt") {
-                setup.prompt = v;
-            } else if (k == "default") {
-                setup.defaultValue.emplace_back(std::map<std::string, std::string>{{k, v}});
-            } else {
-                setup.value.emplace_back(std::map<std::string, std::string>{{k, v}});
-            }
+    for (const auto& [key, value] : orderedMap) {
+        if (key == "name" && value.getType() == "STRING") {
+            setupEntry.name = value.asString();
+        } else if (key == "kind" && value.getType() == "STRING") {
+            setupEntry.kind = value.asString();
+        } else if (key == "prompt" && value.getType() == "STRING") {
+            setupEntry.prompt = value.asString();
+        } else if (key == "range" && value.getType() == "RANGE") {
+            setupEntry.range = value.asRange();
+        } else if (key == "choice" && value.getType() == "ENUM_DESCRIPTION") {
+            setupEntry.choices = value.asEnumDescription();
+        } else if (key == "default" && value.getType() == "ORDERED_MAP") {
+            setupEntry.defaultValue = value.asOrderedMap();
         }
     }
-    return setup;
-}
 
+    return setupEntry;
+}
 
 GameName GameConfiguration::getGameName() const {
     return gameName;
@@ -71,33 +56,62 @@ std::pair<int, int> GameConfiguration::getPlayerRange() const {
     return playerRange;
 }
 
-bool GameConfiguration::hasAudience() {
+bool GameConfiguration::hasAudience() const {
     return audience;
 }
 
-std::vector<GameConfiguration::Setup> GameConfiguration::getSetup() {
+std::vector<GameConfiguration::Setup> GameConfiguration::getSetup() const {
     return setup;
 }
 
-void GameConfiguration::setSetupName(Setup& setup, const std::string& name) {
-    setup.name = name;
+GameConfiguration::Setup* GameConfiguration::findSetupByName(const std::string& key) {
+    auto setupFinder = std::find_if(setup.begin(), setup.end(), [&key](const Setup& s) {
+        return s.name == key;
+    });
+
+    if (setupFinder != setup.end()) {
+        return &(*setupFinder);
+    } else {
+        return nullptr;
+    }
 }
 
-void GameConfiguration::setSetupKind(Setup& setup, const std::string& kind) {
-    setup.kind = kind;
+void GameConfiguration::setKind(const std::string& key, const std::string& kindValue) {
+    if (auto* setupPtr = findSetupByName(key)) {
+        setupPtr->kind = kindValue;
+    } else {
+        throw std::runtime_error("Setup with key '" + key + "' not found.");
+    }
 }
 
-void GameConfiguration::setSetupPrompt(Setup& setup, const std::string& prompt) {
-    setup.prompt = prompt;
+void GameConfiguration::setPrompt(const std::string& key, const std::string& promptValue) {
+    if (auto* setupPtr = findSetupByName(key)) {
+        setupPtr->prompt = promptValue;
+    } else {
+        throw std::runtime_error("Setup with key '" + key + "' not found.");
+    }
 }
 
-void GameConfiguration::setSetupValue(Setup& setup, 
-                                      std::vector<std::variant<std::map<std::string, std::string>, std::pair<int, int>>> value,
-                                      std::vector<std::map<std::string, std::string>> defaultValue) {
-    setup.value = std::move(value);
+void GameConfiguration::setRange(const std::string& key, const std::pair<int, int>& rangeValue) {
+    if (auto* setupPtr = findSetupByName(key)) {
+        setupPtr->range = rangeValue;
+    } else {
+        throw std::runtime_error("Setup with key '" + key + "' not found.");
+    }
+}
 
-    // Wrap each default value map in a variant before assigning
-    for (const auto& def : defaultValue) {
-        setup.defaultValue.emplace_back(def);
+void GameConfiguration::setChoices(const std::string& key, const DataValue::EnumDescriptionType& choicesValue) {
+    if (auto* setupPtr = findSetupByName(key)) {
+        setupPtr->choices = choicesValue;
+    } else {
+        throw std::runtime_error("Setup with key '" + key + "' not found.");
+    }
+}
+
+void GameConfiguration::setDefaultValue(const std::string& key, const DataValue::OrderedMapType& defaultValue) {
+    if (auto* setupPtr = findSetupByName(key)) {
+        setupPtr->defaultValue = defaultValue;
+    } else {
+        throw std::runtime_error("Setup with key '" + key + "' not found.");
     }
 }
