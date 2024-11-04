@@ -9,7 +9,7 @@ add_executable(game_server
 set_target_properties(game_server
                       PROPERTIES
                       LINKER_LANGUAGE CXX
-                      CXX_STANDARD 17
+                      CXX_STANDARD 23
                       PREFIX ""
 )
 
