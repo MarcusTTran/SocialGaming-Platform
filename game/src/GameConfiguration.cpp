@@ -30,9 +30,25 @@ GameConfiguration::Setup GameConfiguration::extractSetupFromOrderedMap(const Dat
     Setup setupEntry;
 
     for (const auto& [key, value] : orderedMap) {
-        if (key == "name" && value.getType() == "STRING") {
-            setupEntry.name = value.asString();
-        } else if (key == "kind" && value.getType() == "STRING") {
+        if (value.getType() == "ORDERED_MAP") {
+            const auto& nestedMap = value.asOrderedMap();
+            for (const auto& [nestedKey, nestedValue] : nestedMap) {
+                if (nestedKey == "kind" && nestedValue.getType() == "STRING") {
+                    setupEntry.kind = nestedValue.asString();
+                } else if (nestedKey == "prompt" && nestedValue.getType() == "STRING") {
+                    setupEntry.prompt = nestedValue.asString();
+                } else if (nestedKey == "range" && nestedValue.getType() == "RANGE") {
+                    setupEntry.range = nestedValue.asRange();
+                } else if (nestedKey == "choice" && nestedValue.getType() == "ENUM_DESCRIPTION") {
+                    setupEntry.choices = nestedValue.asEnumDescription();
+                } else if (nestedKey == "default" && nestedValue.getType() == "ORDERED_MAP") {
+                    setupEntry.defaultValue = nestedValue.asOrderedMap();
+                }
+            }
+        }
+
+        // Handle the case where the current key-value pair does not require recursion
+        if (key == "kind" && value.getType() == "STRING") {
             setupEntry.kind = value.asString();
         } else if (key == "prompt" && value.getType() == "STRING") {
             setupEntry.prompt = value.asString();
@@ -47,6 +63,8 @@ GameConfiguration::Setup GameConfiguration::extractSetupFromOrderedMap(const Dat
 
     return setupEntry;
 }
+
+
 
 GameName GameConfiguration::getGameName() const {
     return gameName;
