@@ -120,15 +120,16 @@ DataValue ParsedGameData::handleExpression(const ts::Node& node, const std::stri
         return DataValue(std::move(subContent));
     } else if (type == "enum_description"){
         DataValue::EnumDescriptionType enumMap;
-        for (const auto& child : ts::Children{node}) {
-            auto keyNode = child.getChildByFieldName("key");
-            auto valueNode = child.getChildByFieldName("value");
-            if (!keyNode.isNull() && !valueNode.isNull()) {
-                std::string key = std::string(keyNode.getSourceRange(source));
-                std::string value = std::string(valueNode.getSourceRange(source));
-                enumMap[key] = value;
-            }
-        }   
+        auto keyNode = node.getChildByFieldName("name");
+        auto valueNode = node.getChildByFieldName("description");
+        if (!keyNode.isNull() && !valueNode.isNull()) {
+            std::string key = std::string(keyNode.getSourceRange(source));
+            std::string value = std::string(valueNode.getSourceRange(source));
+        if (!value.empty() && value.front() == '"' && value.back() == '"') {
+            value = value.substr(1, value.length() - 2);
+        }
+            enumMap[key] = value; 
+        } 
         return DataValue(std::move(enumMap));
     }
 
@@ -186,8 +187,18 @@ DataValue::OrderedMapType ParsedGameData::handleSetup(const ts::Node& node, cons
 
         ts::Node choiceNode = node.getChildByFieldName("choices");
         if (!choiceNode.isNull()) {
-            auto enumValue = handleExpression(choiceNode, source);
-            content.emplace_back("choice", std::move(enumValue));
+            DataValue::EnumDescriptionType enumMap; 
+            ts::Cursor cursor = choiceNode.getCursor();
+            auto curr = cursor.getCurrentNode();
+            while(!curr.getNextSibling().isNull()){
+                DataValue enumValue = handleExpression(curr, source);
+                if (std::holds_alternative<DataValue::EnumDescriptionType>(enumValue.getValue())) {
+                        auto singleEnumMap = std::get<DataValue::EnumDescriptionType>(enumValue.getValue());
+                        enumMap.insert(singleEnumMap.begin(), singleEnumMap.end());
+                }
+                curr = curr.getNextSibling();
+            }
+            content.emplace_back("choice", DataValue(std::move(enumMap)));
         }
 
         ts::Node defaultNode = node.getChildByFieldName("default");

@@ -30,6 +30,15 @@ void ParserRulesAPI::printToConsole(){
     std::cout << "player range: (" << configuration.range.first << ", " << configuration.range.second << ")" << std::endl;
     std::cout << "audience: " << (configuration.audience == true ? "true" : "false") << std::endl;
     
+    std::cout << "\nSetup Section:" << std::endl;
+    for (const auto& setupEntry : configuration.setup) {
+        for (const auto& [key, value] : setupEntry) {
+            std::cout << key << ":\n";
+            // Print the DataValue, assuming we have a method in DataValue to handle printing
+            value.print(2); // Using the DataValue print method to display values with indentation
+        }
+    }
+
     std::cout << "\nConstants Section:" << std::endl;
     parser->printDataValue(constants);
 

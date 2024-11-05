@@ -69,6 +69,42 @@ public:
         return "UNKNOWN";
     }
 
+    // Note: this is for teammate testing, will be removed eventually
+    void print(int indentLevel = 0) const {
+        std::string indent(indentLevel, ' '); 
+        if (std::holds_alternative<std::string>(value)) {
+            std::cout << indent << "\"" << asString() << "\"" << std::endl;
+        } else if (std::holds_alternative<int>(value)) {
+            std::cout << indent << asNumber() << std::endl;
+        } else if (std::holds_alternative<bool>(value)) {
+            std::cout << indent << (asBoolean() ? "true" : "false") << std::endl;
+        } else if (std::holds_alternative<std::vector<DataValue>>(value)) {
+            std::cout << indent << "[\n";
+            for (const auto& item : asList()) {
+                item.print(indentLevel + 2); 
+            }
+            std::cout << indent << "]" << std::endl;
+        } else if (std::holds_alternative<OrderedMapType>(value)) {
+            std::cout << indent << "{\n";
+            for (const auto& [key, subValue] : asOrderedMap()) {
+                std::cout << indent << "  \"" << key << "\": ";
+                subValue.print(indentLevel + 2); 
+            }
+            std::cout << indent << "}" << std::endl;
+        } else if (std::holds_alternative<EnumDescriptionType>(value)) {
+            std::cout << indent << "{\n";
+            for (const auto& [key, val] : asEnumDescription()) {
+                std::cout << indent << "  \"" << key << "\": \"" << val << "\"" << std::endl;
+            }
+            std::cout << indent << "}" << std::endl;
+        } else if (std::holds_alternative<std::pair<int, int>>(value)) {
+            auto range = asRange();
+            std::cout << indent << "(" << range.first << ", " << range.second << ")" << std::endl;
+        } else {
+            std::cout << indent << "UNKNOWN" << std::endl;
+        }
+    }
+
 private:
     ValueType value;
 };
