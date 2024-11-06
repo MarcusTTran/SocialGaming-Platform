@@ -24,7 +24,8 @@ const DataValue& GameVariables::getVariable(const std::string& key) const{
     if(valueFinder != end(variables)){
         return valueFinder->second;
     }
-    throw std::out_of_range("Key '" + key + "' not found in variables.");
+    static const DataValue emptyDataValue;  
+    return emptyDataValue;
 }
 
 void GameVariables::setVariable(const std::string& key, DataValue content){

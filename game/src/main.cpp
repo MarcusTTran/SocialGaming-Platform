@@ -1,8 +1,11 @@
 #include "ParserRulesAPI.h"
 #include "GameConfiguration.h"
+#include "GameConstants.h"
+#include "GameVariables.h"
 #include "GameParser.h"
 #include <iostream>
 #include <string>
+
 
 int main(){
     std::string filename = "config.game";
@@ -53,5 +56,6 @@ int main(){
             }
         } 
     }
+
     return 0;
 }

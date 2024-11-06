@@ -12,5 +12,6 @@ const DataValue& GameConstants::getConstant(const std::string& key) const{
     if(valueFinder != end(constants)){
         return valueFinder->second;
     }
-    throw std::out_of_range("Key '" + key + "' not found in constants.");
+    static const DataValue emptyDataValue;  
+    return emptyDataValue;
 }
