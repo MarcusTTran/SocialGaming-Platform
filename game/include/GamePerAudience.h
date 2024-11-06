@@ -13,16 +13,16 @@ class GamePerAudience {
 // Note: may add more types to this variant in the future
 
 private:
-    std::unordered_map<std::string, DataType> perAudienceVariables;
+    DataValue::OrderedMapType perAudienceVariables;
 
 public:
     GamePerAudience(const ParsedGameData& parsedData); 
     ~GamePerAudience() = default;
-    std::unordered_map<std::string, DataType> getAudienceVariables();
-    DataType& addPerAudienceVariable(std::string key, DataType value);
-    DataType& getPerAudienceVariable(const std::string&) const;
-    void gamePerAudienceSetter(const std::string&);
+    DataValue::OrderedMapType getAudienceVariables();
+    void addPerAudienceVariable(std::string key, DataValue value);
+    const DataValue& getPerAudienceVariable(const std::string&) const;
+    void gamePerAudienceSetter(const std::string&, DataValue newValue);
 
-    std::expected<string, string> getType(const std::string& key);
+    // std::expected<string, string> getType(const std::string& key);
     // TODO: Perhaps create concrete error types later? 
 };

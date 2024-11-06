@@ -52,7 +52,7 @@ rules {
       input choice to player {
         prompt: "{player.name}, choose your weapon!"
         choices: weapons.name
-        target: player.name
+        target: player.weapon
         timeout: 10
       }
     }

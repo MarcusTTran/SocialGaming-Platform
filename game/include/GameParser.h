@@ -58,7 +58,7 @@ private:
     DataValue::OrderedMapType variables;
     DataValue::OrderedMapType perPlayer;
     DataValue::OrderedMapType perAudience;
-    DataValue::OrderedMapType constants;    //       a vector of 2 pairs inside: { outerpair{pair1, pair2}, ... }
+    DataValue::OrderedMapType constants;    // for RPS -> a vector of 2 pairs inside: { outerpair{pair1, pair2}, ... }
     vector<Rule> rules;
 
     DataValue handleExpression(const ts::Node& node, const std::string& source);

@@ -9,13 +9,13 @@
 // NOTE: DataType is defined in CommonVariantTypes.h
 
 class GamePerPlayer {
-    std::unordered_map<std::string, std::vector<DataType> > perPlayerVariables;
+    DataValue::OrderedMapType perPlayerVariables;
     
     public:
         GamePerPlayer(const ParsedGameData& parsedData);
         ~GamePerPlayer() = default;
-        std::unordered_map<std::string, DataType> getPlayerVariables();
-        DataType& addPerPlayerVariable(std::string key, DataType value); 
-        DataType & gamePerPlayerGetter(const std::string&) const;     
-        void gamePerPlayerSetter(const std::string&);  // perPlayerVariables[key] = winner = 3; 
+        DataValue::OrderedMapType getPlayerVariables(); 
+        void addPerPlayerVariable(std::string key, DataValue value); 
+        const DataValue & gamePerPlayerGetter(const std::string&) const;     
+        void gamePerPlayerSetter(const std::string&, DataValue newValue);  // perPlayerVariables[key] = winner = 3; 
 };
