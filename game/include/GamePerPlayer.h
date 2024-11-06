@@ -17,5 +17,5 @@ class GamePerPlayer {
         DataValue::OrderedMapType getPlayerVariables(); 
         void addPerPlayerVariable(std::string key, DataValue value); 
         const DataValue & gamePerPlayerGetter(const std::string&) const;     
-        void gamePerPlayerSetter(const std::string&, DataValue newValue);  // perPlayerVariables[key] = winner = 3; 
+        DataValue gamePerPlayerSetter(const std::string&, DataValue newValue);  // perPlayerVariables[key] = winner = 3; 
 };

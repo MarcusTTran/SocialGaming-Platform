@@ -21,7 +21,7 @@ public:
     DataValue::OrderedMapType getAudienceVariables();
     void addPerAudienceVariable(std::string key, DataValue value);
     const DataValue& getPerAudienceVariable(const std::string&) const;
-    void gamePerAudienceSetter(const std::string&, DataValue newValue);
+    DataValue gamePerAudienceSetter(const std::string&, DataValue newValue);
 
     // std::expected<string, string> getType(const std::string& key);
     // TODO: Perhaps create concrete error types later? 

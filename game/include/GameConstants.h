@@ -10,7 +10,7 @@ public:
     ~GameConstants() = default;
 
     // Access constants by key
-    // vector<pair<string, DataValue>>
+    DataValue::OrderedMapType getConstants() const;
     const DataValue& getConstant(const std::string& key)const;
 
 private:

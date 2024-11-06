@@ -11,6 +11,10 @@ auto GameVariables::findVariable(const std::string& key) const{
     );
 }
 
+DataValue::OrderedMapType GameVariables::getVariables() const{
+    return variables;
+}
+
 auto GameVariables::findVariable(const std::string& key){
     return std::find_if(variables.begin(), variables.end(),
         [&key](const std::pair<std::string, DataValue>& entry) {

@@ -11,7 +11,7 @@ public:
     ~GameVariables() = default;
 
     // Access variables by key
-    // vector<pair<string, DataValue>>
+    DataValue::OrderedMapType getVariables() const;
     const DataValue& getVariable(const std::string& key) const;
     void setVariable(const std::string& key, DataValue content);
 private:

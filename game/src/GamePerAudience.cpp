@@ -34,23 +34,27 @@ const DataValue& GamePerAudience::getPerAudienceVariable(const std::string& key)
         return pair.first == key;
     });
     if (perAudienceVarIter == perAudienceVariables.end()) {
-        throw std::out_of_range("Key '" + key + "' not found in variables.");
-        // TODO: perhaps return an error type?
+        // throw std::out_of_range("Key '" + key + "' not found in variables.");
+        static const DataValue emptyDataValue;
+        return emptyDataValue;
     }
 
     return perAudienceVarIter->second;
 }
 
-void GamePerAudience::gamePerAudienceSetter(const std::string& key, DataValue newValue) {
+DataValue GamePerAudience::gamePerAudienceSetter(const std::string& key, DataValue newValue) {
     auto perAudienceVarIter = std::find_if(perAudienceVariables.begin(), perAudienceVariables.end(), 
     [&key](const auto& pair) {
         return pair.first == key;
     });
     if (perAudienceVarIter == perAudienceVariables.end()) {
-        throw std::out_of_range("Key '" + key + "' not found in variables.");
+        // throw std::out_of_range("Key '" + key + "' not found in variables.");
+        static const DataValue emptyDataValue;
+        return emptyDataValue;
     }
 
     perAudienceVarIter->second = newValue;
+    return perAudienceVarIter->second;
 }
 
 
