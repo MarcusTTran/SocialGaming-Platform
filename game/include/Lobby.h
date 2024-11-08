@@ -1,5 +1,6 @@
 #include "Server.h"
 #include "game.h"
+#include "Player.h"
 #include <deque>
 #include <memory>
 

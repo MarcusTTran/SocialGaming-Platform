@@ -1,6 +1,6 @@
 #include "ParserRulesAPI.h"
 
-ParserRulesAPI::ParserRulesAPI(const std::string& configFilePath) : parser(std::make_unique<GameConfig>(configFilePath)),
+ParserRulesAPI::ParserRulesAPI(const std::string& configFilePath) : parser(std::make_unique<ParsedGameData>(configFilePath)),
 rulesRunner(std::make_unique<RulesRunner>()){}
 
 void ParserRulesAPI::initialize(){
@@ -29,73 +29,27 @@ void ParserRulesAPI::printToConsole(){
     std::cout << "name: " << configuration.name << std::endl;
     std::cout << "player range: (" << configuration.range.first << ", " << configuration.range.second << ")" << std::endl;
     std::cout << "audience: " << (configuration.audience == true ? "true" : "false") << std::endl;
-
-
+    
     std::cout << "\nSetup Section:" << std::endl;
-    for(const auto& setup : configuration.setup){
-        for(const auto& [key, value] : setup){
-            std::cout << key << ":" << std::endl;
-            for(const auto& ele : value){
-                for(const auto& [k, v] : ele){
-                    std::cout << k << ": " << v << std::endl;
-                }
-            }
+    for (const auto& setupEntry : configuration.setup) {
+        for (const auto& [key, value] : setupEntry) {
+            std::cout << key << ":\n";
+            // Print the DataValue, assuming we have a method in DataValue to handle printing
+            value.print(2); // Using the DataValue print method to display values with indentation
         }
     }
-    
-    std::cout << "\nConstants Section:" << std::endl;
-    for (const auto& [key, entries] : constants) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
-    }
 
-    std::cout << "\nVariable Section:" << std::endl;
-    for (const auto& [key, entries] : variables) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
-    }
+    std::cout << "\nConstants Section:" << std::endl;
+    parser->printDataValue(constants);
+
+    std::cout << "\nVariables Section:" << std::endl;
+    parser->printDataValue(variables);
 
     std::cout << "\nPerPlayer Section:" << std::endl;
-    for (const auto&[key, entries] : perPlayer) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
-    }
+    parser->printDataValue(perPlayer);
 
     std::cout << "\nPerAudience Section:" << std::endl;
-    for (const auto& [key, entries] : perAudience) {
-        std::cout << key << " :" << std::endl;
-        for(const auto& ele : entries){
-            auto pair1 = ele.first;
-            auto pair2 = ele.second;
-            std::cout << pair1.first << ": " << pair1.second << " ";
-            std::cout << pair2.first << ": " << pair2.second;
-            std::cout << std::endl;
-        }   
-    }
-    
-    // std::cout << "\nRule Section:" << std::endl;
-    // for(const auto& rule : rules){
-    //     printRule(rule);
-    //     implementForRule(rule);
-    // }
+    parser->printDataValue(perAudience);
 }
 
 void ParserRulesAPI::runRules(){
