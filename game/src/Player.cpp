@@ -28,7 +28,7 @@ void Player::addPerVariableMap(DataValue::OrderedMapType perVariableMap, bool id
 
 void Player::addPlayerVariable(std::string key, DataValue value, bool identity)
 {
-    identity ? playerObjects.emplace_back(key, value) : audienceObjects.emplace_back(key, value);
+    identity ? playerObjects.emplace_back(std::move(key), std::move(value)) : audienceObjects.emplace_back(key, std::move(value));
 };
 
 DataValue::OrderedMapType Player::getMap(bool identity)
@@ -57,6 +57,6 @@ void Player::valueSetter(const std::string& key, DataValue newValue, bool identi
         return pair.first == key;
     });
     if (playerIt != end) {
-        playerIt->second = newValue;
+        playerIt->second = std::move(newValue);
     }
 }
