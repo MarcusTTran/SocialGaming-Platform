@@ -13,7 +13,9 @@
 #include <unordered_map>
 #include <variant>
 #include <cassert>
+#include <optional>
 #include "RuleTypes.h"
+#include "CommonVariantTypes.h"
 #include <span>
 
 
@@ -22,7 +24,6 @@
 */
 
 
-using generalType = std::map<std::string, std::vector<std::pair<std::pair<std::string, std::string>, std::pair<std::string, std::string>>>>;
 using loopVariableType = std::variant<
     std::string,
     int,
@@ -47,19 +48,19 @@ public:
 
     // Setter functions
     void configurationSetter(const Configuration& config);
-    void variablesSetter(const generalType& vars);
-    void constantsSetter(const generalType& consts);
-    void perPlayerSetter(const generalType& perPlayers);
-    void perAudienceSetter(const generalType& perAudiences);
+    void variablesSetter(const DataValue::OrderedMapType& vars);
+    void constantsSetter(const DataValue::OrderedMapType& consts);
+    void perPlayerSetter(const DataValue::OrderedMapType& perPlayers);
+    void perAudienceSetter(const DataValue::OrderedMapType& perAudiences);
     void rulesSetter(const std::vector<Rule>& r);
-    generalType constantsGetter();
+    DataValue::OrderedMapType constantsGetter();
     void processRules();
 private:
-    generalType variables;
-    generalType perPlayer;
-    generalType perAudience;
-    generalType constants;
-    std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>> setup;
+    DataValue::OrderedMapType variables;
+    DataValue::OrderedMapType perPlayer;
+    DataValue::OrderedMapType perAudience;
+    DataValue::OrderedMapType constants;
+    std::vector<DataValue::OrderedMapType> setup;
     std::vector<Rule> rules;
     Configuration configuration;  // instance of configuration struct
 };

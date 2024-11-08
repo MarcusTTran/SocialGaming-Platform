@@ -1,19 +1,21 @@
-#ifndef GAMEPERPLAYER_H
-#define GAMEPERPLAYER_H
+#pragma once
 
+#include <variant>
+#include <unordered_map>
+#include <string>
+#include "CommonVariantTypes.h"
+#include "GameParser.h"
 
-template <typename T>
+// NOTE: DataType is defined in CommonVariantTypes.h
+
 class GamePerPlayer {
-    // std::unordered_map<std::string, T> perPlayerVariables;
+    DataValue::OrderedMapType perPlayerVariables;
     
-    // public:
-    //     GamePerPlayer() = default;
-    //     ~GamePerPlayer() = default;
-    //     std::unordered_map<std::string, std::string> getPlayerVariables();
-    //     T& addPerPlayerVariable(std::string key, T value);
-    //     T& gamePerPlayerGetter(const string&) const;     
-    //     void gamePerPlayerSetter(const string&);  // perPlayerVariables[key] = winner = 3; 
-    // // For PLayer.h
+    public:
+        GamePerPlayer(const ParsedGameData& parsedData);
+        ~GamePerPlayer() = default;
+        DataValue::OrderedMapType getPlayerVariables(); 
+        void addPerPlayerVariable(std::string key, DataValue value); 
+        const DataValue & gamePerPlayerGetter(const std::string&) const;     
+        DataValue gamePerPlayerSetter(const std::string&, DataValue newValue);  // perPlayerVariables[key] = winner = 3; 
 };
-
-#endif // GAMEPERPLAYER_H

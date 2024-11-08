@@ -1,18 +1,35 @@
 #include "game.h"
 
-Game::Game(const std::string &gameName) : gameName(gameName) {}
-void Game::addPlayer(const Player &player) { players.push_back(player); }
+// Game::Game(const ParsedGameData& parserObject, const std::string& gameName)
+//     : gameName(gameName),
+//       configuration(parserObject),
+//       constants(parserObject),
+//       variables(parserObject),
+//       perPlayer(parserObject),
+//       perAudience(parserObject) 
+// { }
+
+// Game::Game(const Game& other)
+//     : gameName(other.gameName),
+//       gameCode(other.gameCode),
+//       configuration(other.configuration),
+//       constants(other.constants),
+//       variables(other.variables),
+//       perPlayer(other.perPlayer),
+//       perAudience(other.perAudience) { }
+
+Game::Game(const std::string& gameName) : gameName(gameName) {}
+
 std::string Game::getGameCode() const { return gameCode; }
 
 std::string Game::getGameName() const { return gameName; }
 
-const std::vector<Player> &Game::getPlayers() const { return players; }
+// GameConfiguration Game::getConfiguration(){ return configuration; }
+// GameConstants Game::getConstants() { return constants; }
+// GameVariables Game::getVariables() { return variables; }
+// GamePerPlayer Game::getPerPlayer() { return perPlayer; }
+// GamePerAudience Game::getPerAudience() {return perAudience; }
 
-void Game::sendingMessage(networking::Server &server, const Player &player,
-                          const std::string &message) const {
-  server.send({{player.getConnection(), message}});
-}
-
-void Game::setGameCode(const std::string &gameCode) {
-  this->gameCode = gameCode;
-}
+// void Game::setGameCode(const std::string &gameCode) {
+//   this->gameCode = gameCode;
+// }

@@ -1,70 +1,59 @@
 // author: kwa132, mtt8
+#pragma once
 
 #include <map>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
-#pragma once
-
-// TODO: need to fix all logic for future API
+#include <variant>
+#include "GameParser.h"
 
 class GameName {
 private:
-  const std::string &name;
+    std::string name;
 
 public:
-  // We will not allow an instance to be create without an input string
-  GameName(const std::string &name) : name(name) {}
-};
-
-template <typename T> class SetupRules {
-public:
-  class SetupRuleKind {
-    // Configuration kinds can be 'boolean', 'integer', 'string', 'enum',
-    // 'question-answer', 'multiple-choice', 'json'.
-    // std::string name;
-    // SetupRuleKind(const std::string &name) : name(name) {}
-    // TODO: create a validation function that checks if the Kind is valid (ie.
-    // 'integer')
-    // TODO: perhaps make this a template? Would that work?
-  };
-
-  // SetupRuleKind kindGetter();
-  // std::string &promptGetter() const;
-  // std::optional<std::pair<int, int>> &rangeGetter() const;
-  // std::optional<std::map<std::string, std::string>> &choicesGetter() const;
-  // std::optional<std::string> &defaultsGetter() const;
-  // SetupRuleKind kind;
-  // std::string prompt;
-  // std::optional<std::pair<int, int>> range;
-  // std::optional<std::map<std::string, std::string>> choices;
-  // std::optional<std::string> defaults;
-  // // TODO: Perhaps add a default? It is used for range in professors example of
-  // // RPS
+    GameName(const std::string& name) : name(name) {}
+    std::string getName() const { return name; }
 };
 
 class GameConfiguration {
-// private:
-  // const GameName gameName;
+public:
+    struct Setup {
+        std::string name;
+        std::optional<std::string> kind;
+        std::optional<std::string> prompt;
+        std::optional<std::pair<int, int>> range;
+        std::optional<DataValue::EnumDescriptionType> choices;
+        std::optional<DataValue::OrderedMapType> defaultValue;
 
-  // std::pair<size_t, size_t> playerRange;
-  // bool audience;
-  // std::map<std::string, std::vector<std::map<std::string, std::string>>> setup;
-//   // TODO: change
-//   std::vector<SetupRules> setup; // Contains a list of SetupRules (like the
-//                                  // number of rounds to start from)
+        std::optional<std::pair<int, int>> getRange() const;
+        std::optional<DataValue::EnumDescriptionType> getChoices() const;
+        std::optional<DataValue::OrderedMapType> getDefault() const;
+    };
 
-// public:
-//   ~GameConfiguration() = default;
+    // Constructor
+    GameConfiguration(const ParsedGameData& parserObject);
+    ~GameConfiguration() = default;
 
-//   std::string getGameName() const;
-//   std::pair<size_t, size_t> getPlayerRange() const;
-//   bool hasAudience() const;
-//   std::vector<SetupRules> getSetup();
-//   void setupSetter(
-//       const SetupRuleKind &kind, const string &prompt,
-//       const std::optional<std::pair<int, int>> &range = {1, 10},
-//       const std::optional<std::map<std::string, std::string>> &choices = {},
-//       const std::optional<std::string> &defaults = "");
+    // Getter methods
+    GameName getGameName() const;
+    std::pair<int, int> getPlayerRange() const;
+    bool hasAudience() const;
+    std::vector<Setup> getSetup() const;
+    Setup* findSetupByName(const std::string& key);
+    void setKind(const std::string& key, const std::string& kindValue);
+    void setPrompt(const std::string& key, const std::string& promptValue);
+    void setRange(const std::string& key, const std::pair<int, int>& rangeValue);
+    void setChoices(const std::string& key, const DataValue::EnumDescriptionType& choicesValue);
+    void setDefaultValue(const std::string& key, const DataValue::OrderedMapType& defaultValue);
+
+private:
+    GameName gameName;
+    std::pair<int, int> playerRange;
+    bool audience;
+    std::vector<Setup> setup;
+    // Helper function to extract Setup from OrderedMapType
+    Setup extractSetupFromOrderedMap(const DataValue::OrderedMapType& orderedMap) const;
 };
