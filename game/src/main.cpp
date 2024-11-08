@@ -8,7 +8,7 @@
 #include <string>
 
 int main() {
-  std::string filename = "../config/config.game";
+  std::string filename = "../config/minimal.game";
   // ParserRulesAPI parserAPI(filename);
   // parserAPI.initialize();
   // parserAPI.printToConsole();
