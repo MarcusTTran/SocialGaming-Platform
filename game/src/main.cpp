@@ -1,18 +1,19 @@
 #include "ParserRulesAPI.h"
-#include "GameConfiguration.h"
-#include "GameConstants.h"
-#include "GameVariables.h"
+// #include "GameConfiguration.h"
+// #include "GameConstants.h"
+// #include "GameVariables.h"
 #include "GameParser.h"
 #include <iostream>
 #include <string>
+#include "game.h"
 
 
 int main(){
     std::string filename = "config.game";
-    ParserRulesAPI parserAPI(filename);
-    parserAPI.initialize();
-    parserAPI.printToConsole();
-    parserAPI.runRules();
+    // ParserRulesAPI parserAPI(filename);
+    // parserAPI.initialize();
+    // parserAPI.printToConsole();
+    // parserAPI.runRules();
 
     /*
         This is the demo section to show how to extract data from GameConfiguration class, interacting
@@ -20,6 +21,7 @@ int main(){
     */
 
     ParsedGameData parser(filename);
+    // Game game(parser, "Rock-Paper-Scissors");
     GameConfiguration config(parser);
     std::cout << "Name: " << config.getGameName().getName() << std::endl;
     std::cout << "Player Range: " << config.getPlayerRange().first << ", " << 
