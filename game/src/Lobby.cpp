@@ -58,6 +58,9 @@ void Lobby::addMessage(const Message &message) { incomingMessages.push_back(mess
 
 void Lobby::processIncomingMessage(const networking::Connection &connection, const std::string &message) {
 
+  // TODO: Think of incoming messages as events that trigger reesponses from incoming messages
+  // need to refactor this to use a more event driven approach so that game logic can be implemented
+
   // check if the connection is the lobby creator
   if (connection.id == lobbyCreator->id) {
     if (message == "start") {
@@ -92,3 +95,5 @@ void Lobby::processIncomingMessage(const networking::Connection &connection, con
     }
   }
 }
+
+std::vector<Player> Lobby::getPlayers() const { return players; }
