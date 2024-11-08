@@ -1,22 +1,28 @@
-#ifndef GAMEPERAUDIENCE_H
-#define GAMEPERAUDIENCE_H
+#pragma once
 
 #include <unordered_map>
 #include <string>
+#include <variant>
+#include <expected>
+#include "CommonVariantTypes.h"
+#include "GameParser.h"
 
-template <typename T>
+// NOTE: DataType is defined in CommonVariantTypes.h
+
 class GamePerAudience {
-    // // for the Player.h
-    // std::unordered_map<std::string, T> perAudienceVariables;
+// Note: may add more types to this variant in the future
 
-    // public:
-    //     GamePerAudience() = default;
-    //     ~GamePerAudience() = default;
-    //     std::unordered_map<std::string, std::string> getAudienceVariables();
-    //     T& addPerAudienceVariable(std::string key, T value);
-    //     T& gamePerAudienceGetter(const string&) const;
-    //     void gamePerAudienceSetter(const string&);
+private:
+    DataValue::OrderedMapType perAudienceVariables;
 
+public:
+    GamePerAudience(const ParsedGameData& parsedData); 
+    ~GamePerAudience() = default;
+    DataValue::OrderedMapType getAudienceVariables();
+    void addPerAudienceVariable(std::string key, DataValue value);
+    const DataValue& getPerAudienceVariable(const std::string&) const;
+    DataValue gamePerAudienceSetter(const std::string&, DataValue newValue);
+
+    // std::expected<string, string> getType(const std::string& key);
+    // TODO: Perhaps create concrete error types later? 
 };
-
-#endif 

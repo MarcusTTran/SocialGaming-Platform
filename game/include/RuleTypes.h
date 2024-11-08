@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <variant>
+#include "CommonVariantTypes.h"
 
 /*
     This is type class, which is used for parser and rules
@@ -18,7 +19,7 @@ struct Configuration {
     std::string name = "";
     bool audience = false;  
     std::pair<int, int> range = {0, 0};  
-    std::vector<std::map<std::string, std::vector<std::map<std::string, std::string>>>> setup;
+    std::vector<DataValue::OrderedMapType> setup;
 
     Configuration() : name(""), audience(false), range({0, 0}), setup({}) {}
 };

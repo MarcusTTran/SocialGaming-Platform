@@ -11,8 +11,16 @@ include(cmake/CPM.cmake)
 CPMAddPackage(
   NAME cpp-tree-sitter
   GIT_REPOSITORY https://github.com/nsumner/cpp-tree-sitter.git
-  GIT_TAG main
+  GIT_TAG main # version 0.0.3
 )
+
+# Ensure cpp-tree-sitter uses C++23
+if (cpp-tree-sitter_ADDED)
+  set_target_properties(cpp-tree-sitter PROPERTIES 
+  CXX_STANDARD 23 
+  CXX_STANDARD_REQUIRED YES
+  )
+endif()
 
 # Add tree-sitter-socialgaming
 CPMAddPackage(
@@ -26,14 +34,6 @@ CPMAddPackage(
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
     GIT_TAG 8.1.1  # Specify a compatible version, adjust if necessary
 )
-
-# # Add tree-sitter-json
-# CPMAddPackage(
-#   NAME tree-sitter-json
-#   GIT_REPOSITORY https://github.com/tree-sitter/tree-sitter-json.git
-#   GIT_TAG master
-#   OPTIONS "TREE_SITTER_CLI_EXECUTABLE=${TREE_SITTER_CLI_EXECUTABLE}"
-# )
 
 add_grammar_from_repo(tree-sitter-json                 # Defines the library name for a grammar
   https://github.com/tree-sitter/tree-sitter-json.git  # Repository URL of a tree-sitter grammar
