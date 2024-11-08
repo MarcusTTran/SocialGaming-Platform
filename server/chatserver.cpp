@@ -61,9 +61,7 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
 
     if (lobbyManager->isAwaitingDisplayName(connection)) { // Check if connection is awaiting display name
       std::string displayName = text;
-      Player player(connection, displayName);
-      lobbyManager->addPlayerToLobbyWithDisplayName(connection, player);
-      lobbyManager->removeFromPendingDisplayNames(connection);
+      lobbyManager->addPlayerToLobbyWithDisplayName(connection, displayName);
     } else if (text == "create") {
 
       // TODO: This is a temporary solution to create a game. This will be replaced with a user
@@ -138,6 +136,8 @@ int main(int argc, char *argv[]) {
     if (shouldQuit || errorWhileUpdating) {
       break;
     }
+
+    // TODO: need to loop through each lobby and update the game state
 
     sleep(1);
   }
