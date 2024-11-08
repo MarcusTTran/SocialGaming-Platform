@@ -34,5 +34,6 @@ private:
   int id;
   DataValue::OrderedMapType playerObjects;
   DataValue::OrderedMapType audienceObjects;
+  // Determines if a player is an audience member or an actual player
   bool playerIdentity;
 };

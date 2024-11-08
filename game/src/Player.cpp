@@ -9,7 +9,7 @@ Player::Player(const networking::Connection &con, std::string displayName)
 
 void Player::setPlayerIdentity(bool identity) {playerIdentity = identity; }
 
-void Player::getPlayerIdentity() {return playerIdentity; }
+bool Player::getPlayerIdentity() {return playerIdentity; }
 
 void Player::make_choice(const std::string &c) { this->choice = c; }
 
