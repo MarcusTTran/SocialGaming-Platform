@@ -27,6 +27,8 @@ public:
   void addMessage(const networking::Message &message);
   LobbyState getState();
 
+  vector<Player> getPlayers() const;
+
   // This method is called from main loop to update the game state with incoming messages
   // Calls game.update() and processes the messages
   void update();

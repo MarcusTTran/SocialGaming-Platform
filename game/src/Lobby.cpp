@@ -96,4 +96,4 @@ void Lobby::processIncomingMessage(const networking::Connection &connection, con
   }
 }
 
-std::vector<Player> Lobby::getPlayers() const { return players; }
+vector<Player> Lobby::getPlayers() const { return players; }
