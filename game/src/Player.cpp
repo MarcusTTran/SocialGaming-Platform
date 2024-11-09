@@ -21,6 +21,8 @@ int Player::getId() const { return id; }
 
 std::string Player::getDisplayName() const { return displayName; }
 
+bool Player::operator==(const Player &other) const { return connection.id == other.connection.id; }
+
 void Player::addPerVariableMap(DataValue::OrderedMapType perVariableMap, bool identity)
 {
     identity ? playerObjects = perVariableMap : audienceObjects = perVariableMap;

@@ -20,6 +20,7 @@ public:
   std::string getChoice() const;
   int getId() const;
   std::string getDisplayName() const;
+  bool operator==(const Player &other) const;
   void addPerVariableMap(DataValue::OrderedMapType perVariableMap, bool identity);
   DataValue::OrderedMapType getMap(bool identity);
   void valueSetter(const std::string& key, DataValue newValue, bool identity);
