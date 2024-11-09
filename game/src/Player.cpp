@@ -16,3 +16,5 @@ std::string Player::getChoice() const { return choice; }
 variantType Player::getId() const { return id; }
 
 std::string Player::getDisplayName() const { return displayName; }
+
+bool Player::operator==(const Player &other) const { return connection.id == other.connection.id; }

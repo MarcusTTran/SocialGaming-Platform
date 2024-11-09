@@ -21,6 +21,7 @@ public:
   std::string getChoice() const;
   variantType getId() const;
   std::string getDisplayName() const;
+  bool operator==(const Player &other) const;
 
 private:
   std::string displayName;

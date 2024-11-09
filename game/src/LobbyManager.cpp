@@ -54,6 +54,10 @@ void LobbyManager::addPlayerToLobby(const std::string &lobbyCode, const networki
   auto lobby = findLobbyByCode(lobbyCode);
   if (lobby) {
 
+    if (lobby->getState() != Lobby::LobbyState::Waiting) {
+      server.send({{connection, "The game has already started. Please try again later."}});
+      return;
+    }
     // Track that this connection is awaiting a display name
     pendingDisplayNames[connection.id] = lobbyCode;
 
