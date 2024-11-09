@@ -11,7 +11,6 @@
 #include <variant>
 #include <vector>
 
-using variantType = std::variant<int, std::string, std::string_view>;
 
 class Player {
 public:
@@ -19,95 +18,23 @@ public:
   void make_choice(const std::string &);
   networking::Connection getConnection() const;
   std::string getChoice() const;
-  variantType getId() const;
+  int getId() const;
   std::string getDisplayName() const;
   bool operator==(const Player &other) const;
+  void addPerVariableMap(DataValue::OrderedMapType perVariableMap, bool identity);
+  DataValue::OrderedMapType getMap(bool identity);
+  void valueSetter(const std::string& key, DataValue newValue, bool identity);
+  void addPlayerVariable(std::string key, DataValue value, bool identity);
+  void setPlayerIdentity(bool identity);
+  bool getPlayerIdentity();
 
 private:
   std::string displayName;
   networking::Connection connection;
   std::string choice;
-  variantType id;
+  int id;
+  DataValue::OrderedMapType playerObjects;
+  DataValue::OrderedMapType audienceObjects;
+  // Determines if a player is an audience member or an actual player
+  bool playerIdentity;
 };
-
-// template <typename T, typename M> // M is for player, T is for audience
-// class Player {
-// public:
-//   Player();
-//   Player(networking::Connection con, variant<int, string, string_view> ID);
-//   Player(networking::Connection con, variant<int, string, string_view> ID, T
-//   audienceVar, M playerVar); ~Player(); void make_choice(const string &);
-//   networking::Connection getConnection();
-//   string getChoice() const;
-//   int getId() const;
-//   bool getAudience();
-//   GamePerPlayer<M> &getPerPlayer();
-//   GamePerAudience<T> &getPerAudience();
-
-// private:
-//   networking::Connection connection;
-//   string choice;
-//   int id;
-//   bool inAudience;
-//   GamePerAudience<T> audience;
-//   GamePerPlayer<M> players;
-// };
-
-// // Template definitions moved to the header file
-
-// template <typename T, typename M>
-// Player<T, M>::Player() : connection(), choice(""), id(0) {
-//     audience = GamePerAudience<T>();
-//     players = GamePerPlayer<M>();
-// }
-
-// template <typename T, typename M>
-// Player<T, M>::Player(networking::Connection conn, variant<int, string,
-// string_view> ID)
-//     : connection(conn), id(ID), inAudience(false) {}
-
-// template <typename T, typename M>
-// Player<T, M>::Player(networking::Connection conn, variant<int, string,
-// string_view> ID, T audienceVar, M playerVar)
-//     : connection(conn), id(ID), inAudience(false) {
-//     this->audience = audienceVar;
-//     this->players = playerVar;
-// }
-
-// template <typename T, typename M>
-// Player<T, M>::~Player() {}
-
-// template <typename T, typename M>
-// bool Player<T, M>::getAudience() {
-//     return inAudience;
-// }
-
-// template <typename T, typename M>
-// void Player<T, M>::make_choice(const string &c) {
-//     this->choice = c;
-// }
-
-// template <typename T, typename M>
-// networking::Connection Player<T, M>::getConnection() {
-//     return connection;
-// }
-
-// template <typename T, typename M>
-// string Player<T, M>::getChoice() const {
-//     return choice;
-// }
-
-// template <typename T, typename M>
-// int Player<T, M>::getId() const {
-//     return id;
-// }
-
-// template <typename T, typename M>
-// GamePerPlayer<M> &Player<T, M>::getPerPlayer() {
-//     return players;
-// }
-
-// template <typename T, typename M>
-// GamePerAudience<T> &Player<T, M>::getPerAudience() {
-//     return audience;
-// }
