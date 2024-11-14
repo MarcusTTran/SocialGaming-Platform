@@ -1,11 +1,9 @@
 #include "Lobby.h"
 
-using networking::Message;
-
 Lobby::Lobby(const Game &game, networking::Server &server, std::shared_ptr<networking::Connection> lobbyCreator,
              std::string lobbyCode)
-    : game(std::make_unique<Game>(game.getGameName())), server(server), lobbyCreator(lobbyCreator),
-      lobbyCode(lobbyCode), state(LobbyState::Waiting) {
+    : game(std::make_unique<Game>(std::move(game))), server(server), lobbyCreator(lobbyCreator), lobbyCode(lobbyCode),
+      state(LobbyState::Waiting) {
   server.send({{*lobbyCreator, "Lobby created with code: " + lobbyCode}});
 }
 
@@ -83,17 +81,32 @@ void Lobby::processIncomingMessage(const networking::Connection &connection, con
   // messages back to the players. For now, we will just echo the message back to the player.
   // Untill we have a more concrete implementation of the game logic.
   if (player != players.end()) {
+    std::cout << "Player " << player->getDisplayName() << " said: " << message << std::endl;
     if (state == LobbyState::InProgress) {
+      std::cout << "Game is in progress" << std::endl;
       // Add the incoming message to the queue of messages to be processed
       // Mesages will be processed on the next call to update()
-      networking::Message incomingMessage = {connection, message};
+      Message incomingMessage = {*player, message};
       addMessage(incomingMessage);
+
+      if (message == "dump") {
+        std::cout << "Dumping messages:" << std::endl;
+        sendToPlayer(*player, "Dumping messages:");
+        for (const auto &msg : incomingMessages) {
+          std::string msgString = msg.player.getDisplayName() + ": " + msg.message;
+          sendToPlayer(*player, msgString);
+        }
+      }
     } else if (message == "leave") {
       removePlayer(*player);
-    } else {
+    }
+
+    else {
       sendToPlayer(*player, "You said: " + message);
     }
   }
 }
 
 vector<Player> Lobby::getPlayers() const { return players; }
+
+void Lobby::update() {}

@@ -20,6 +20,7 @@ public:
   bool isInLobby(const networking::Connection &connection) const;
   bool isLobbyCreator(const networking::Connection &connection) const;
   bool isDisplayNameUnique(const std::string &lobbyCode, const std::string &displayName) const;
+  std::map<std::string, std::unique_ptr<Lobby>> &getLobbies() { return lobbies; }
 
 private:
   Lobby *findLobbyByCode(const std::string &lobbyCode) const;

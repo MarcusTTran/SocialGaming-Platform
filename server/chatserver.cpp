@@ -8,6 +8,7 @@
 #include "Server.h"
 
 #include "LobbyManager.h"
+#include "NameResolver.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -66,6 +67,7 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
 
       // TODO: This is a temporary solution to create a game. This will be replaced with a user
       // selected game with a game configuration file.
+
       std::string gameName = "Rock Paper Scissors";
       Game game(gameName);
       lobbyManager->createLobby(game, connection);
@@ -138,6 +140,10 @@ int main(int argc, char *argv[]) {
     }
 
     // TODO: need to loop through each lobby and update the game state
+
+    for (const auto &[lobbyCode, lobby] : lobbyManager->getLobbies()) {
+      lobby->update();
+    }
 
     sleep(1);
   }

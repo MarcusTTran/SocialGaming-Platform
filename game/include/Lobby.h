@@ -1,3 +1,4 @@
+#pragma once
 #include "Player.h"
 #include "Server.h"
 #include "game.h"
@@ -12,6 +13,11 @@
 class Lobby {
 
 public:
+  struct Message {
+    Player player;
+    std::string message;
+  };
+
   // State of the lobby (e.g. waiting for players, in progress, finished)
   enum class LobbyState { Waiting, InProgress, Finished };
 
@@ -24,7 +30,7 @@ public:
   void sendToPlayer(const Player &player, const std::string &message);
   void sendWelcomeMessage(const Player &player);
   void processIncomingMessage(const networking::Connection &connection, const std::string &message);
-  void addMessage(const networking::Message &message);
+  void addMessage(const Message &message);
   LobbyState getState();
 
   vector<Player> getPlayers() const;
@@ -39,7 +45,7 @@ private:
   std::vector<Player> players;
   networking::Server &server;
   // A queue for messages to be processed on game.update()
-  std::deque<networking::Message> incomingMessages;
+  std::deque<Message> incomingMessages;
 
   // The state of the lobby
   LobbyState state;

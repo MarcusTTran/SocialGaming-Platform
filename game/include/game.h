@@ -8,6 +8,8 @@
 #include "GamePerPlayer.h"
 #include "GameRules.h"
 #include "GameVariables.h"
+#include "NameResolver.h"
+#include "Player.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -18,8 +20,13 @@
 
 class Game {
 public:
+  struct Message {
+    Player player;
+    std::string message;
+  };
   // Game(const ParsedGameData& parserObject, const std::string& gameName);
   // Game(const Game& other);  // copy constructor
+  Game(const std::string &gameName, NameResolver &NameResolver);
   Game(const std::string &gameName);
   ~Game() = default;
 
@@ -27,8 +34,9 @@ public:
   std::string getGameCode() const;
 
   // TODO: Implement these methods
-  void startGame();
+  void startGame(const std::vector<Player> &players);
   void updateGame();
+  void insertIncomingMessages(const std::deque<Message> &incomingMessages);
   // void setGameCode(const std::string &gameCode);
   // GameConfiguration getConfiguration();
   // GameConstants getConstants();
@@ -43,4 +51,6 @@ private:
   // GamePerAudience perAudience;
   std::string gameName;
   std::string gameCode;
+
+  // std::vector<Rule> rules;
 };

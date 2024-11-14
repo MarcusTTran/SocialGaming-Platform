@@ -24,8 +24,8 @@ std::string LobbyManager ::generateLobbyCode() {
   static constexpr std::string_view digits = "0123456789";
   static const int codeLength = 6;
 
-  thread_local std::random_device rd;
-  thread_local std::mt19937 gen(rd());
+  std::random_device rd;
+  std::mt19937 gen(rd());
 
   std::string newCode;
   newCode.reserve(codeLength);
