@@ -31,6 +31,7 @@ variables {
 // initializing `wins` below to 0 creates a counter for each player and
 // initializes it to 0.
 per-player {
+  weapon: "Rock"
   wins: 0
 }
 
@@ -52,7 +53,7 @@ rules {
       input choice to player {
         prompt: "{player.name}, choose your weapon!"
         choices: weapons.name
-        target: player.name
+        target: player.weapon
         timeout: 10
       }
     }
@@ -60,7 +61,7 @@ rules {
     for weapon in weapons {
       match !players.elements.weapon.contains(weapon.name) {
         true => {
-          extend winners with players.elements.collect(player, player.weapon = weapon.beats);
+          extend winners with players.collect(player, player.weapon = weapon.beats);
         }
       }
     }

@@ -21,6 +21,6 @@ class ParserRulesAPI{
         void runRules();
         void printToConsole();
     private:
-        std::unique_ptr<GameConfig> parser;
+        std::unique_ptr<ParsedGameData> parser;
         std::unique_ptr<RulesRunner> rulesRunner;
 };

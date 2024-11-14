@@ -32,7 +32,7 @@ endif()
 set_target_properties(networking
                       PROPERTIES
                       LINKER_LANGUAGE CXX
-                      CXX_STANDARD 17
+                      CXX_STANDARD 23
 )
 
 install(TARGETS networking
