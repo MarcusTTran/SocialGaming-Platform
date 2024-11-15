@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "NameResolver.h"
+#include "CommonVariantTypes.h"
 
 // TODO: use Nicholas's implementation
 struct IO
@@ -23,7 +24,6 @@ struct IO
 // ])
 
 using Scope = Map;
-using Variables = std::vector<Scope>;
 
 class Rule
 {
@@ -33,21 +33,21 @@ public:
     /*
      * Attempt to execute as much of the rule as possible.
      */
-    GameVariant runBurst(NameResolver &name_resolver)
+    DataValue runBurst(NameResolver &name_resolver)
     {
         if (first_time)
         {
             _handle_dependencies(name_resolver);
         }
         first_time = false;
-        name_resolver.add_inner_scope();
-        GameVariant return_value = _runBurst(name_resolver);
-        name_resolver.remove_inner_scope();
-        if (return_value.completed)
+        name_resolver.addInnerScope();
+        DataValue returnValue = _runBurst(name_resolver);
+        name_resolver.removeInnerScope();
+        if (returnValue.asRuleStatus() == DataValue::RuleStatus::DONE)
         {
             first_time = true;
         }
-        return return_value;
+        return returnValue;
     }
 
 private:
@@ -57,7 +57,7 @@ private:
     virtual void _handle_dependencies(NameResolver &name_resolver) = 0;
     bool first_time = true;
 
-    virtual GameVariant _runBurst(NameResolver &name_resolver) = 0;
+    virtual DataValue _runBurst(NameResolver &name_resolver) = 0;
 };
 
 class StringRule : public Rule
@@ -71,10 +71,9 @@ private:
         // TODO: handle strings with {} braces
     }
 
-    GameVariant _runBurst(NameResolver &name_resolver) override
+    DataValue _runBurst(NameResolver &name_resolver) override
     {
-        GameVariant string_val;
-        string_val.s_value = string;
+        DataValue string_val{string};
         return string_val;
     }
 
@@ -87,9 +86,10 @@ class AllPlayersRule : public Rule
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {}
 
-    GameVariant _runBurst(NameResolver &name_resolver) override
+    DataValue _runBurst(NameResolver &name_resolver) override
     {
-        return name_resolver.get_value("players");
+        // TODO: handle error value returning
+        return name_resolver.getValue("players");
     }
 };
 
@@ -102,25 +102,25 @@ private:
     void _handle_dependencies(NameResolver &name_resolver) override
     {
         auto recipients_generic = recipient_list_maker.runBurst(name_resolver);
-        recipients = recipients_generic.values;
+        recipients = recipients_generic.asList(); //TODO: figure out this error
 
         auto message_generic = string_maker.runBurst(name_resolver);
-        message = message_generic.s_value;
+        message = message_generic.asString();
     }
 
-    GameVariant _runBurst(NameResolver &name_resolver) override
+    DataValue _runBurst(NameResolver &name_resolver) override
     {
         for (auto person : recipients)
         {
-            messager.send_message(person.m_value, message);
+            messager.send_message(person.getValue(), message);
         }
-        return {}; // void
+        return {}; // void TODO: change to error return type
     }
 
     IO messager;
     Rule &recipient_list_maker;
     Rule &string_maker;
-    std::vector<GameVariant> recipients;
+    std::vector<DataValue> recipients;
     std::string message;
 };
 
@@ -133,22 +133,22 @@ public:
     void _handle_dependencies(NameResolver &name_resolver) override
     {
         auto list_of_values_generic = list_maker.runBurst(name_resolver);
-        list_of_values = list_of_values_generic.values;
+        list_of_values = list_of_values_generic.asList(); //TODO: figure out this error
         value_for_this_loop = list_of_values.begin();
         if (list_of_values.size() > 0)
         {
-            name_resolver.add_new_value(iterator_name, (*value_for_this_loop));
+            name_resolver.addNewValue(iterator_name, (*value_for_this_loop));
         }
 
         current_statement = statement_list.begin();
     }
 
-    GameVariant _runBurst(NameResolver &name_resolver) override
+    DataValue _runBurst(NameResolver &name_resolver) override
     {
-        GameVariant return_value;
+        DataValue return_value;
         if (list_of_values.size() < 1 || statement_list.size() < 1)
         {
-            return_value.completed = true;
+            return_value = DataValue::RuleStatus::DONE;
             return return_value; // complete
         }
         while (true)
@@ -157,7 +157,7 @@ public:
             assert(current_statement != statement_list.end() && "The next statement to run should always be valid");
             // run the current sub-rule, and check whether it finished
             auto rule_state = (*current_statement).runBurst(name_resolver);
-            if (!rule_state.completed)
+            if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE)
             {
                 return return_value; // incomplete
             }
@@ -175,18 +175,18 @@ public:
                 continue;
             }
             // every iteration complete
-            return_value.completed = true;
+            return_value = DataValue::RuleStatus::DONE;
             return return_value; // complete
         }
     }
 
 private:
     std::string iterator_name;
-    GameVariant iterator;
+    DataValue iterator;
 
     Rule &list_maker;
-    std::vector<GameVariant> list_of_values;
-    std::vector<GameVariant>::iterator value_for_this_loop;
+    std::vector<DataValue> list_of_values;
+    std::vector<DataValue>::iterator value_for_this_loop;
 
     std::vector<Rule> statement_list;
     std::vector<Rule>::iterator current_statement;
