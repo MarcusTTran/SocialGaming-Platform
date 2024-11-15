@@ -11,7 +11,6 @@
 #include <variant>
 #include <vector>
 
-
 class Player {
 public:
   Player(const networking::Connection &con, std::string displayName);
@@ -23,7 +22,7 @@ public:
   bool operator==(const Player &other) const;
   void addPerVariableMap(DataValue::OrderedMapType perVariableMap, bool identity);
   DataValue::OrderedMapType getMap(bool identity);
-  void valueSetter(const std::string& key, DataValue newValue, bool identity);
+  void valueSetter(const std::string &key, DataValue newValue, bool identity);
   void addPlayerVariable(std::string key, DataValue value, bool identity);
   void setPlayerIdentity(bool identity);
   bool getPlayerIdentity();

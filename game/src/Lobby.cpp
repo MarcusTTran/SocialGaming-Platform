@@ -90,19 +90,18 @@ void Lobby::processIncomingMessage(const networking::Connection &connection, con
       addMessage(incomingMessage);
 
       if (message == "dump") {
-        std::cout << "Dumping messages:" << std::endl;
-        sendToPlayer(*player, "Dumping messages:");
-        for (const auto &msg : incomingMessages) {
-          std::string msgString = msg.player.getDisplayName() + ": " + msg.message;
-          sendToPlayer(*player, msgString);
+        auto playersMap = getPlayersMap().asList();
+        std::cout << "Dumping players map" << std::endl;
+        for (auto &player : playersMap) {
+          server->sendMessageToPlayerMap("You said: " + message, player.asOrderedMap());
         }
+      } else if (message == "leave") {
+        removePlayer(*player);
       }
-    } else if (message == "leave") {
-      removePlayer(*player);
-    }
 
-    else {
-      sendToPlayer(*player, "You said: " + message);
+      else {
+        sendToPlayer(*player, "You said: " + message);
+      }
     }
   }
 }
@@ -110,3 +109,11 @@ void Lobby::processIncomingMessage(const networking::Connection &connection, con
 vector<Player> Lobby::getPlayers() const { return players; }
 
 void Lobby::update() {}
+
+DataValue Lobby::getPlayersMap() {
+  std::vector<DataValue> playersMap;
+  for (auto &player : players) {
+    playersMap.push_back(DataValue(player.getMap(true)));
+  }
+  return DataValue(playersMap);
+}

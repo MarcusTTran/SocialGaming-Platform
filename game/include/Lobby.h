@@ -1,4 +1,5 @@
 #pragma once
+#include "CommonVariantTypes.h"
 #include "Messenger.h"
 #include "Player.h"
 #include "game.h"
@@ -41,6 +42,9 @@ public:
 
 private:
   void sendCurrentListOfPlayers();
+
+  DataValue getPlayersMap();
+
   std::unique_ptr<Game> game;
   std::vector<Player> players;
   std::shared_ptr<IServer> server;
