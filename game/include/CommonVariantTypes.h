@@ -10,14 +10,16 @@
 /*
     This is the general variant type class
 */
-
+// TODO: Add error Value
 class DataValue {
+    
+
+public:
     enum RuleStatus{
         DONE,
         NOTDONE
     }
 
-public:
     using OrderedMapType = std::vector<std::pair<std::string, DataValue>>;
     using EnumDescriptionType = std::map<std::string, DataValue>; 
     using ValueType = std::variant<
@@ -29,7 +31,6 @@ public:
         EnumDescriptionType,  // For example, look at project description.
         std::pair<int, int>,
         RuleStatus,
-        void*
     >;
 
     DataValue() : value("") {}
@@ -54,7 +55,7 @@ public:
     const std::string& asString() const { return std::get<std::string>(value); }
     int asNumber() const { return std::get<int>(value); }
     bool asBoolean() const { return std::get<bool>(value); }
-    const std::vector<DataValue>& asList() const { return std::get<std::vector<DataValue>>(value); }
+    std::vector<DataValue>& asList() const { return std::get<std::vector<DataValue>>(value); }
     const OrderedMapType& asOrderedMap() const { return std::get<OrderedMapType>(value); }
     const EnumDescriptionType& asEnumDescription() const { return std::get<EnumDescriptionType>(value); }
     const std::pair<int, int>& asRange() const { return std::get<std::pair<int, int>>(value); }

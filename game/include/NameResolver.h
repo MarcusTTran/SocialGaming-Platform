@@ -3,26 +3,29 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include "CommonVariantTypes.h"
 
-// TODO: use Ian's implementation
-struct GameVariant
-{
-    std::string s_value;
-    int i_value;
-    void *v_value;
-    Map m_value;
-    std::vector<GameVariant> values;
-    bool completed;
-};
-
-using Map = std::unordered_map<std::string, GameVariant>;
+using Map = std::unordered_map<std::string, DataValue>;
 
 class NameResolver
 {
 public:
-    void add_inner_scope() { full_scope.push_back({}); }
-    void remove_inner_scope() { full_scope.pop_back(); }
-    bool set_value(const std::string &key, const GameVariant &value)
+    void addInnerScope() { full_scope.push_back({}); }
+    void removeInnerScope() { full_scope.pop_back(); }
+    
+    bool addNewValue(const std::string &key, const DataValue &value)
+    {
+        // return false if the key already exists in the inner-most scope
+        if (full_scope.back().find(key) != full_scope.back().end())
+        {
+            return false;
+        }
+        // add new key/value pair to inner-most scope
+        full_scope.back()[key] = value;
+        return true;
+    }
+    
+    bool setValue(const std::string &key, const DataValue &value)
     {
         for (auto it = full_scope.rbegin(); it != full_scope.rend(); ++it)
         {
@@ -37,7 +40,7 @@ public:
         }
         return false;
     }
-    GameVariant get_value(const std::string &key)
+    DataValue getValue(const std::string &key)
     {
         for (auto it : full_scope)
         {
@@ -49,19 +52,9 @@ public:
                 return mapIt->second;
             }
         }
-        return {}; // null
+        return {}; // null TODO: change to error value
     }
-    bool add_new_value(const std::string &key, const GameVariant &value)
-    {
-        // return false if the key already exists in the inner-most scope
-        if (full_scope.back().find(key) != full_scope.back().end())
-        {
-            return false;
-        }
-        // add new key/value pair to inner-most scope
-        full_scope.back()[key] = value;
-        return true;
-    }
+    
 
 private:
     std::vector<Map> full_scope;
