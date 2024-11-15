@@ -1,10 +1,10 @@
 #include "Lobby.h"
 
-Lobby::Lobby(const Game &game, networking::Server &server, std::shared_ptr<networking::Connection> lobbyCreator,
+Lobby::Lobby(const Game &game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
              std::string lobbyCode)
     : game(std::make_unique<Game>(std::move(game))), server(server), lobbyCreator(lobbyCreator), lobbyCode(lobbyCode),
       state(LobbyState::Waiting) {
-  server.send({{*lobbyCreator, "Lobby created with code: " + lobbyCode}});
+  server->sendToConnection("Lobby created with code: " + lobbyCode, *lobbyCreator);
 }
 
 Lobby::LobbyState Lobby::getState() { return state; }
@@ -30,18 +30,18 @@ void Lobby::sendToAll(const std::string &message) {
     outgoing.push_back({player.getConnection(), message});
   }
 
-  server.send(outgoing);
+  server->sendMessages(outgoing);
 }
 
 void Lobby::sendToPlayer(const Player &player, const std::string &message) {
-  server.send({{player.getConnection(), message}});
+  server->sendToConnection(message, player.getConnection());
 }
 
 void Lobby::sendWelcomeMessage(const Player &player) {
   std::string welcomeMessage = "Welcome to the lobby, " + player.getDisplayName() + "!";
   welcomeMessage += " The game is " + game->getGameName();
 
-  sendToPlayer(player, welcomeMessage);
+  server->sendToConnection(welcomeMessage, player.getConnection());
 }
 
 void Lobby::sendCurrentListOfPlayers() {
@@ -49,7 +49,7 @@ void Lobby::sendCurrentListOfPlayers() {
   for (const auto &player : players) {
     message += player.getDisplayName() + ", ";
   }
-  server.send({{*lobbyCreator, message}});
+  server->sendToConnection(message, *lobbyCreator);
 }
 
 void Lobby::addMessage(const Message &message) { incomingMessages.push_back(message); }
@@ -68,7 +68,7 @@ void Lobby::processIncomingMessage(const networking::Connection &connection, con
       // This is where the game would start
     } else {
       std::string errorMessage = "Invalid command. Please type 'start' to start the game.";
-      server.send({{connection, errorMessage}});
+      server->sendToConnection(errorMessage, connection);
       return;
     }
   }

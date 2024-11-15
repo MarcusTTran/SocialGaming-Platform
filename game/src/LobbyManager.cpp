@@ -55,16 +55,15 @@ void LobbyManager::addPlayerToLobby(const std::string &lobbyCode, const networki
   if (lobby) {
 
     if (lobby->getState() != Lobby::LobbyState::Waiting) {
-      server.send({{connection, "The game has already started. Please try again later."}});
+      server->sendToConnection("The game has already started. Please try again later.", connection);
       return;
     }
     // Track that this connection is awaiting a display name
     pendingDisplayNames[connection.id] = lobbyCode;
-
-    server.send({{connection, "Please enter a display name:"}});
+    server->sendToConnection("Lobby found. Please enter a display name:", connection);
 
   } else {
-    server.send({{connection, "Lobby not found. Please check the code and try again."}});
+    server->sendToConnection("Lobby not found. Please check the code and try again.", connection);
   }
 }
 
@@ -79,7 +78,7 @@ void LobbyManager::addPlayerToLobbyWithDisplayName(const networking::Connection 
     playersInLobbies[connection.id] = lobbyCode;
     removeFromPendingDisplayNames(connection);
   } else {
-    server.send({{connection, "Display name is already taken. Please enter a different display name:"}});
+    server->sendToConnection("Display name is already taken. Please enter a different display name:", connection);
   }
 }
 

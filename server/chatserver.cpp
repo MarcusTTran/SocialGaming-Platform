@@ -8,6 +8,7 @@
 #include "Server.h"
 
 #include "LobbyManager.h"
+#include "Messenger.h"
 #include "NameResolver.h"
 #include <algorithm>
 #include <fstream>
@@ -118,7 +119,8 @@ int main(int argc, char *argv[]) {
   const unsigned short port = std::stoi(argv[1]);
   Server server = {port, getHTTPMessage(argv[2]), onConnect, onDisconnect};
   server_ptr = &server;
-  lobbyManager = std::make_unique<LobbyManager>(server);
+  auto messenger = std::make_shared<Messenger>(server);
+  lobbyManager = std::make_unique<LobbyManager>(messenger);
 
   while (true) {
     bool errorWhileUpdating = false;

@@ -1,6 +1,6 @@
 #pragma once
+#include "Messenger.h"
 #include "Player.h"
-#include "Server.h"
 #include "game.h"
 #include <deque>
 #include <memory>
@@ -21,7 +21,7 @@ public:
   // State of the lobby (e.g. waiting for players, in progress, finished)
   enum class LobbyState { Waiting, InProgress, Finished };
 
-  Lobby(const Game &game, networking::Server &server, std::shared_ptr<networking::Connection> lobbyCreator,
+  Lobby(const Game &game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
         std::string lobbyCode);
   ~Lobby() = default;
   void addPlayer(const Player &player);
@@ -43,7 +43,7 @@ private:
   void sendCurrentListOfPlayers();
   std::unique_ptr<Game> game;
   std::vector<Player> players;
-  networking::Server &server;
+  std::shared_ptr<IServer> server;
   // A queue for messages to be processed on game.update()
   std::deque<Message> incomingMessages;
 

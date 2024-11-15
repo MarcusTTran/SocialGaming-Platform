@@ -1,4 +1,5 @@
 #include "Lobby.h"
+#include "Messenger.h"
 
 /*
  *  The LobbyManager is responsible for managing the creation and deletion of
@@ -7,7 +8,7 @@
 class LobbyManager {
 
 public:
-  LobbyManager(networking::Server &server) : server(server) {}
+  LobbyManager(std::shared_ptr<IServer> server) : server(server) {}
   ~LobbyManager() = default;
   void createLobby(Game &game, const networking::Connection &lobbyCreator);
   void addPlayerToLobby(const std::string &lobbyCode, const networking::Connection &connection);
@@ -27,13 +28,13 @@ private:
   void removeFromPendingDisplayNames(const networking::Connection &connection);
   std::string generateLobbyCode();
 
-  networking::Server &server;
-
   // Maps for tracking pending display names
   std::unordered_map<uintptr_t, std::string> pendingDisplayNames;
 
   // Map for tracking all created lobbies currently active
   std::map<std::string, std::unique_ptr<Lobby>> lobbies;
+
+  std::shared_ptr<IServer> server;
 
   // Maps for tracking players in lobbies and lobby creators
   // Key is the player's connection id and value is the lobby code
