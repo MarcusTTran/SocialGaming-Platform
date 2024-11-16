@@ -1,0 +1,34 @@
+// Minimal game that immediately returns success, Testing with configurfation in different order.
+
+constants {
+  weapons: [
+    { name: "Rock",     beats: "Scissors" },
+    { name: "Paper",    beats: "Rock"     },
+    { name: "Scissors", beats: "Paper"    },
+  ]
+}
+
+variables {
+  winners: []
+}
+
+per-player {
+  wins: 0
+}
+
+per-audience {}
+
+rules {
+  for round in configuration.rounds.upfrom(1) {
+    message all "Round {round}. Choose your weapon!";
+  }
+}
+rules {
+    message all "You Lost the Game ::trollface::\n";
+}
+configuration {
+  name: "config in different order game"
+  player range: (1, 1)
+  audience: false
+  setup: {}
+}
