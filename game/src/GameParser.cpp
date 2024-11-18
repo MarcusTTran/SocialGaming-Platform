@@ -339,31 +339,28 @@ string ParsedGameData::ruleTypeToString(Rule::Type type){
     }
 }
 
-void ParsedGameData::DFS(const ts::Node& node, const string& source, Rule& rule){
+void ParsedGameData::DFS(const ts::Node& node, const std::string& source, Rule& rule){
     // Check if node is a leaf or an identifier
     if (!node.getNumNamedChildren() || node.getType() == "identifier") {
-        auto content = string(node.getSourceRange(source));
+        auto content = std::string(node.getSourceRange(source));
+        // Only proceed if `content` is not in the `toSkip` list
         if (find(begin(GameConstantsType::toSkip), end(GameConstantsType::toSkip), content) == end(GameConstantsType::toSkip)) {
-            auto identifier = node.getSourceRange(source);
+            DataValue identifier(content);
             
-            auto exists = std::find_if(rule.parameters.begin(), rule.parameters.end(), [&](const auto& param) {
-                return std::holds_alternative<string>(param) && std::get<string>(param) == identifier;
+            // Check if `identifier` already exists in `parameters`
+            auto exists = std::find_if(rule.parameters.begin(), rule.parameters.end(), [&](const DataValue& param) {
+                return param.getType() == "STRING" && param.asString() == content;
             }) != rule.parameters.end();
             
-            if (exists) {
-                return;
-            }
-            // type is either certain rule type or body
-            if(rule.type == Rule::Type::Default){
-                rule.type = Rule::Type::Body;
-            }
-            if (std::all_of(identifier.begin(), identifier.end(), ::isdigit)) {
-                rule.parameters.emplace_back(std::stoi(string(identifier)));
-            } else {
-                rule.parameters.emplace_back(string(identifier));
+            if (!exists) {
+                if (rule.type == Rule::Type::Default) {
+                    rule.type = Rule::Type::Body;
+                }
+                rule.parameters.emplace_back(std::move(identifier));
             }
         }
     }
+    // Skip "builtin" nodes
     if (node.getType() == "builtin") {
         return;
     }
@@ -373,14 +370,13 @@ void ParsedGameData::DFS(const ts::Node& node, const string& source, Rule& rule)
     }    
 }
 
-void ParsedGameData::handleForRule(const ts::Node& node, const string& source, Rule& outerRule){
-
+void ParsedGameData::handleForRule(const ts::Node& node, const std::string& source, Rule& outerRule){
     ts::Node elementNode = node.getChildByFieldName("element"); // round or weapon
     ts::Node listNode = node.getChildByFieldName("list");       // configuration.rounds or weapons
     ts::Node bodyNode = node.getChildByFieldName("body");
 
     if (!elementNode.isNull()) {
-        outerRule.parameters.emplace_back(string(elementNode.getSourceRange(source)));
+        outerRule.parameters.emplace_back(std::string(elementNode.getSourceRange(source)));
     }
 
     if(!listNode.isNull()){
@@ -392,23 +388,17 @@ void ParsedGameData::handleForRule(const ts::Node& node, const string& source, R
             Rule subRule;
             parseRuleSection(child, source, subRule);
             if(!subRule.parameters.empty()){
-                outerRule.subRules.emplace_back(subRule);
+                outerRule.subRules.emplace_back(std::move(subRule));
             }
         }
-    } 
+    }  
 }
 
-void ParsedGameData::handleMessageSection(const ts::Node& node, const string& source, Rule& outerRule){
-    if(!node.getNumNamedChildren()){
-        auto currContent = string(node.getSourceRange(source));
-        if(currContent != "\"" && currContent != ";"){
-            outerRule.parameters.emplace_back(currContent);
-        }
-        return;
-    }
-    for(const auto& child : ts::Children{node}){
-        handleMessageSection(child, source, outerRule);
-    }    
+void ParsedGameData::handleMessageSection(const ts::Node& node, const std::string& source, Rule& outerRule){
+    // new way to interacte with rule interface
+    auto playersKeyword = node.getChildByFieldName("players").getSourceRange(source); // all key word
+    auto content = node.getChildByFieldName("content").getSourceRange(source);        // message content
+    // MessageRule(IO, AllRule(playersKeyword), StringRule(content));                 // TODO: need to figure out how to call this
 }
 
 void ParsedGameData::traverseHelper(const ts::Node& node, const string& source, Rule& rule){
@@ -433,13 +423,15 @@ void ParsedGameData::handleMatchRule(const ts::Node& node, const string& source,
     for(size_t i = 3; i < node.getNumChildren() - 1; ++i){
         auto curr = node.getChild(i);
         Rule subRule;
+        // TODO: need to figure out how to call it
+        // auto subRule = std::make_unique<MatchRule>();
         traverseHelper(curr, source, subRule);
-        outerRule.subRules.emplace_back(subRule);
-    }  
+        outerRule.subRules.emplace_back(std::move(subRule));
+    }
 }
 
 // TODO: need to check node type or how to use in txt file.
-void ParsedGameData::handleWhileSection(const ts::Node& node, const string& source, Rule& outerRule){
+void ParsedGameData::handleWhileSection(const ts::Node& node, const std::string& source, Rule& outerRule){
     ts::Node condition = node.getChildByFieldName("condition");
     ts::Node loopBody = node.getChildByFieldName("body");
     if(!condition.isNull()){
@@ -450,36 +442,50 @@ void ParsedGameData::handleWhileSection(const ts::Node& node, const string& sour
             Rule subRule;
             DFS(loopBody, source, subRule);
             if(!subRule.parameters.empty()){
-                outerRule.subRules.emplace_back(subRule);
+                outerRule.subRules.emplace_back(std::move(subRule));
             }
         }
     }     
 }
 
-void ParsedGameData::parseRuleSection(const ts::Node& node, const string& source, Rule& outerRule){
+void ParsedGameData::parseRuleSection(const ts::Node& node, const std::string& source, Rule& outerRule){
     for (const auto& child : ts::Children{node}) {
         std::string_view ruleType = child.getType();
 
         if (ruleType == "for") {
-            outerRule.type = getRuleType(string(ruleType));
+            outerRule.type = getRuleType(std::string(ruleType));
+            // TODO: figure out how to call constructor correctly
+            // outerRule = std::make_unique<ForRule>();
             handleForRule(child, source, outerRule);
         } else if(ruleType == "parallel_for"){
-            outerRule.type = getRuleType(string(ruleType));
+            outerRule.type = getRuleType(std::string(ruleType));
+            // TODO: figure out how to call constructor correctly
+            // outerRule = std::make_unique<ForRule>();
             handleForRule(child, source, outerRule);
         }
         else if (ruleType == "match") {
-            outerRule.type = getRuleType(string(ruleType));
+            outerRule.type = getRuleType(std::string(ruleType));
+            // TODO: figure out how to call constructor correctly
+            // outerRule = std::make_unique<MatchRule>();
             handleMatchRule(child, source, outerRule);
         }
         else if (ruleType == "message") {
-            outerRule.type = getRuleType(string(ruleType));
+            outerRule.type = getRuleType(std::string(ruleType));
+            // TODO: need an IO messager passed over parser in order to call default
+            //       constructor.
+            // outerRule = std::make_unique<MessageRule>();
             handleMessageSection(child, source, outerRule);
+            // outerRule.subRules.emplace_back(messageRule);
         }
         else if(ruleType == "loop"){
-            outerRule.type = getRuleType(string(ruleType));
+            outerRule.type = getRuleType(std::string(ruleType));
+            // outerRule = std::make_unique<LoopRule>();
+            // TODO: figure out how to call constructor correctly
             handleWhileSection(child, source, outerRule);
+            // outerRule.subRules.emplace_back(whileRule);
         }
         else {
+            // Recursively handle other types of rules
             parseRuleSection(child, source, outerRule);
         }
     }    

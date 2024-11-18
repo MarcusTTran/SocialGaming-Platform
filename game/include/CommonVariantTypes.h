@@ -1,36 +1,30 @@
 #pragma once
 
-#include <unordered_map>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <map>
 #include <variant>
 
-/*
-    This is the general variant type class
-*/
-// TODO: Add error Value
 class DataValue {
-    
-
 public:
-    enum RuleStatus{
+    enum class RuleStatus {
         DONE,
         NOTDONE
-    }
+    };
 
+    using SimpleValueType = std::variant<std::string, int, bool>;
     using OrderedMapType = std::vector<std::pair<std::string, DataValue>>;
-    using EnumDescriptionType = std::map<std::string, DataValue>; 
+    using EnumDescriptionType = std::map<std::string, std::string>;
     using ValueType = std::variant<
         std::string,
         int,
         bool,
         std::vector<DataValue>,
         OrderedMapType,
-        EnumDescriptionType,  // For example, look at project description.
+        EnumDescriptionType,
         std::pair<int, int>,
-        RuleStatus,
+        RuleStatus
     >;
 
     DataValue() : value("") {}
@@ -49,13 +43,13 @@ public:
     DataValue& operator=(EnumDescriptionType&& v) { value = std::move(v); return *this; }
     DataValue& operator=(const std::pair<int, int>& v) { value = v; return *this; }
     DataValue& operator=(std::pair<int, int>&& v) { value = std::move(v); return *this; }
-    DataValue& operator=(const RuleStatus & v) { value = v; return *this; }
+    DataValue& operator=(const RuleStatus& v) { value = v; return *this; }
 
     // Accessors for each type
     const std::string& asString() const { return std::get<std::string>(value); }
     int asNumber() const { return std::get<int>(value); }
     bool asBoolean() const { return std::get<bool>(value); }
-    std::vector<DataValue>& asList() const { return std::get<std::vector<DataValue>>(value); }
+    const std::vector<DataValue>& asList() const { return std::get<std::vector<DataValue>>(value); }
     const OrderedMapType& asOrderedMap() const { return std::get<OrderedMapType>(value); }
     const EnumDescriptionType& asEnumDescription() const { return std::get<EnumDescriptionType>(value); }
     const std::pair<int, int>& asRange() const { return std::get<std::pair<int, int>>(value); }
@@ -75,25 +69,9 @@ public:
         return "UNKNOWN";
     }
 
-    // Might not need this, mainly for debugging
-    std::ostream& operator<<(std::ostream& os, const RUleStatus& ruleStatus) {
-        switch (status) {
-            case DONE:
-                os << "DONE";
-                break;
-            case NOTDONE:
-                os << "NOTDONE";
-                break;
-            default:
-                os << "UNKNOWN";
-                break;
-        }
-        return os;
-    }
-
-    // Note: this is for teammate testing, will be removed eventually
+    // Print function to display the content of the DataValue
     void print(int indentLevel = 0) const {
-        std::string indent(indentLevel, ' '); 
+        std::string indent(indentLevel, ' '); // Create an indentation string
         if (std::holds_alternative<std::string>(value)) {
             std::cout << indent << "\"" << asString() << "\"" << std::endl;
         } else if (std::holds_alternative<int>(value)) {
@@ -103,14 +81,14 @@ public:
         } else if (std::holds_alternative<std::vector<DataValue>>(value)) {
             std::cout << indent << "[\n";
             for (const auto& item : asList()) {
-                item.print(indentLevel + 2); 
+                item.print(indentLevel + 2); // Recursive call with increased indentation
             }
             std::cout << indent << "]" << std::endl;
         } else if (std::holds_alternative<OrderedMapType>(value)) {
             std::cout << indent << "{\n";
             for (const auto& [key, subValue] : asOrderedMap()) {
                 std::cout << indent << "  \"" << key << "\": ";
-                subValue.print(indentLevel + 2); 
+                subValue.print(indentLevel + 2); // Recursive call for nested values
             }
             std::cout << indent << "}" << std::endl;
         } else if (std::holds_alternative<EnumDescriptionType>(value)) {
@@ -122,11 +100,7 @@ public:
         } else if (std::holds_alternative<std::pair<int, int>>(value)) {
             auto range = asRange();
             std::cout << indent << "(" << range.first << ", " << range.second << ")" << std::endl;
-        } else if (std::holds_alternative<RuleStatus>(value)) {
-            std::cout << indent << "(" << asRuleStatus() << ")" << std::endl;
-        } 
-        
-        else {
+        } else {
             std::cout << indent << "UNKNOWN" << std::endl;
         }
     }
