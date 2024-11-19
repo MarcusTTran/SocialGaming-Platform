@@ -35,7 +35,7 @@ void ParserRulesAPI::printToConsole(){
         for (const auto& [key, value] : setupEntry) {
             std::cout << key << ":\n";
             // Print the DataValue, assuming we have a method in DataValue to handle printing
-            value.print(2); // Using the DataValue print method to display values with indentation
+            value.print(std::cout, 2); // Using the DataValue print method to display values with indentation
         }
     }
 

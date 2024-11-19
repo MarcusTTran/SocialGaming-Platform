@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
 #include <map>
@@ -13,9 +14,8 @@ public:
         NOTDONE
     };
 
-    using SimpleValueType = std::variant<std::string, int, bool>;
     using OrderedMapType = std::vector<std::pair<std::string, DataValue>>;
-    using EnumDescriptionType = std::map<std::string, std::string>;
+    using EnumDescriptionType = std::map<std::string, DataValue>;
     using ValueType = std::variant<
         std::string,
         int,
@@ -27,10 +27,13 @@ public:
         RuleStatus
     >;
 
+    // Default constructor
     DataValue() : value("") {}
+
+    // Constructor with a ValueType
     explicit DataValue(ValueType v) : value(std::move(v)) {}
 
-    // Overload assignment operators
+    // Assignment operators
     DataValue& operator=(bool v) { value = v; return *this; }
     DataValue& operator=(int v) { value = v; return *this; }
     DataValue& operator=(const std::string& v) { value = v; return *this; }
@@ -45,7 +48,7 @@ public:
     DataValue& operator=(std::pair<int, int>&& v) { value = std::move(v); return *this; }
     DataValue& operator=(const RuleStatus& v) { value = v; return *this; }
 
-    // Accessors for each type
+    // Accessor methods for each type
     const std::string& asString() const { return std::get<std::string>(value); }
     int asNumber() const { return std::get<int>(value); }
     bool asBoolean() const { return std::get<bool>(value); }
@@ -57,6 +60,7 @@ public:
 
     const ValueType& getValue() const { return value; }
 
+    // Get the type of value as a string
     std::string getType() const {
         if (std::holds_alternative<std::string>(value)) return "STRING";
         if (std::holds_alternative<int>(value)) return "NUMBER";
@@ -69,42 +73,54 @@ public:
         return "UNKNOWN";
     }
 
-    // Print function to display the content of the DataValue
-    void print(int indentLevel = 0) const {
-        std::string indent(indentLevel, ' '); // Create an indentation string
+    // Print function for debugging
+    void print(std::ostream& os, int indentLevel = 0) const {
+        std::string indent(indentLevel, ' ');
         if (std::holds_alternative<std::string>(value)) {
-            std::cout << indent << "\"" << asString() << "\"" << std::endl;
+            os << indent << "\"" << asString() << "\"";
         } else if (std::holds_alternative<int>(value)) {
-            std::cout << indent << asNumber() << std::endl;
+            os << indent << asNumber();
         } else if (std::holds_alternative<bool>(value)) {
-            std::cout << indent << (asBoolean() ? "true" : "false") << std::endl;
+            os << indent << (asBoolean() ? "true" : "false");
         } else if (std::holds_alternative<std::vector<DataValue>>(value)) {
-            std::cout << indent << "[\n";
+            os << indent << "[\n";
             for (const auto& item : asList()) {
-                item.print(indentLevel + 2); // Recursive call with increased indentation
+                item.print(os, indentLevel + 2);
+                os << ",\n";
             }
-            std::cout << indent << "]" << std::endl;
+            os << indent << "]";
         } else if (std::holds_alternative<OrderedMapType>(value)) {
-            std::cout << indent << "{\n";
+            os << indent << "{\n";
             for (const auto& [key, subValue] : asOrderedMap()) {
-                std::cout << indent << "  \"" << key << "\": ";
-                subValue.print(indentLevel + 2); // Recursive call for nested values
+                os << indent << "  \"" << key << "\": ";
+                subValue.print(os, indentLevel + 2);
+                os << "\n";
             }
-            std::cout << indent << "}" << std::endl;
+            os << indent << "}";
         } else if (std::holds_alternative<EnumDescriptionType>(value)) {
-            std::cout << indent << "{\n";
+            os << indent << "{\n";
             for (const auto& [key, val] : asEnumDescription()) {
-                std::cout << indent << "  \"" << key << "\": \"" << val << "\"" << std::endl;
+                os << indent << "  \"" << key << "\": ";
+                val.print(os, indentLevel + 2);
+                os << "\n";
             }
-            std::cout << indent << "}" << std::endl;
+            os << indent << "}";
         } else if (std::holds_alternative<std::pair<int, int>>(value)) {
             auto range = asRange();
-            std::cout << indent << "(" << range.first << ", " << range.second << ")" << std::endl;
+            os << indent << "(" << range.first << ", " << range.second << ")";
+        } else if (std::holds_alternative<RuleStatus>(value)) {
+            os << indent << (asRuleStatus() == RuleStatus::DONE ? "DONE" : "NOTDONE");
         } else {
-            std::cout << indent << "UNKNOWN" << std::endl;
+            os << indent << "UNKNOWN";
         }
     }
 
 private:
     ValueType value;
 };
+
+// for debugging, it will be removed eventually
+inline std::ostream& operator<<(std::ostream& os, const DataValue& data) {
+    data.print(os);
+    return os;
+}

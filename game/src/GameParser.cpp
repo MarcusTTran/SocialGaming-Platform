@@ -128,7 +128,7 @@ DataValue ParsedGameData::handleExpression(const ts::Node& node, const std::stri
         if (!value.empty() && value.front() == '"' && value.back() == '"') {
             value = value.substr(1, value.length() - 2);
         }
-            enumMap[key] = value; 
+            enumMap[key] = DataValue(value); 
         } 
         return DataValue(std::move(enumMap));
     }
