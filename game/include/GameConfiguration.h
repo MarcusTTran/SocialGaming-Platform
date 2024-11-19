@@ -35,6 +35,7 @@ public:
 
     // Constructor
     GameConfiguration(const ParsedGameData& parserObject);
+    GameConfiguration(); // Delete later (for mocking purposes)
     ~GameConfiguration() = default;
 
     // Getter methods

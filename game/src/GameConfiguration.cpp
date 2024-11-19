@@ -18,12 +18,20 @@ std::optional<DataValue::OrderedMapType> GameConfiguration::Setup::getDefault() 
 GameConfiguration::GameConfiguration(const ParsedGameData& parserObject)
     : gameName(parserObject.getGameName()), 
       playerRange(parserObject.getPlayerRange()),
-      audience(parserObject.hasAudience()) {
+      audience(parserObject.hasAudience()) 
+{
 
     const auto& setupData = parserObject.getSetup();  
     for (const auto& orderedMap : setupData) {
         setup.push_back(extractSetupFromOrderedMap(orderedMap));
     }
+}
+
+
+GameConfiguration::GameConfiguration() 
+: gameName(""), playerRange(std::make_pair(0, 0)), audience(false) 
+{
+    setup = {};
 }
 
 GameConfiguration::Setup GameConfiguration::extractSetupFromOrderedMap(const DataValue::OrderedMapType& orderedMap) const {
