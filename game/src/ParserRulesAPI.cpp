@@ -1,9 +1,9 @@
 #include "ParserRulesAPI.h"
 
-ParserRulesAPI::ParserRulesAPI(const std::string& configFilePath) : parser(std::make_unique<ParsedGameData>(configFilePath)),
-rulesRunner(std::make_unique<RulesRunner>()){}
+ParserRulesAPI::ParserRulesAPI(const std::string &configFilePath)
+    : parser(std::make_unique<ParsedGameData>(configFilePath)), rulesRunner(std::make_unique<RulesRunner>()) {}
 
-void ParserRulesAPI::initialize(){
+void ParserRulesAPI::initialize() {
     // parser->parseConfig();
 
     rulesRunner->configurationSetter(parser->getConfiguration());
@@ -14,7 +14,7 @@ void ParserRulesAPI::initialize(){
     rulesRunner->rulesSetter(parser->getRules());
 }
 
-void ParserRulesAPI::printToConsole(){
+void ParserRulesAPI::printToConsole() {
 
     auto configuration = parser->getConfiguration();
     auto constants = parser->getConstants();
@@ -27,12 +27,13 @@ void ParserRulesAPI::printToConsole(){
     //     std::cout << key << " : " << value << std::endl;
     // }
     std::cout << "name: " << configuration.name << std::endl;
-    std::cout << "player range: (" << configuration.range.first << ", " << configuration.range.second << ")" << std::endl;
+    std::cout << "player range: (" << configuration.range.first << ", " << configuration.range.second << ")"
+              << std::endl;
     std::cout << "audience: " << (configuration.audience == true ? "true" : "false") << std::endl;
-    
+
     std::cout << "\nSetup Section:" << std::endl;
-    for (const auto& setupEntry : configuration.setup) {
-        for (const auto& [key, value] : setupEntry) {
+    for (const auto &setupEntry : configuration.setup) {
+        for (const auto &[key, value] : setupEntry) {
             std::cout << key << ":\n";
             // Print the DataValue, assuming we have a method in DataValue to handle printing
             value.print(2); // Using the DataValue print method to display values with indentation
@@ -52,6 +53,4 @@ void ParserRulesAPI::printToConsole(){
     parser->printDataValue(perAudience);
 }
 
-void ParserRulesAPI::runRules(){
-    rulesRunner->processRules();
-}
+void ParserRulesAPI::runRules() { rulesRunner->processRules(); }

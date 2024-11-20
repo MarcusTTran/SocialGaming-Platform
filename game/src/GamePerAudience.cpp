@@ -1,11 +1,10 @@
 #include "GamePerAudience.h"
 
-
-/* 
+/*
 Idea of what perAudience:
 
 perAudience = {
-    wins : 0 
+    wins : 0
     weapons: {
         tomatoes : 1
         eggs : 2
@@ -14,13 +13,11 @@ perAudience = {
 }
 */
 
-GamePerAudience::GamePerAudience(const ParsedGameData& parsedData) {
+GamePerAudience::GamePerAudience(const ParsedGameData &parsedData) {
     perAudienceVariables = parsedData.getPerAudience();
 }
 
-DataValue::OrderedMapType GamePerAudience::getAudienceVariables() {
-    return perAudienceVariables;
-}
+DataValue::OrderedMapType GamePerAudience::getAudienceVariables() { return perAudienceVariables; }
 
 // Note: might delete this if we don't need to add mor perAudience variables after
 // initially creating the game
@@ -28,11 +25,9 @@ void GamePerAudience::addPerAudienceVariable(std::string key, DataValue value) {
     perAudienceVariables.emplace_back(key, value);
 }
 
-const DataValue& GamePerAudience::getPerAudienceVariable(const std::string& key) const {
-    auto perAudienceVarIter = std::find_if(perAudienceVariables.begin(), perAudienceVariables.end(), 
-    [&key](const auto& pair) {
-        return pair.first == key;
-    });
+const DataValue &GamePerAudience::getPerAudienceVariable(const std::string &key) const {
+    auto perAudienceVarIter = std::find_if(perAudienceVariables.begin(), perAudienceVariables.end(),
+                                           [&key](const auto &pair) { return pair.first == key; });
     if (perAudienceVarIter == perAudienceVariables.end()) {
         // throw std::out_of_range("Key '" + key + "' not found in variables.");
         static const DataValue emptyDataValue;
@@ -42,11 +37,9 @@ const DataValue& GamePerAudience::getPerAudienceVariable(const std::string& key)
     return perAudienceVarIter->second;
 }
 
-DataValue GamePerAudience::gamePerAudienceSetter(const std::string& key, DataValue newValue) {
-    auto perAudienceVarIter = std::find_if(perAudienceVariables.begin(), perAudienceVariables.end(), 
-    [&key](const auto& pair) {
-        return pair.first == key;
-    });
+DataValue GamePerAudience::gamePerAudienceSetter(const std::string &key, DataValue newValue) {
+    auto perAudienceVarIter = std::find_if(perAudienceVariables.begin(), perAudienceVariables.end(),
+                                           [&key](const auto &pair) { return pair.first == key; });
     if (perAudienceVarIter == perAudienceVariables.end()) {
         // throw std::out_of_range("Key '" + key + "' not found in variables.");
         static const DataValue emptyDataValue;
@@ -57,13 +50,10 @@ DataValue GamePerAudience::gamePerAudienceSetter(const std::string& key, DataVal
     return perAudienceVarIter->second;
 }
 
-
-
-
 // // Postcondition: returns a string representation of the type used
-// // for the data portion of the perAudience map.If none is found, returns error 
+// // for the data portion of the perAudience map.If none is found, returns error
 // // must be handled.
-// std::expected<std::string, string> 
+// std::expected<std::string, string>
 // GamePerAudience::getType(const std::string& key) {
 //     if (std::holds_alternative<std::string>(perAudienceVariables[key])) {
 //         return "string";

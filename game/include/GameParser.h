@@ -1,53 +1,55 @@
 // author: kwa132, Mtt8
 #pragma once
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <map>
-#include <string>
-#include <vector>
-#include <fmt/core.h>
-#include <regex>
-#include <algorithm>
-#include <variant>
-#include <cpp-tree-sitter.h>
-#include "tree_sitter/api.h" 
-#include "RuleTypes.h"
 #include "CommonVariantTypes.h"
+#include "RuleTypes.h"
+#include "tree_sitter/api.h"
+#include <algorithm>
+#include <cpp-tree-sitter.h>
+#include <fmt/core.h>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <regex>
+#include <sstream>
+#include <string>
+#include <variant>
+#include <vector>
+
 
 /*
     This is game parser class, which is responsible for parsing data from txt input file
     via tree-sitter and extract, store into certain data structure.
 */
- 
+
 using std::map;
-using std::vector;
 using std::pair;
 using std::string;
+using std::vector;
 
 class ParsedGameData {
 public:
-    ParsedGameData(const string& configFileContent);
+    ParsedGameData(const string &configFileContent);
 
     string getGameName() const;
     pair<int, int> getPlayerRange() const;
     bool hasAudience() const;
-    string readFileContent(const string& filePath);
+    string readFileContent(const string &filePath);
     Configuration getConfiguration();
 
     // DataValue::OrderedMapType = vector<pair<string, DataValue>>
-    const DataValue::OrderedMapType& getConstants() const;
-    const DataValue::OrderedMapType& getVariables() const;
-    const DataValue::OrderedMapType& getPerPlayer() const;
-    const DataValue::OrderedMapType& getPerAudience() const;
-    const std::vector<DataValue::OrderedMapType>& getSetup() const;
+    const DataValue::OrderedMapType &getConstants() const;
+    const DataValue::OrderedMapType &getVariables() const;
+    const DataValue::OrderedMapType &getPerPlayer() const;
+    const DataValue::OrderedMapType &getPerAudience() const;
+    const std::vector<DataValue::OrderedMapType> &getSetup() const;
     vector<Rule> getRules();
 
     // helper functions to print result to the console
     // Note that anything related to print out will be removed eventually
     void printKeyValuePair();
-    void printDataValue(const DataValue::OrderedMapType& value, int indent = 0);
+    void printDataValue(const DataValue::OrderedMapType &value, int indent = 0);
+
 private:
     string gameName;
     pair<int, int> playerRange;
@@ -58,29 +60,29 @@ private:
     DataValue::OrderedMapType variables;
     DataValue::OrderedMapType perPlayer;
     DataValue::OrderedMapType perAudience;
-    DataValue::OrderedMapType constants;    // for RPS -> a vector of 2 pairs inside: { outerpair{pair1, pair2}, ... }
+    DataValue::OrderedMapType constants; // for RPS -> a vector of 2 pairs inside: { outerpair{pair1, pair2}, ... }
     vector<Rule> rules;
 
-    DataValue handleExpression(const ts::Node& node, const std::string& source);
-    void parseValueMap(const ts::Node&, const std::string& source, DataValue::OrderedMapType& output);
-    DataValue::OrderedMapType handleSetup(const ts::Node& node, const std::string& source);
-    void parseConfig(const string&);
-    void parseConfigurationSection(const ts::Node&, const string&);
-    void parseConstantsSection(const ts::Node&, const string&);
-    void parseVariablesSection(const ts::Node&, const string&);
-    void parsePerPlayerSection(const ts::Node&, const string&);
-    void parsePerAudienceSection(const ts::Node&, const string&);
-    void DFS(const ts::Node& node, const string& source, Rule& rule);
-    void handleForRule(const ts::Node& node, const string& source, Rule& outerRule);
-    void handleMessageSection(const ts::Node& node, const string& source, Rule& outerRule);
-    void traverseHelper(const ts::Node& node, const string& source, Rule& rule);
-    void handleMatchRule(const ts::Node& node, const string& source, Rule& outerRule);
-    void handleWhileSection(const ts::Node& node, const string& source, Rule& outerRule);
-    void parseRuleSection(const ts::Node& node, const string& source, Rule& outerRule);
+    DataValue handleExpression(const ts::Node &node, const std::string &source);
+    void parseValueMap(const ts::Node &, const std::string &source, DataValue::OrderedMapType &output);
+    DataValue::OrderedMapType handleSetup(const ts::Node &node, const std::string &source);
+    void parseConfig(const string &);
+    void parseConfigurationSection(const ts::Node &, const string &);
+    void parseConstantsSection(const ts::Node &, const string &);
+    void parseVariablesSection(const ts::Node &, const string &);
+    void parsePerPlayerSection(const ts::Node &, const string &);
+    void parsePerAudienceSection(const ts::Node &, const string &);
+    void DFS(const ts::Node &node, const string &source, Rule &rule);
+    void handleForRule(const ts::Node &node, const string &source, Rule &outerRule);
+    void handleMessageSection(const ts::Node &node, const string &source, Rule &outerRule);
+    void traverseHelper(const ts::Node &node, const string &source, Rule &rule);
+    void handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule);
+    void handleWhileSection(const ts::Node &node, const string &source, Rule &outerRule);
+    void parseRuleSection(const ts::Node &node, const string &source, Rule &outerRule);
     string ruleTypeToString(Rule::Type type);
-    Rule::Type getRuleType(const string& type);
+    Rule::Type getRuleType(const string &type);
 
     // print tree strucutre to console for debugging
-    void printTree(const ts::Node& node, const string& source, int indent = 0);
-    void printSingleDataValue(const DataValue& value, int indent);
+    void printTree(const ts::Node &node, const string &source, int indent = 0);
+    void printSingleDataValue(const DataValue &value, int indent);
 };
