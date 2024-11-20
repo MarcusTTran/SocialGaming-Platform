@@ -9,7 +9,7 @@ Game::Game(const ParsedGameData& parserObject, const std::string& gameName)
       constants(parserObject),
       variables(parserObject),
       // TODO: perhaps add rules?
-      globalMap()
+      globalMap() 
 { 
     // Populate the global map with other API variables held in Game object
     addObjectToGlobalMap("constants", DataValue(constants.getConstants()), globalMap);
