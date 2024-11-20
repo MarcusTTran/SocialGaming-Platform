@@ -1,20 +1,20 @@
 // author: kwa132, mtt8
 #pragma once
 
+#include "GameParser.h"
 #include <map>
 #include <optional>
 #include <string>
 #include <utility>
-#include <vector>
 #include <variant>
-#include "GameParser.h"
+#include <vector>
 
 class GameName {
 private:
     std::string name;
 
 public:
-    GameName(const std::string& name) : name(name) {}
+    GameName(const std::string &name) : name(name) {}
     std::string getName() const { return name; }
 };
 
@@ -43,12 +43,12 @@ public:
     std::pair<int, int> getPlayerRange() const;
     bool hasAudience() const;
     std::vector<Setup> getSetup() const;
-    Setup* findSetupByName(const std::string& key);
-    void setKind(const std::string& key, const std::string& kindValue);
-    void setPrompt(const std::string& key, const std::string& promptValue);
-    void setRange(const std::string& key, const std::pair<int, int>& rangeValue);
-    void setChoices(const std::string& key, const DataValue::EnumDescriptionType& choicesValue);
-    void setDefaultValue(const std::string& key, const DataValue::OrderedMapType& defaultValue);
+    Setup *findSetupByName(const std::string &key);
+    void setKind(const std::string &key, const std::string &kindValue);
+    void setPrompt(const std::string &key, const std::string &promptValue);
+    void setRange(const std::string &key, const std::pair<int, int> &rangeValue);
+    void setChoices(const std::string &key, const DataValue::EnumDescriptionType &choicesValue);
+    void setDefaultValue(const std::string &key, const DataValue::OrderedMapType &defaultValue);
 
 private:
     GameName gameName;
@@ -56,5 +56,5 @@ private:
     bool audience;
     std::vector<Setup> setup;
     // Helper function to extract Setup from OrderedMapType
-    Setup extractSetupFromOrderedMap(const DataValue::OrderedMapType& orderedMap) const;
+    Setup extractSetupFromOrderedMap(const DataValue::OrderedMapType &orderedMap) const;
 };

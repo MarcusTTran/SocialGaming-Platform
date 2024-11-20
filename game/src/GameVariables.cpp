@@ -1,42 +1,33 @@
 #include "GameVariables.h"
 
-GameVariables::GameVariables(const ParsedGameData& parserObject) 
-    : variables(parserObject.getVariables()){};
+GameVariables::GameVariables(const ParsedGameData &parserObject) : variables(parserObject.getVariables()) {};
 
-auto GameVariables::findVariable(const std::string& key) const{
+auto GameVariables::findVariable(const std::string &key) const {
     return std::find_if(variables.begin(), variables.end(),
-        [&key](const std::pair<std::string, DataValue>& entry) {
-            return entry.first == key;
-        }
-    );
+                        [&key](const std::pair<std::string, DataValue> &entry) { return entry.first == key; });
 }
 
-DataValue::OrderedMapType GameVariables::getVariables() const{
-    return variables;
-}
+DataValue::OrderedMapType GameVariables::getVariables() const { return variables; }
 
-auto GameVariables::findVariable(const std::string& key){
+auto GameVariables::findVariable(const std::string &key) {
     return std::find_if(variables.begin(), variables.end(),
-        [&key](const std::pair<std::string, DataValue>& entry) {
-            return entry.first == key;
-        }
-    );
+                        [&key](const std::pair<std::string, DataValue> &entry) { return entry.first == key; });
 }
 
-const DataValue& GameVariables::getVariable(const std::string& key) const{
+const DataValue &GameVariables::getVariable(const std::string &key) const {
     auto valueFinder = findVariable(key);
-    if(valueFinder != end(variables)){
+    if (valueFinder != end(variables)) {
         return valueFinder->second;
     }
-    static const DataValue emptyDataValue;  
+    static const DataValue emptyDataValue;
     return emptyDataValue;
 }
 
-void GameVariables::setVariable(const std::string& key, DataValue content){
+void GameVariables::setVariable(const std::string &key, DataValue content) {
     auto valueFinder = findVariable(key);
-    if(valueFinder != end(variables)){
+    if (valueFinder != end(variables)) {
         valueFinder->second = std::move(content);
-    } else{
+    } else {
         variables.emplace_back(key, std::move(content));
     }
 }

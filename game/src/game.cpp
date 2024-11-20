@@ -9,7 +9,7 @@ Game::Game(const ParsedGameData& parserObject, const std::string& gameName)
       constants(parserObject),
       variables(parserObject),
       // TODO: perhaps add rules?
-      globalMap() 
+      globalMap()  
 { 
     // Populate the global map with other API variables held in Game object
     addObjectToGlobalMap("constants", DataValue(constants.getConstants()), globalMap);
@@ -35,9 +35,10 @@ Game::Game(const ParsedGameData& parserObject, const std::string& gameName)
     addObjectToGlobalMap(std::string("configuration"), DataValue(configurationMap), globalMap);
 }
 
-Game::Game(const std::string& gameName) : gameName(gameName) {}
+// Game::Game(const std::string &gameName, NameResolver &nameResolver)
+//     : gameName(gameName), nameResolver(std::make_unique<NameResolver>(nameResolver)) {}
 
-std::string Game::getGameCode() const { return gameCode; }
+Game::Game(const std::string &gameName) : gameName(gameName) {}
 
 std::string Game::getGameName() const { return gameName; }
 
@@ -52,14 +53,20 @@ void Game::addObjectToGlobalMap(const std::string &key, const DataValue &value, 
     }
 }
 
+void Game::startGame(const std::vector<Player> &players) {
+    std::string key = "players";
 
+    // Todo: Add the players to the name resolver
+    // Need tp fix the types
 
-// GameConfiguration Game::getConfiguration(){ return configuration; }
-// GameConstants Game::getConstants() { return constants; }
-// GameVariables Game::getVariables() { return variables; }
-// GamePerPlayer Game::getPerPlayer() { return perPlayer; }
-// GamePerAudience Game::getPerAudience() {return perAudience; }
+    // nameResolver->add_new_value(key, players);
+}
 
-// void Game::setGameCode(const std::string &gameCode) {
-//   this->gameCode = gameCode;
-// }
+void Game::insertIncomingMessages(const std::deque<Message> &incomingMessages) {
+    std::string key = "incomingMessages";
+    std::unordered_map<std::string, std::deque<Message>> incomingMessagesMap;
+    incomingMessagesMap[key] = incomingMessages;
+
+    // TODO: Add the incoming messages to the name resolver
+    // nameResolver->add_new_value(key, incomingMessagesMap);
+}

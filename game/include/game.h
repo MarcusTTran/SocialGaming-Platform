@@ -7,6 +7,7 @@
 #include "GameVariables.h"
 #include "CommonVariantTypes.h"
 #include "NameResolver.h"
+#include "Player.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -24,16 +25,24 @@
 
 class Game {
 public:
+
+  // For compilation purposes (remove later)
+  struct Message {
+    std::string message; 
+    Player player;
+  };
+
   Game(const ParsedGameData& parserObject, const std::string& gameName);
   Game(const std::string &gameName);
   ~Game() = default;
 
-  std::string getGameName() const;
-  std::string getGameCode() const;
+    std::string getGameName() const;
+    std::string getGameCode() const;
 
   // TODO: Implement these methods
-  void startGame();
-  void updateGame();
+    void startGame(const std::vector<Player> &players);
+    void updateGame();
+    void insertIncomingMessages(const std::deque<Message> &incomingMessages);
   // void setGameCode(const std::string &gameCode);
   // GameConfiguration getConfiguration();
   // GameConstants getConstants();
@@ -50,4 +59,7 @@ private:
   GameConstants constants;
   GameVariables variables;
     // TODO: add rules to the Game once it is parseable and instantiable
+    // TODO: Implement these methods
+    
+    // void setGameCode(const std::string &gameCode);
 };
