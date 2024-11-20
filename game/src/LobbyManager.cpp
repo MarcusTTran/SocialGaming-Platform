@@ -138,4 +138,6 @@ bool LobbyManager::isDisplayNameUnique(const std::string &lobbyCode, const std::
         return std::find_if(players.begin(), players.end(),
                             [&](const Player &p) { return p.getDisplayName() == displayName; }) == players.end();
     }
+
+    return false;
 }

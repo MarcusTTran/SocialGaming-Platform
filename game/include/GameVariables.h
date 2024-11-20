@@ -9,6 +9,7 @@ class GameVariables {
 public:
     GameVariables(const ParsedGameData &parserObject);
     ~GameVariables() = default;
+    GameVariables() = default; // Delete later
 
     // Access variables by key
     DataValue::OrderedMapType getVariables() const;

@@ -49,8 +49,6 @@ struct Rule {
         Body
     };
     Type type = Type::Default;
-    std::vector<std::variant<int, std::string, bool, std::vector<std::string>,
-                             std::map<std::string, std::variant<int, std::string, bool, std::vector<std::string>>>>>
-        parameters;
+    std::vector<DataValue> parameters;
     std::vector<Rule> subRules;
 };
