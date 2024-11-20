@@ -7,6 +7,8 @@
 
 #include "Server.h"
 
+#include "optionsDisplay.h"
+
 #include "LobbyManager.h"
 #include <algorithm>
 #include <fstream>

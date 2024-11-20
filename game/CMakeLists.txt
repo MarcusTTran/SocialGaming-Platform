@@ -33,7 +33,7 @@ target_link_libraries(game_parser
     cpp-tree-sitter
     tree-sitter-socialgaming  
     networking
-    fmt  
+    fmt 
 )
 
 
@@ -48,6 +48,7 @@ set(MAIN_SOURCES
     ${GAME_SRC_DIR}/GameParser.cpp
     ${GAME_SRC_DIR}/ParserRulesAPI.cpp
     ${GAME_SRC_DIR}/RulesRunner.cpp
+    #${GAME_SRC_DIR}/testOPmain.cpp
 )
 
 # Main executable
