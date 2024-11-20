@@ -394,12 +394,19 @@ void ParsedGameData::handleForRule(const ts::Node& node, const std::string& sour
     }  
 }
 
-void ParsedGameData::handleMessageSection(const ts::Node& node, const std::string& source, Rule& outerRule){
-    // new way to interacte with rule interface
-    auto playersKeyword = node.getChildByFieldName("players").getSourceRange(source); // all key word
-    auto content = node.getChildByFieldName("content").getSourceRange(source);        // message content
-    // MessageRule(IO, AllRule(playersKeyword), StringRule(content));                 // TODO: need to figure out how to call this
+void ParsedGameData::handleMessageSection(const ts::Node& node, const std::string& source, Rule& outerRule) {
+    auto playersKeyword = node.getChildByFieldName("players").getSourceRange(source); // Keyword indicating players
+    auto content = node.getChildByFieldName("content").getSourceRange(source);        // Message content
+
+    // currently we assume all will be there all the time
+    // TODO: we need to create more rule types to deal with mutiple keyword
+    // auto allPlayersRule = std::make_unique<AllPlayersRule>();  
+    // auto stringRule = std::make_unique<StringRule>(content);
+
+    // IO messager; // TODO: Ensure this is properly initialized or passed in
+    // MessageRule messageRule(messager, *allPlayersRule, *stringRule);
 }
+
 
 void ParsedGameData::traverseHelper(const ts::Node& node, const string& source, Rule& rule){
     if(node.getType() == "match_entry"){
