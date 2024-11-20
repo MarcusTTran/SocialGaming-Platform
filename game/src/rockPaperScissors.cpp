@@ -30,7 +30,8 @@
 //     waitingList.pop();
 // }
 
-// void RockPaperScissorsGame::sendingMessage(networking::Server& server, networking::Connection connection, const string& text) const{
+// void RockPaperScissorsGame::sendingMessage(networking::Server& server, networking::Connection connection, const
+// string& text) const{
 //     networking::Message message{connection, text};
 //     server.send({message});
 // }
@@ -51,7 +52,7 @@
 //     return (lowerChoice == "rock" || lowerChoice == "paper" || lowerChoice == "scissors");
 // }
 
-// void RockPaperScissorsGame::processPlayerChoice(networking::Connection connection, 
+// void RockPaperScissorsGame::processPlayerChoice(networking::Connection connection,
 //     const string& choice, networking::Server& server){
 //     if (players.find(connection) == players.end()) {
 //         sendingMessage(server, connection, "You are currently in the waiting room.\n");
@@ -61,11 +62,11 @@
 //     auto& player = players[connection];
 
 //     if (player.roundGetter() == 0) {
-//         sendingMessage(server, connection, "Player" + to_string(player.getId()) + 
+//         sendingMessage(server, connection, "Player" + to_string(player.getId()) +
 //         " has no more rounds left. Please rejoin to play again.\n");
 //         players.erase(connection);
 //         size_of_player--;
-        
+
 //         if (!waitingList.empty()) {
 //             networking::Connection nextPlayer = waitingList.front();
 //             waitingList.pop();
@@ -79,7 +80,7 @@
 //         string invalidMessage = "Invalid choice! Please enter Rock, Paper, or Scissors.\n";
 //         cout << "Player " << connection.id << " typed an invalid choice: " << choice << "\n";
 //         sendingMessage(server, connection, invalidMessage);
-//         return;  
+//         return;
 //     }
 
 //     player.make_choice(toLowerCase(choice));
@@ -95,7 +96,7 @@
 //         sendingMessage(server, p1->first, result);
 //         sendingMessage(server, p2->first, result);
 
-//         resetPlayerChoices();  
+//         resetPlayerChoices();
 //     } else {
 //         cout << "Waiting for the other player to make a choice...\n";
 //     }
@@ -103,7 +104,7 @@
 
 // void RockPaperScissorsGame::resetPlayerChoices(){
 //     for (auto& [conn, player] : players) {
-//         player.make_choice("");  
+//         player.make_choice("");
 //     }
 // }
 

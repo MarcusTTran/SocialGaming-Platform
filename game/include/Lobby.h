@@ -14,49 +14,49 @@
 class Lobby {
 
 public:
-  struct Message {
-    Player player;
-    std::string message;
-  };
+    struct Message {
+        Player player;
+        std::string message;
+    };
 
-  // State of the lobby (e.g. waiting for players, in progress, finished)
-  enum class LobbyState { Waiting, InProgress, Finished };
+    // State of the lobby (e.g. waiting for players, in progress, finished)
+    enum class LobbyState { Waiting, InProgress, Finished };
 
-  Lobby(const Game &game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
-        std::string lobbyCode);
-  ~Lobby() = default;
-  void addPlayer(const Player &player);
-  void removePlayer(const Player &player);
-  void sendToAll(const std::string &message);
-  void sendToPlayer(const Player &player, const std::string &message);
-  void sendWelcomeMessage(const Player &player);
-  void processIncomingMessage(const networking::Connection &connection, const std::string &message);
-  void addMessage(const Message &message);
-  LobbyState getState();
+    Lobby(const Game &game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
+          std::string lobbyCode);
+    ~Lobby() = default;
+    void addPlayer(const Player &player);
+    void removePlayer(const Player &player);
+    void sendToAll(const std::string &message);
+    void sendToPlayer(const Player &player, const std::string &message);
+    void sendWelcomeMessage(const Player &player);
+    void processIncomingMessage(const networking::Connection &connection, const std::string &message);
+    void addMessage(const Message &message);
+    LobbyState getState();
 
-  vector<Player> getPlayers() const;
+    vector<Player> getPlayers() const;
 
-  // This method is called from main loop to update the game state with incoming messages
-  // Calls game.update() and processes the messages
-  void update();
+    // This method is called from main loop to update the game state with incoming messages
+    // Calls game.update() and processes the messages
+    void update();
 
 private:
-  void sendCurrentListOfPlayers();
+    void sendCurrentListOfPlayers();
 
-  DataValue getPlayersMap();
+    DataValue getPlayersMap();
 
-  std::unique_ptr<Game> game;
-  std::vector<Player> players;
-  std::shared_ptr<IServer> server;
-  // A queue for messages to be processed on game.update()
-  std::deque<Message> incomingMessages;
+    std::unique_ptr<Game> game;
+    std::vector<Player> players;
+    std::shared_ptr<IServer> server;
+    // A queue for messages to be processed on game.update()
+    std::deque<Message> incomingMessages;
 
-  // The state of the lobby
-  LobbyState state;
+    // The state of the lobby
+    LobbyState state;
 
-  // The user who created the lobby
-  // This user has special privileges in the lobby (e.g. starting the game)
-  // Can use this to send messages to the lobby creator
-  std::shared_ptr<networking::Connection> lobbyCreator;
-  std::string lobbyCode;
+    // The user who created the lobby
+    // This user has special privileges in the lobby (e.g. starting the game)
+    // Can use this to send messages to the lobby creator
+    std::shared_ptr<networking::Connection> lobbyCreator;
+    std::string lobbyCode;
 };

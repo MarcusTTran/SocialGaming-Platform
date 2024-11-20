@@ -1,14 +1,15 @@
 #ifndef GAMERULES_H
 #define GAMERULES_H
 
-#include <vector>
-#include <string>
 #include "RuleTypes.h"
+#include <string>
+#include <vector>
 
 // - Contains the structure of the game using a social gaming file language as pseudocode
 // - High-level control statements include: for, while, parallel for, in parallel, match
 // - Other statements may start with an operation like "discard" or "message all"
-// - Often, the rules will refer to other variabels or constants define in other parts of the game file "ie. configuration.rounds.upFrom(1)"
+// - Often, the rules will refer to other variabels or constants define in other parts of the game file "ie.
+// configuration.rounds.upFrom(1)"
 
 // IMPORTANT: KEEP VECTOR OF RULES IN-ORDER! IT REPRESENTS A LINEAR SEQUENCE OF OPERATIONS TO RUN THE GAME
 
@@ -59,40 +60,39 @@ for round in configuration.rounds.upfrom(1) {
 //     //     virtual bool isNested() const = 0;
 // };
 
-
-class NestedRule: public Rule {
+class NestedRule : public Rule {
     // GameRuleType type;
     // std::string statementBody;
     // std::optional<builtInFunctionName> builtinFunction;
     // std::optional<std::string> containerName;
     // std::optional<std::string> iteratorName;
     // std::vector<Rule> nestedRules;
-    
+
     // public:
     //     GameRuleType getType() const override {
     //         return type;
     //     }
 };
 
-class StatementRule: public Rule {
+class StatementRule : public Rule {
     // GameRuleType type;
     // std::string statementBody;
     // std::optional<builtInFunctionName> builtinFunction;
     // std::optional<std::string> containerName;
     // std::optional<std::string> iteratorName;
-    
+
     // public:
     //     GameRuleType getType() const override {
     //         return type;
     //     }
 };
 
-class GameRules {   
+class GameRules {
     // std::vector<Rule> rules;
 
     // public:
     //     // GameRules();
-    //     ~GameRules();   
+    //     ~GameRules();
     //     std::vector<Rule> getRules();
 };
 

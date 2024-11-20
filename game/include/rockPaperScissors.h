@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "game.h"
 #include "GameParser.h"
 #include "algorithm"
+#include "game.h"
 #include "iostream"
 #include <queue>
 
@@ -12,7 +12,7 @@ using namespace std;
 
 // struct ConnectionComparator {
 //     bool operator()(const networking::Connection& lhs, const networking::Connection& rhs) const {
-//         return lhs.id < rhs.id;  
+//         return lhs.id < rhs.id;
 //     }
 // };
 
@@ -37,5 +37,5 @@ using namespace std;
 //         int size_of_player;
 //         queue<networking::Connection> waitingList;
 //         map<string, string> rules;
-//         map<networking::Connection, Player, ConnectionComparator> players;       
+//         map<networking::Connection, Player, ConnectionComparator> players;
 // };

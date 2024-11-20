@@ -28,23 +28,23 @@ std::string Game::getGameCode() const { return gameCode; }
 std::string Game::getGameName() const { return gameName; }
 
 void Game::startGame(const std::vector<Player> &players) {
-  std::string key = "players";
+    std::string key = "players";
 
-  // Todo: Add the players to the name resolver
-  // Need tp fix the types
+    // Todo: Add the players to the name resolver
+    // Need tp fix the types
 
-  // nameResolver->add_new_value(key, players);
+    // nameResolver->add_new_value(key, players);
 }
 
 void Game::updateGame() {}
 
 void Game::insertIncomingMessages(const std::deque<Message> &incomingMessages) {
-  std::string key = "incomingMessages";
-  std::unordered_map<std::string, std::deque<Message>> incomingMessagesMap;
-  incomingMessagesMap[key] = incomingMessages;
+    std::string key = "incomingMessages";
+    std::unordered_map<std::string, std::deque<Message>> incomingMessagesMap;
+    incomingMessagesMap[key] = incomingMessages;
 
-  // TODO: Add the incoming messages to the name resolver
-  // nameResolver->add_new_value(key, incomingMessagesMap);
+    // TODO: Add the incoming messages to the name resolver
+    // nameResolver->add_new_value(key, incomingMessagesMap);
 }
 
 // GameConfiguration Game::getConfiguration(){ return configuration; }

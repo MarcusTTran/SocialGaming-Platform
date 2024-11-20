@@ -20,37 +20,37 @@
 
 class Game {
 public:
-  struct Message {
-    Player player;
-    std::string message;
-  };
-  // Game(const ParsedGameData& parserObject, const std::string& gameName);
-  // Game(const Game& other);  // copy constructor
-  Game(const std::string &gameName, NameResolver &NameResolver);
-  Game(const std::string &gameName);
-  ~Game() = default;
+    struct Message {
+        Player player;
+        std::string message;
+    };
+    // Game(const ParsedGameData& parserObject, const std::string& gameName);
+    // Game(const Game& other);  // copy constructor
+    Game(const std::string &gameName, NameResolver &NameResolver);
+    Game(const std::string &gameName);
+    ~Game() = default;
 
-  std::string getGameName() const;
-  std::string getGameCode() const;
+    std::string getGameName() const;
+    std::string getGameCode() const;
 
-  // TODO: Implement these methods
-  void startGame(const std::vector<Player> &players);
-  void updateGame();
-  void insertIncomingMessages(const std::deque<Message> &incomingMessages);
-  // void setGameCode(const std::string &gameCode);
-  // GameConfiguration getConfiguration();
-  // GameConstants getConstants();
-  // GameVariables getVariables();
-  // GamePerPlayer getPerPlayer();
-  // GamePerAudience getPerAudience();
+    // TODO: Implement these methods
+    void startGame(const std::vector<Player> &players);
+    void updateGame();
+    void insertIncomingMessages(const std::deque<Message> &incomingMessages);
+    // void setGameCode(const std::string &gameCode);
+    // GameConfiguration getConfiguration();
+    // GameConstants getConstants();
+    // GameVariables getVariables();
+    // GamePerPlayer getPerPlayer();
+    // GamePerAudience getPerAudience();
 private:
-  // GameConfiguration configuration;
-  // GameConstants constants;
-  // GameVariables variables;
-  // GamePerPlayer perPlayer;
-  // GamePerAudience perAudience;
-  std::string gameName;
-  std::string gameCode;
+    // GameConfiguration configuration;
+    // GameConstants constants;
+    // GameVariables variables;
+    // GamePerPlayer perPlayer;
+    // GamePerAudience perAudience;
+    std::string gameName;
+    std::string gameCode;
 
-  // std::vector<Rule> rules;
+    // std::vector<Rule> rules;
 };

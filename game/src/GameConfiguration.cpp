@@ -1,38 +1,32 @@
 #include "GameConfiguration.h"
 #include <algorithm>
 #include <utility>
-#include <vector>  
+#include <vector>
 
-std::optional<std::pair<int, int>> GameConfiguration::Setup::getRange() const {
-    return range;
-}
+std::optional<std::pair<int, int>> GameConfiguration::Setup::getRange() const { return range; }
 
-std::optional<DataValue::EnumDescriptionType> GameConfiguration::Setup::getChoices() const {
-    return choices;
-}
+std::optional<DataValue::EnumDescriptionType> GameConfiguration::Setup::getChoices() const { return choices; }
 
-std::optional<DataValue::OrderedMapType> GameConfiguration::Setup::getDefault() const {
-    return defaultValue;
-}
+std::optional<DataValue::OrderedMapType> GameConfiguration::Setup::getDefault() const { return defaultValue; }
 
-GameConfiguration::GameConfiguration(const ParsedGameData& parserObject)
-    : gameName(parserObject.getGameName()), 
-      playerRange(parserObject.getPlayerRange()),
+GameConfiguration::GameConfiguration(const ParsedGameData &parserObject)
+    : gameName(parserObject.getGameName()), playerRange(parserObject.getPlayerRange()),
       audience(parserObject.hasAudience()) {
 
-    const auto& setupData = parserObject.getSetup();  
-    for (const auto& orderedMap : setupData) {
+    const auto &setupData = parserObject.getSetup();
+    for (const auto &orderedMap : setupData) {
         setup.push_back(extractSetupFromOrderedMap(orderedMap));
     }
 }
 
-GameConfiguration::Setup GameConfiguration::extractSetupFromOrderedMap(const DataValue::OrderedMapType& orderedMap) const {
+GameConfiguration::Setup
+GameConfiguration::extractSetupFromOrderedMap(const DataValue::OrderedMapType &orderedMap) const {
     Setup setupEntry;
 
-    for (const auto& [key, value] : orderedMap) {
+    for (const auto &[key, value] : orderedMap) {
         if (value.getType() == "ORDERED_MAP") {
-            const auto& nestedMap = value.asOrderedMap();
-            for (const auto& [nestedKey, nestedValue] : nestedMap) {
+            const auto &nestedMap = value.asOrderedMap();
+            for (const auto &[nestedKey, nestedValue] : nestedMap) {
                 if (nestedKey == "kind" && nestedValue.getType() == "STRING") {
                     setupEntry.kind = nestedValue.asString();
                 } else if (nestedKey == "prompt" && nestedValue.getType() == "STRING") {
@@ -64,28 +58,16 @@ GameConfiguration::Setup GameConfiguration::extractSetupFromOrderedMap(const Dat
     return setupEntry;
 }
 
+GameName GameConfiguration::getGameName() const { return gameName; }
 
+std::pair<int, int> GameConfiguration::getPlayerRange() const { return playerRange; }
 
-GameName GameConfiguration::getGameName() const {
-    return gameName;
-}
+bool GameConfiguration::hasAudience() const { return audience; }
 
-std::pair<int, int> GameConfiguration::getPlayerRange() const {
-    return playerRange;
-}
+std::vector<GameConfiguration::Setup> GameConfiguration::getSetup() const { return setup; }
 
-bool GameConfiguration::hasAudience() const {
-    return audience;
-}
-
-std::vector<GameConfiguration::Setup> GameConfiguration::getSetup() const {
-    return setup;
-}
-
-GameConfiguration::Setup* GameConfiguration::findSetupByName(const std::string& key) {
-    auto setupFinder = std::find_if(setup.begin(), setup.end(), [&key](const Setup& s) {
-        return s.name == key;
-    });
+GameConfiguration::Setup *GameConfiguration::findSetupByName(const std::string &key) {
+    auto setupFinder = std::find_if(setup.begin(), setup.end(), [&key](const Setup &s) { return s.name == key; });
 
     if (setupFinder != setup.end()) {
         return &(*setupFinder);
@@ -94,40 +76,40 @@ GameConfiguration::Setup* GameConfiguration::findSetupByName(const std::string& 
     }
 }
 
-void GameConfiguration::setKind(const std::string& key, const std::string& kindValue) {
-    if (auto* setupPtr = findSetupByName(key)) {
+void GameConfiguration::setKind(const std::string &key, const std::string &kindValue) {
+    if (auto *setupPtr = findSetupByName(key)) {
         setupPtr->kind = kindValue;
     } else {
         throw std::runtime_error("Setup with key '" + key + "' not found.");
     }
 }
 
-void GameConfiguration::setPrompt(const std::string& key, const std::string& promptValue) {
-    if (auto* setupPtr = findSetupByName(key)) {
+void GameConfiguration::setPrompt(const std::string &key, const std::string &promptValue) {
+    if (auto *setupPtr = findSetupByName(key)) {
         setupPtr->prompt = promptValue;
     } else {
         throw std::runtime_error("Setup with key '" + key + "' not found.");
     }
 }
 
-void GameConfiguration::setRange(const std::string& key, const std::pair<int, int>& rangeValue) {
-    if (auto* setupPtr = findSetupByName(key)) {
+void GameConfiguration::setRange(const std::string &key, const std::pair<int, int> &rangeValue) {
+    if (auto *setupPtr = findSetupByName(key)) {
         setupPtr->range = rangeValue;
     } else {
         throw std::runtime_error("Setup with key '" + key + "' not found.");
     }
 }
 
-void GameConfiguration::setChoices(const std::string& key, const DataValue::EnumDescriptionType& choicesValue) {
-    if (auto* setupPtr = findSetupByName(key)) {
+void GameConfiguration::setChoices(const std::string &key, const DataValue::EnumDescriptionType &choicesValue) {
+    if (auto *setupPtr = findSetupByName(key)) {
         setupPtr->choices = choicesValue;
     } else {
         throw std::runtime_error("Setup with key '" + key + "' not found.");
     }
 }
 
-void GameConfiguration::setDefaultValue(const std::string& key, const DataValue::OrderedMapType& defaultValue) {
-    if (auto* setupPtr = findSetupByName(key)) {
+void GameConfiguration::setDefaultValue(const std::string &key, const DataValue::OrderedMapType &defaultValue) {
+    if (auto *setupPtr = findSetupByName(key)) {
         setupPtr->defaultValue = defaultValue;
     } else {
         throw std::runtime_error("Setup with key '" + key + "' not found.");
