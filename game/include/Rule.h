@@ -4,10 +4,11 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
+#include <optional>
 #include "CommonVariantTypes.h"
 #include "Messenger.h"
 #include "NameResolver.h"
+#include <stdexcept>
 
 // Example variables state
 // vector([
@@ -49,6 +50,7 @@ private:
     virtual void _handle_dependencies(NameResolver &name_resolver) = 0;
     bool first_time = true;
 
+    // TODO: possibly make this virtual?
     virtual DataValue _runBurst(NameResolver &name_resolver) = 0;
 };
 
@@ -67,7 +69,6 @@ private:
     }
 
     std::string string;
-    std::vector<Rule *> dependencies;
 };
 
 class AllPlayersRule : public Rule {
@@ -75,8 +76,13 @@ private:
     void _handle_dependencies(NameResolver &name_resolver) override {}
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        // TODO: handle error value returning
-        return name_resolver.getValue("players");
+        auto playersMap = name_resolver.getValue("players");
+        if (playersMap.hasValue()) {
+            return playersMap;
+        } 
+        else {
+            throw std::runtime_error("players map was not found in global map");
+        }
     }
 };
 
