@@ -53,7 +53,8 @@ private:
 };
 
 class StringRule : public Rule {
-    StringRule(std::string string_literal) : string(string_literal) {}
+public:
+    StringRule(std::string_view string_literal) : string(string_literal) {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
@@ -66,7 +67,7 @@ private:
     }
 
     std::string string;
-    std::vector<Rule &> dependencies;
+    std::vector<Rule *> dependencies;
 };
 
 class AllPlayersRule : public Rule {
@@ -80,6 +81,7 @@ private:
 };
 
 class MessageRule : public Rule {
+public:
     MessageRule(std::shared_ptr<IServer> server, Rule &recipient_list_maker, Rule &string_maker)
         : messager(server), recipient_list_maker(recipient_list_maker), string_maker(string_maker) {};
 
@@ -108,50 +110,56 @@ private:
 
 class ForRule : public Rule {
 public:
-    ForRule(std::string iterator_name, Rule &list_maker, std::vector<Rule> contents)
-        : iterator_name{iterator_name}, list_maker{list_maker}, statement_list{contents} {}
+    ForRule(std::string iterator_name, Rule &list_maker, std::vector<std::unique_ptr<Rule>> contents)
+        : iterator_name{std::move(iterator_name)}, list_maker{list_maker}, statement_list{std::move(contents)} {}
 
     void _handle_dependencies(NameResolver &name_resolver) override {
         auto list_of_values_generic = list_maker.runBurst(name_resolver);
-        list_of_values = list_of_values_generic.asList(); // TODO: figure out this error
+        list_of_values = list_of_values_generic.asList(); // Ensure `asList` is implemented in `DataValue`
         value_for_this_loop = list_of_values.begin();
-        if (list_of_values.size() > 0) {
-            name_resolver.addNewValue(iterator_name, (*value_for_this_loop));
+
+        if (!list_of_values.empty()) {
+            name_resolver.addNewValue(iterator_name, *value_for_this_loop);
         }
 
         current_statement = statement_list.begin();
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        DataValue return_value;
-        if (list_of_values.size() < 1 || statement_list.size() < 1) {
-            return_value = DataValue::RuleStatus::DONE;
-            return return_value; // complete
+        // Return type is DataValue; wrap RuleStatus appropriately
+        if (list_of_values.empty() || statement_list.empty()) {
+            return DataValue{DataValue::RuleStatus::DONE};
         }
+
         while (true) {
-            assert(value_for_this_loop != list_of_values.end() && "The next iterator to run should always be valid");
-            assert(current_statement != statement_list.end() && "The next statement to run should always be valid");
-            // run the current sub-rule, and check whether it finished
-            auto rule_state = (*current_statement).runBurst(name_resolver);
+            assert(value_for_this_loop != list_of_values.end() && "Iterator for list_of_values is invalid");
+            assert(current_statement != statement_list.end() && "Iterator for statement_list is invalid");
+
+            // Run the current statement
+            auto rule_state = (*current_statement)->runBurst(name_resolver); // Dereference unique_ptr
             if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
-                return return_value; // incomplete
+                return DataValue{DataValue::RuleStatus::NOTDONE}; // Incomplete
             }
-            // set up next rule to run
+
+            // Move to the next statement
             current_statement++;
             if (current_statement != statement_list.end()) {
                 continue;
             }
-            // set up next full iteration
+
+            // If all statements are done, move to the next iteration
             current_statement = statement_list.begin();
             value_for_this_loop++;
             if (value_for_this_loop != list_of_values.end()) {
+                name_resolver.addNewValue(iterator_name, *value_for_this_loop);
                 continue;
             }
-            // every iteration complete
-            return_value = DataValue::RuleStatus::DONE;
-            return return_value; // complete
+
+            // All iterations are complete
+            return DataValue{DataValue::RuleStatus::DONE};
         }
     }
+
 
 private:
     std::string iterator_name;
@@ -161,6 +169,7 @@ private:
     std::vector<DataValue> list_of_values;
     std::vector<DataValue>::iterator value_for_this_loop;
 
-    std::vector<Rule> statement_list;
-    std::vector<Rule>::iterator current_statement;
+    std::vector<std::unique_ptr<Rule>> statement_list;
+    std::vector<std::unique_ptr<Rule>>::iterator current_statement; // Correct iterator type
 };
+
