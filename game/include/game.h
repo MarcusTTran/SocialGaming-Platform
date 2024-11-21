@@ -43,23 +43,17 @@ public:
     void startGame(const std::vector<Player> &players);
     void updateGame();
     void insertIncomingMessages(const std::deque<Message> &incomingMessages);
-  // void setGameCode(const std::string &gameCode);
-  // GameConfiguration getConfiguration();
-  // GameConstants getConstants();
-  // GameVariables getVariables();
-  void addObjectToGlobalMap(const std::string &key, const DataValue &value, NameResolver &globalMap);
+    void addObjectToGlobalMap(const std::string &key, const DataValue &value, NameResolver &globalMap);
 
 private:
   NameResolver globalMap;
   std::string gameName;
   std::string gameCode; 
   
-  // API objects
+  // API objects (will be added to global map during constructor)
   GameConfiguration configuration;
   GameConstants constants;
   GameVariables variables;
-    // TODO: add rules to the Game once it is parseable and instantiable
-    // TODO: Implement these methods
-    
-    // void setGameCode(const std::string &gameCode);
+  // TODO: add vector<Rules> to the Game once it is parseable and instantiable
+
 };

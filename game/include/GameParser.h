@@ -15,6 +15,8 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include "Messenger.h"
+#include <memory>
 
 
 /*
@@ -29,7 +31,7 @@ using std::vector;
 
 class ParsedGameData {
 public:
-    ParsedGameData(const string &configFileContent);
+    ParsedGameData(const string &configFileContent, std::shared_ptr<IServer>& server);
 
     string getGameName() const;
     pair<int, int> getPlayerRange() const;
@@ -55,6 +57,7 @@ private:
     pair<int, int> playerRange;
     bool audience;
     Configuration configuration;
+    std::shared_ptr<IServer> server; // For constructing messaging rules
 
     // using variant types to do a map-like data structure while preserving data order
     DataValue::OrderedMapType variables;
