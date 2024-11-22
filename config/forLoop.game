@@ -1,4 +1,4 @@
-// Minimal game that immediately returns success
+// Minimal game that tests a for loop
 configuration {
   name: "minimal"
   player range: (1, 20)
