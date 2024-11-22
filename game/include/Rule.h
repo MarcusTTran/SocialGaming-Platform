@@ -77,14 +77,15 @@ private:
 
     DataValue _runBurst(NameResolver &name_resolver) override {
         auto playersMap = name_resolver.getValue("players");
-        if (playersMap.hasValue()) {
-            return playersMap;
-        } 
-        else {
-            throw std::runtime_error("players map was not found in global map");
+
+        if (playersMap.has_value()) {
+            return playersMap.value();
+        } else {
+            throw std::runtime_error("Players map was not found in global map");
         }
     }
 };
+
 
 class MessageRule : public Rule {
 public:

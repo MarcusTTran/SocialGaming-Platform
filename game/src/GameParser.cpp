@@ -66,7 +66,6 @@ DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::stri
         int curr = std::stoi(currContent);
         return DataValue(curr);
     } else if (type == "number_range") {
-        // Example: Parsing a range string like "(2, 4)"
         size_t start = currContent.find('(');
         size_t comma = currContent.find(',');
         size_t end = currContent.find(')');
@@ -102,7 +101,7 @@ DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::stri
         parseValueMap(node, source, subContent);
         return DataValue(std::move(subContent));
     } else if (type == "enum_description") {
-        DataValue::EnumDescriptionType enumMap;
+        DataValue::EnumDescriptionType enumVector;
         auto keyNode = node.getChildByFieldName("name");
         auto valueNode = node.getChildByFieldName("description");
         if (!keyNode.isNull() && !valueNode.isNull()) {
@@ -111,13 +110,11 @@ DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::stri
             if (!value.empty() && value.front() == '"' && value.back() == '"') {
                 value = value.substr(1, value.length() - 2);
             }
-            enumMap[key] = DataValue(value);
+            enumVector.emplace_back(key, DataValue(value));
         }
+        return DataValue(std::move(enumVector));
+    }
 
-        return DataValue(std::move(enumMap));
-    } 
-    
-    // Fallback: recursively handle any child nodes
     for (const auto &child : ts::Children{node}) {
         return handleExpression(child, source);
     }
@@ -125,10 +122,8 @@ DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::stri
     return DataValue("");
 }
 
-    
 
 void ParsedGameData::parseValueMap(const ts::Node &node, const std::string &source, DataValue::OrderedMapType &output) {
-
     for (const auto &child : ts::Children{node}) {
         if (child.getType() == "map_entry") {
             ts::Node keyNode = child.getChildByFieldName("key");
@@ -137,7 +132,7 @@ void ParsedGameData::parseValueMap(const ts::Node &node, const std::string &sour
             if (!keyNode.isNull() && !valueNode.isNull()) {
                 auto key = std::string(keyNode.getSourceRange(source));
                 DataValue content = handleExpression(valueNode, source);
-                output.emplace_back(key, std::move(content));
+                output.emplace(key, std::move(content));
             }
         }
     }
@@ -149,54 +144,50 @@ DataValue::OrderedMapType ParsedGameData::handleSetup(const ts::Node &node, cons
     ts::Node nameNode = node.getChildByFieldName("name");
     if (!nameNode.isNull()) {
         std::string key = std::string(nameNode.getSourceRange(source));
-        DataValue::OrderedMapType content; // Use OrderedMapType to store key-value pairs
+        DataValue::OrderedMapType content;
 
         ts::Node kindNode = node.getChildByFieldName("kind");
         if (!kindNode.isNull()) {
             std::string kindContent = std::string(kindNode.getSourceRange(source));
-            content.emplace_back("kind", DataValue(kindContent));
+            content.emplace("kind", DataValue(kindContent));
         }
 
         ts::Node promptNode = node.getChildByFieldName("prompt");
         if (!promptNode.isNull()) {
             std::string promptContent = std::string(promptNode.getSourceRange(source));
             promptContent = promptContent.substr(1, promptContent.length() - 2);
-            content.emplace_back("prompt", DataValue(promptContent));
+            content.emplace("prompt", DataValue(promptContent));
         }
 
         ts::Node rangeNode = node.getChildByFieldName("range");
         if (!rangeNode.isNull()) {
             auto rangeValue = handleExpression(rangeNode, source);
-            content.emplace_back("range", std::move(rangeValue));
+            content.emplace("range", std::move(rangeValue));
         }
 
         ts::Node choiceNode = node.getChildByFieldName("choices");
         if (!choiceNode.isNull()) {
-            DataValue::EnumDescriptionType enumMap;
-            ts::Cursor cursor = choiceNode.getCursor();
-            auto curr = cursor.getCurrentNode();
-            while (!curr.getNextSibling().isNull()) {
-                DataValue enumValue = handleExpression(curr, source);
-                if (std::holds_alternative<DataValue::EnumDescriptionType>(enumValue.getValue())) {
-                    auto singleEnumMap = std::get<DataValue::EnumDescriptionType>(enumValue.getValue());
-                    enumMap.insert(singleEnumMap.begin(), singleEnumMap.end());
-                }
-                curr = curr.getNextSibling();
+            DataValue::EnumDescriptionType enumVector;
+            for (const auto &child : ts::Children{choiceNode}) {
+                auto key = std::string(child.getSourceRange(source));
+                auto value = handleExpression(child, source);
+                enumVector.emplace_back(key, std::move(value));
             }
-            content.emplace_back("choice", DataValue(std::move(enumMap)));
+            content.emplace("choices", DataValue(std::move(enumVector)));
         }
 
         ts::Node defaultNode = node.getChildByFieldName("default");
         if (!defaultNode.isNull()) {
             auto defaultValue = handleExpression(defaultNode, source);
-            content.emplace_back("default", std::move(defaultValue));
+            content.emplace("default", std::move(defaultValue));
         }
 
-        setup.emplace_back(std::move(key), DataValue(std::move(content)));
+        setup.emplace(key, DataValue(std::move(content)));
     }
 
     return setup;
 }
+
 
 void ParsedGameData::parseConstantsSection(const ts::Node &node, const string &source) {
     parseValueMap(node.getChildByFieldName("map"), source, constants);

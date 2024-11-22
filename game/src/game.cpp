@@ -15,24 +15,24 @@ Game::Game(const ParsedGameData& parserObject, const std::string& gameName)
     addObjectToGlobalMap("constants", DataValue(constants.getConstants()), globalMap);
     addObjectToGlobalMap("variables", DataValue(variables.getVariables()), globalMap);
     
-    // add configuration to global map
+    // Add configuration to global map
     DataValue::OrderedMapType configurationMap;
-    configurationMap.push_back(std::make_pair(std::string("name"), DataValue(gameName)) );
-    configurationMap.push_back(std::make_pair(std::string("player range"), DataValue(configuration.getPlayerRange())) );
-    configurationMap.push_back(std::make_pair(std::string("audience"), DataValue(configuration.hasAudience()) ) );
+    configurationMap.emplace("name", DataValue(gameName));
+    configurationMap.emplace("player range", DataValue(configuration.getPlayerRange()));
+    configurationMap.emplace("audience", DataValue(configuration.hasAudience()));
 
-    // Convert setup rules to a vector of DataValue TODO: fix this by testing and making better with ranges
+    // Convert setup rules to a vector of DataValue
     std::vector<DataValue> setupData;
     for (const auto& setup : parserObject.getSetup()) {
         DataValue::OrderedMapType setupRuleMap;
         for (const auto& [key, value] : setup) {
-            setupRuleMap.push_back(std::make_pair(key, value));
+            setupRuleMap.emplace(key, value);
         }
         setupData.push_back(DataValue(setupRuleMap));
     }
-    configurationMap.push_back(std::make_pair("setup", DataValue(setupData)));
-    // configurationMap.push_back(std::make_pair(std::string("setup"), DataValue(setupFromParser)) );
-    addObjectToGlobalMap(std::string("configuration"), DataValue(configurationMap), globalMap);
+    configurationMap.emplace("setup", DataValue(setupData));
+
+    addObjectToGlobalMap("configuration", DataValue(configurationMap), globalMap);
 }
 
 // Game::Game(const std::string &gameName, NameResolver &nameResolver)
@@ -44,11 +44,10 @@ std::string Game::getGameName() const { return gameName; }
 
 // Adds an object to the global map provided a key and a DataValue object
 void Game::addObjectToGlobalMap(const std::string &key, const DataValue &value, NameResolver &globalMap) {
-    bool operationResult =  globalMap.addNewValue(key, value);
+    bool operationResult = globalMap.addNewValue(key, value);
     if (!operationResult) {
         std::string_view errorMsg = "Error: key already exists in the global map.\n";
         std::string errorDef = "Tried to add key: {" + key + " }";
-        
         std::cerr << std::string(errorMsg) << errorDef << std::endl;
     }
 }
