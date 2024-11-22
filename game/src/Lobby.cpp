@@ -5,11 +5,27 @@ Lobby::Lobby(Game game, std::shared_ptr<IServer> server, std::shared_ptr<network
     : game(std::make_unique<Game>(std::move(game))), server(server), lobbyCreator(lobbyCreator), lobbyCode(lobbyCode),
       state(LobbyState::Waiting) {
     server->sendToConnection("Lobby created with code: " + lobbyCode, *lobbyCreator);
+
+    // Register event handlers
+    eventHandlers["start"] = [this](const networking::Connection &connection, const std::string &message) {
+        handleStartEvent(connection, message);
+    };
+    eventHandlers["dump"] = [this](const networking::Connection &connection, const std::string &message) {
+        handleDumpEvent(connection, message);
+    };
+    eventHandlers["leave"] = [this](const networking::Connection &connection, const std::string &message) {
+        handleLeaveEvent(connection, message);
+    };
 }
 
 Lobby::LobbyState Lobby::getState() { return state; }
 
 void Lobby::addPlayer(const Player &player) {
+
+    if (state != LobbyState::Waiting) {
+        server->sendToConnection("The game has already started. Please try again later.", player.getConnection());
+        return;
+    }
     sendWelcomeMessage(player);
 
     players.push_back(player);
@@ -17,6 +33,11 @@ void Lobby::addPlayer(const Player &player) {
 }
 
 void Lobby::removePlayer(const Player &player) {
+
+    if (state == LobbyState::InProgress) {
+        server->sendToConnection("You cannot leave the lobby once the game has started.", player.getConnection());
+        return;
+    }
     sendToPlayer(player, "You have left the lobby.");
     players.erase(std::remove(players.begin(), players.end(), player), players.end());
     sendToAll(player.getDisplayName() + " has left the lobby.");
@@ -56,54 +77,19 @@ void Lobby::addMessage(const Message &message) { incomingMessages.push_back(mess
 
 void Lobby::processIncomingMessage(const networking::Connection &connection, const std::string &message) {
 
-    // TODO: Think of incoming messages as events that trigger reesponses from incoming messages
-    // need to refactor this to use a more event driven approach so that game logic can be implemented
+    auto handler = eventHandlers.find(message);
+    if (handler != eventHandlers.end()) {
+        handler->second(connection, message);
+    } else {
 
-    // check if the connection is the lobby creator
-    if (connection.id == lobbyCreator->id) {
-        if (message == "start") {
-            sendToAll("Game starting!");
-            auto playersMap = getPlayersMap();
-            game->startGame(playersMap);
-            state = LobbyState::InProgress;
-
-            // This is where the game would start
-        } else {
-            std::string errorMessage = "Invalid command. Please type 'start' to start the game.";
-            server->sendToConnection(errorMessage, connection);
+        if (state == LobbyState::Waiting) {
             return;
-        }
-    }
 
-    auto player = std::find_if(players.begin(), players.end(),
-                               [&](const Player &p) { return p.getConnection().id == connection.id; });
-
-    // This is where we would process the meesage from the player if the game was running.
-    // The game would be responsible for processing the message and sending the appropriate
-    // messages back to the players. For now, we will just echo the message back to the player.
-    // Untill we have a more concrete implementation of the game logic.
-    if (player != players.end()) {
-        std::cout << "Player " << player->getDisplayName() << " said: " << message << std::endl;
-        if (state == LobbyState::InProgress) {
-            std::cout << "Game is in progress" << std::endl;
-            // Add the incoming message to the queue of messages to be processed
-            // Mesages will be processed on the next call to update()
-            Message incomingMessage = {*player, message};
-            addMessage(incomingMessage);
-
-            if (message == "dump") {
-                auto playersMap = getPlayersMap().asList();
-                std::cout << "Dumping players map" << std::endl;
-                for (auto &player : playersMap) {
-                    server->sendMessageToPlayerMap("You said: " + message, player.asOrderedMap());
-                }
-            } else if (message == "leave") {
-                removePlayer(*player);
-            }
-
-            else {
-                sendToPlayer(*player, "You said: " + message);
-            }
+        } else {
+            auto player = std::find_if(players.begin(), players.end(),
+                                       [&](const Player &p) { return p.getConnection().id == connection.id; });
+            Message newMessage = {(*player), message};
+            addMessage(newMessage);
         }
     }
 }
@@ -119,4 +105,36 @@ DataValue Lobby::getPlayersMap() {
         playersMap.push_back(DataValue(player.getMap(true)));
     }
     return DataValue(playersMap);
+}
+
+void Lobby::handleStartEvent(const networking::Connection &connection, const std::string &message) {
+    if (connection.id == lobbyCreator->id) {
+        sendToAll("Game starting!");
+        auto playersMap = getPlayersMap();
+        game->startGame(playersMap);
+        state = LobbyState::InProgress;
+    } else {
+        std::string errorMessage = "Only the lobby creator can start the game.";
+        server->sendToConnection(errorMessage, connection);
+    }
+}
+
+void Lobby::handleDumpEvent(const networking::Connection &connection, const std::string &message) {
+    auto playersMap = getPlayersMap().asList();
+    for (auto &player : playersMap) {
+        server->sendMessageToPlayerMap("You said: " + message, player.asOrderedMap());
+    }
+}
+
+void Lobby::handleLeaveEvent(const networking::Connection &connection, const std::string &message) {
+    auto player = std::find_if(players.begin(), players.end(),
+                               [&](const Player &p) { return p.getConnection().id == connection.id; });
+    if (player != players.end()) {
+        removePlayer(*player);
+    }
+}
+
+void Lobby::handleUnknownEvent(const networking::Connection &connection, const std::string &message) {
+    std::string errorMessage = "Unknown command: " + message;
+    server->sendToConnection(errorMessage, connection);
 }
