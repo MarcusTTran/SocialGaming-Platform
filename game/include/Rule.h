@@ -168,3 +168,35 @@ private:
     std::vector<Rule> statement_list;
     std::vector<Rule>::iterator current_statement;
 };
+
+class UpfromRule : public Rule {
+public:
+    UpfromRule(Rule &number_maker, int starting_value)
+        : number_maker(number_maker), starting_value(starting_value) {}
+
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        auto ending_value_generic = number_maker.runBurst(name_resolver);
+        ending_value = ending_value_generic.asNumber();
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // return empty list, not a decreasing list
+        if (ending_value < starting_value) {
+            return DataValue(std::vector<DataValue>());
+        }
+        // construct vector
+        std::vector<DataValue> list_of_ints;
+        int number_of_values = ending_value - starting_value;
+        list_of_ints.reserve(number_of_values);
+        for (int val = starting_value; val <= ending_value; val++) {
+            list_of_ints.emplace_back(DataValue(val));
+        }
+        return DataValue(list_of_ints);
+    }
+
+private:
+    Rule &number_maker;
+    int ending_value;
+
+    int starting_value;
+};
