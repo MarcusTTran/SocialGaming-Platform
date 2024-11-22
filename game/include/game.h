@@ -42,10 +42,6 @@ public:
     void startGame(DataValue &players);
     void updateGame();
     void insertIncomingMessages(const std::deque<Message> &incomingMessages);
-    // void setGameCode(const std::string &gameCode);
-    // GameConfiguration getConfiguration();
-    // GameConstants getConstants();
-    // GameVariables getVariables();
     void addObjectToGlobalMap(const std::string &key, const DataValue &value, NameResolver &globalMap);
 
 private:
