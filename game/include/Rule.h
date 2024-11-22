@@ -111,6 +111,7 @@ public:
     ForRule(std::string fresh_variable_name, Rule &list_maker, std::vector<Rule> contents)
         : fresh_variable_name{fresh_variable_name}, list_maker{list_maker}, statement_list{contents} {}
 
+private:
     void _handle_dependencies(NameResolver &name_resolver) override {
         // Run the rule that provides a list of values
         auto list_of_values_generic = list_maker.runBurst(name_resolver);
@@ -158,7 +159,6 @@ public:
         }
     }
 
-private:
     std::string fresh_variable_name;
 
     Rule &list_maker;
@@ -174,6 +174,7 @@ public:
     UpfromRule(Rule &number_maker, int starting_value)
         : number_maker(number_maker), starting_value(starting_value) {}
 
+private:
     void _handle_dependencies(NameResolver &name_resolver) override {
         auto ending_value_generic = number_maker.runBurst(name_resolver);
         ending_value = ending_value_generic.asNumber();
@@ -194,7 +195,6 @@ public:
         return DataValue(list_of_ints);
     }
 
-private:
     Rule &number_maker;
     int ending_value;
 
