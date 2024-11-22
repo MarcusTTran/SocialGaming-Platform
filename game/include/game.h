@@ -39,7 +39,7 @@ public:
     std::string getGameCode() const;
 
     // TODO: Implement these methods
-    void startGame(DataValue &players);
+    void startGame(const DataValue &players);
     void updateGame();
     void insertIncomingMessages(const std::deque<Message> &incomingMessages);
     void addObjectToGlobalMap(const std::string &key, const DataValue &value, NameResolver &globalMap);

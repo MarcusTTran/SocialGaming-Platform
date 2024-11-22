@@ -2,12 +2,8 @@
 #pragma once
 
 #include "CommonVariantTypes.h"
-#include "Messenger.h"
-
-// This needs to be included to make actual rules currently there is a conflict with RuleTypes.h since they are both
-// named Rule
-// #include "Rule.h"
 #include "RuleTypes.h"
+#include "Rule.h"
 #include "tree_sitter/api.h"
 #include <algorithm>
 #include <cpp-tree-sitter.h>
@@ -15,12 +11,14 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <memory>
 #include <regex>
 #include <sstream>
 #include <string>
 #include <variant>
 #include <vector>
+#include "Messenger.h"
+#include <memory>
+
 
 /*
     This is game parser class, which is responsible for parsing data from txt input file
@@ -34,8 +32,7 @@ using std::vector;
 
 class ParsedGameData {
 public:
-    ParsedGameData(const string &configFileContent);
-    ParsedGameData(const string &configFileContent, std::shared_ptr<Messenger> &server);
+    ParsedGameData(const string &configFileContent, std::shared_ptr<IServer> server);
 
     string getGameName() const;
     pair<int, int> getPlayerRange() const;
@@ -49,7 +46,7 @@ public:
     const DataValue::OrderedMapType &getPerPlayer() const;
     const DataValue::OrderedMapType &getPerAudience() const;
     const std::vector<DataValue::OrderedMapType> &getSetup() const;
-    vector<Rule> getRules();
+    const vector<std::unique_ptr<Rule>>& getRules() const;
 
     // helper functions to print result to the console
     // Note that anything related to print out will be removed eventually
@@ -61,14 +58,14 @@ private:
     pair<int, int> playerRange;
     bool audience;
     Configuration configuration;
-    std::shared_ptr<Messenger> server; // For constructing messaging rules
+    std::shared_ptr<IServer> server; // For constructing messaging rules
 
     // using variant types to do a map-like data structure while preserving data order
     DataValue::OrderedMapType variables;
     DataValue::OrderedMapType perPlayer;
     DataValue::OrderedMapType perAudience;
     DataValue::OrderedMapType constants; // for RPS -> a vector of 2 pairs inside: { outerpair{pair1, pair2}, ... }
-    vector<Rule> rules;
+    std::vector<std::unique_ptr<Rule>> rules;
 
     DataValue handleExpression(const ts::Node &node, const std::string &source);
     void parseValueMap(const ts::Node &, const std::string &source, DataValue::OrderedMapType &output);
@@ -79,15 +76,15 @@ private:
     void parseVariablesSection(const ts::Node &, const string &);
     void parsePerPlayerSection(const ts::Node &, const string &);
     void parsePerAudienceSection(const ts::Node &, const string &);
-    void DFS(const ts::Node &node, const string &source, Rule &rule);
-    void handleForRule(const ts::Node &node, const string &source, Rule &outerRule);
-    void handleMessageSection(const ts::Node &node, const string &source, Rule &outerRule);
+    void DFS(const ts::Node &node, const string &source, std::string& str);
+    void handleForRule(const ts::Node &node, const string &source);
+    void handleMessageSection(const ts::Node &node, const string &source);
     void traverseHelper(const ts::Node &node, const string &source, Rule &rule);
     void handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule);
     void handleWhileSection(const ts::Node &node, const string &source, Rule &outerRule);
-    void parseRuleSection(const ts::Node &node, const string &source, Rule &outerRule);
-    string ruleTypeToString(Rule::Type type);
-    Rule::Type getRuleType(const string &type);
+    std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
+    string ruleTypeToString(RuleT::Type type);
+    RuleT::Type getRuleType(const string &type);
 
     // print tree strucutre to console for debugging
     void printTree(const ts::Node &node, const string &source, int indent = 0);
