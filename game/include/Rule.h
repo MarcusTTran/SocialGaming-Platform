@@ -150,9 +150,9 @@ public:
             // set up next full iteration
             value_for_this_loop++;
             if (value_for_this_loop != list_of_values.end()) {
+                name_resolver.setValue(fresh_variable_name, *value_for_this_loop);
                 continue;
             }
-            name_resolver.setValue(fresh_variable_name, *value_for_this_loop);
             // every iteration complete
             return DataValue({DataValue::RuleStatus::DONE});
         }
