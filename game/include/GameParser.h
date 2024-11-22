@@ -2,6 +2,11 @@
 #pragma once
 
 #include "CommonVariantTypes.h"
+#include "Messenger.h"
+
+// This needs to be included to make actual rules currently there is a conflict with RuleTypes.h since they are both
+// named Rule
+// #include "Rule.h"
 #include "RuleTypes.h"
 #include "tree_sitter/api.h"
 #include <algorithm>
@@ -10,14 +15,12 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <regex>
 #include <sstream>
 #include <string>
 #include <variant>
 #include <vector>
-#include "Messenger.h"
-#include <memory>
-
 
 /*
     This is game parser class, which is responsible for parsing data from txt input file
@@ -31,7 +34,8 @@ using std::vector;
 
 class ParsedGameData {
 public:
-    ParsedGameData(const string &configFileContent, std::shared_ptr<IServer>& server);
+    ParsedGameData(const string &configFileContent);
+    ParsedGameData(const string &configFileContent, std::shared_ptr<Messenger> &server);
 
     string getGameName() const;
     pair<int, int> getPlayerRange() const;
@@ -57,7 +61,7 @@ private:
     pair<int, int> playerRange;
     bool audience;
     Configuration configuration;
-    std::shared_ptr<IServer> server; // For constructing messaging rules
+    std::shared_ptr<Messenger> server; // For constructing messaging rules
 
     // using variant types to do a map-like data structure while preserving data order
     DataValue::OrderedMapType variables;

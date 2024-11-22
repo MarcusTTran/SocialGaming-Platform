@@ -80,7 +80,9 @@ private:
 };
 
 class MessageRule : public Rule {
-    MessageRule(std::shared_ptr<IServer> server, Rule &recipient_list_maker, Rule &string_maker)
+public:
+    MessageRule();
+    MessageRule(std::shared_ptr<Messenger> server, Rule &recipient_list_maker, Rule &string_maker)
         : messager(server), recipient_list_maker(recipient_list_maker), string_maker(string_maker) {};
 
 private:

@@ -17,6 +17,7 @@ public:
 class Messenger : public IServer {
 
 public:
+    Messenger();
     Messenger(networking::Server &server);
     void broadcast(const std::string &message, const std::vector<networking::Connection> &connections) override;
     void sendToConnection(const std::string &message, const networking::Connection &connection) override;

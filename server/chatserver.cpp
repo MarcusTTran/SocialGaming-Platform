@@ -9,6 +9,7 @@
 
 #include "optionsDisplay.h"
 
+#include "GameParser.h"
 #include "LobbyManager.h"
 #include "Messenger.h"
 #include "NameResolver.h"
@@ -30,6 +31,7 @@ std::vector<Connection> clients;
 // TODO: Tempory solution to allow the onConnect and onDisconnect to access the
 // server object. refactor at a later date.
 Server *server_ptr = nullptr;
+std::shared_ptr<Messenger> messenger;
 std::unique_ptr<LobbyManager> lobbyManager;
 
 void onConnect(Connection c) {
@@ -70,6 +72,10 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
 
             // TODO: This is a temporary solution to create a game. This will be replaced with a user
             // selected game with a game configuration file.
+
+            const std::string gameConfigFile = "../config/minimal.game";
+            ParsedGameData gameData(gameConfigFile, messenger);
+            std::cout << "Game name: " << gameData.getGameName() << "\n";
 
             std::string gameName = "Rock Paper Scissors";
             Game game(gameName);
