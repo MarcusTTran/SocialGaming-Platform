@@ -1,0 +1,16 @@
+// Minimal game that immediately returns success
+configuration {
+  name: "minimal"
+  player range: (1, 20)
+  audience: false
+  setup: {}
+}
+constants {}
+variables {}
+per-player {}
+per-audience {}
+rules {
+    for player in players {
+        message [player] "Hi\n";
+    }
+}
