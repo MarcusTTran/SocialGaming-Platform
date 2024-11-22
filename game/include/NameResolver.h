@@ -12,6 +12,11 @@ public:
     void removeInnerScope() { full_scope.pop_back(); }
 
     bool addNewValue(const std::string &key, const DataValue &value) {
+
+        if (full_scope.empty()) {
+            full_scope.push_back({});
+        }
+
         // return false if the key already exists in the inner-most scope
         if (full_scope.back().find(key) != full_scope.back().end()) {
             return false;

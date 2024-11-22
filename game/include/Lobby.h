@@ -22,7 +22,7 @@ public:
     // State of the lobby (e.g. waiting for players, in progress, finished)
     enum class LobbyState { Waiting, InProgress, Finished };
 
-    Lobby(const Game &game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
+    Lobby(Game game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
           std::string lobbyCode);
     ~Lobby() = default;
     void addPlayer(const Player &player);

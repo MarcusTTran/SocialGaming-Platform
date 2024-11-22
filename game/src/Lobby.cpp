@@ -1,6 +1,6 @@
 #include "Lobby.h"
 
-Lobby::Lobby(const Game &game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
+Lobby::Lobby(Game game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
              std::string lobbyCode)
     : game(std::make_unique<Game>(std::move(game))), server(server), lobbyCreator(lobbyCreator), lobbyCode(lobbyCode),
       state(LobbyState::Waiting) {
@@ -63,6 +63,8 @@ void Lobby::processIncomingMessage(const networking::Connection &connection, con
     if (connection.id == lobbyCreator->id) {
         if (message == "start") {
             sendToAll("Game starting!");
+            auto playersMap = getPlayersMap();
+            game->startGame(playersMap);
             state = LobbyState::InProgress;
 
             // This is where the game would start
@@ -112,6 +114,7 @@ void Lobby::update() {}
 
 DataValue Lobby::getPlayersMap() {
     std::vector<DataValue> playersMap;
+    playersMap.reserve(players.size());
     for (auto &player : players) {
         playersMap.push_back(DataValue(player.getMap(true)));
     }

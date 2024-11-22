@@ -10,7 +10,7 @@ class LobbyManager {
 public:
     LobbyManager(std::shared_ptr<IServer> server) : server(server) {}
     ~LobbyManager() = default;
-    void createLobby(Game &game, const networking::Connection &lobbyCreator);
+    void createLobby(Game game, const networking::Connection &lobbyCreator);
     void addPlayerToLobby(const std::string &lobbyCode, const networking::Connection &connection);
     void routeMessage(const networking::Connection &connection, const std::string &message);
 
