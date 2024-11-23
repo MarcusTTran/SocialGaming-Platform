@@ -3,6 +3,7 @@
 #include <cassert>
 #include <string>
 #include <unordered_map>
+#include <algorithm>
 #include <vector>
 
 #include "CommonVariantTypes.h"
@@ -167,4 +168,48 @@ private:
 
     std::vector<Rule> statement_list;
     std::vector<Rule>::iterator current_statement;
+};
+
+class InParallelRule : public Rule {
+    enum class StatementState{
+        NOT_COMPLETED,
+        COMPLETED
+    };
+public:
+    InParallelRule(std::vector<Rule> &statements) {
+        for (auto &statement : statements) {
+            this->statements.emplace_back(statement, StatementState::NOT_COMPLETED);
+        }
+    }
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        // Initialize all statements to be not completed
+        for (auto statement : statements) {
+            statement.second = StatementState::NOT_COMPLETED;
+        }
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        for (auto statement_pair : statements) {
+            if (statement_pair.second == StatementState::COMPLETED) {
+                continue;
+            }
+            // run the current statement, and check whether it finished
+            auto rule_state = statement_pair.first.runBurst(name_resolver);
+            if (rule_state.asRuleStatus() != DataValue::RuleStatus::NOTDONE) {
+                statement_pair.second = StatementState::COMPLETED;
+            }
+        }
+        // check whether any statement in statements has a statement.second == StatementState::NOT_COMPLETED
+        auto it = std::find_if(statements.begin(), statements.end(), [](const auto &statement_pair) {
+            return statement_pair.second == StatementState::NOT_COMPLETED;
+        });
+        if (it != statements.end()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+        return DataValue({DataValue::RuleStatus::DONE});
+    }
+
+    std::vector<std::pair<Rule, StatementState>> statements;
 };
