@@ -381,7 +381,7 @@ void ParsedGameData::handleForRule(const ts::Node& node, const std::string& sour
     }
 
     std::unique_ptr<ForRule> forRule = std::make_unique<ForRule>(
-    iteratorName, *conditions, std::move(content));
+    iteratorName, std::move(conditions), std::move(content));
     rules.emplace_back(std::move(forRule));
 }
 

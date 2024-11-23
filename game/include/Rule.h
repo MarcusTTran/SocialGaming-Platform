@@ -4,7 +4,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <optional>
 #include "CommonVariantTypes.h"
 #include "Messenger.h"
 #include "NameResolver.h"
@@ -50,7 +49,6 @@ private:
     virtual void _handle_dependencies(NameResolver &name_resolver) = 0;
     bool first_time = true;
 
-    // TODO: possibly make this virtual?
     virtual DataValue _runBurst(NameResolver &name_resolver) = 0;
 };
 
@@ -117,12 +115,13 @@ private:
 
 class ForRule : public Rule {
 public:
-    ForRule(std::string fresh_variable_name, Rule &list_maker, std::vector<std::unique_ptr<Rule>> contents)
-        : fresh_variable_name{std::move(fresh_variable_name)}, list_maker{list_maker}, statement_list{std::move(contents)} {}
+    ForRule(std::string fresh_variable_name, std::unique_ptr<Rule> list_maker, std::vector<std::unique_ptr<Rule>> contents)
+        : fresh_variable_name{std::move(fresh_variable_name)},
+          list_maker{std::move(list_maker)}, // Move the unique_ptr
+          statement_list{std::move(contents)} {}
 
     void _handle_dependencies(NameResolver &name_resolver) override {
-        // Run the rule that provides a list of values
-        auto list_of_values_generic = list_maker.runBurst(name_resolver);
+        auto list_of_values_generic = list_maker->runBurst(name_resolver); 
         list_of_values = list_of_values_generic.asList();
 
         // Initialize the iterators
@@ -141,15 +140,14 @@ public:
             name_resolver.addNewValue(fresh_variable_name, *value_for_this_loop);
         }
 
-        // Run 
         while (true) {
             assert(value_for_this_loop != list_of_values.end() && "Iterator for list_of_values is invalid");
             assert(current_statement != statement_list.end() && "Iterator for statement_list is invalid");
 
-            // Run the current statement
+            // Run 
             auto rule_state = (*current_statement)->runBurst(name_resolver); // Dereference unique_ptr
             if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
-                return DataValue({DataValue::RuleStatus::NOTDONE}); 
+                return DataValue({DataValue::RuleStatus::NOTDONE});
             }
 
             // Move to the next statement
@@ -157,27 +155,29 @@ public:
             if (current_statement != statement_list.end()) {
                 continue;
             }
+
+            // Move to the next full iteration
             current_statement = statement_list.begin();
-            // set up next full iteration
             value_for_this_loop++;
             if (value_for_this_loop != list_of_values.end()) {
                 name_resolver.setValue(fresh_variable_name, *value_for_this_loop);
                 continue;
             }
-            // every iteration complete
+
+            // Every iteration complete
             return DataValue({DataValue::RuleStatus::DONE});
         }
     }
 
-
 private:
     std::string fresh_variable_name;
 
-    Rule &list_maker;
+    std::unique_ptr<Rule> list_maker; // Changed to unique_ptr
     std::vector<DataValue> list_of_values;
     std::vector<DataValue>::iterator value_for_this_loop;
 
     std::vector<std::unique_ptr<Rule>> statement_list;
-    std::vector<std::unique_ptr<Rule>>::iterator current_statement; // Correct iterator type
+    std::vector<std::unique_ptr<Rule>>::iterator current_statement; 
 };
+
 
