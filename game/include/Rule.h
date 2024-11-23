@@ -164,3 +164,50 @@ private:
     std::vector<Rule> statement_list;
     std::vector<Rule>::iterator current_statement;
 };
+
+/*
+    match !players.elements.weapon.contains(weapon.name) {
+        true => {
+            extend winners with players.elements.collect(player, player.weapon = weapon.beats);
+        }
+    }
+*/
+class MatchRule : public Rule{
+  MatchRule(Rule boolean_maker, std::vector<Rule> content, bool booleanCheck)
+  : boolean_maker{boolean_maker}, statement_list{content}, booleanCheck{booleanCheck} {}
+
+  private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        //TRUE or FALSE its this part match !players.elements.weapon.contains(weapon.name)
+        auto boolean_generic = boolean_maker.runBurst(name_resolver);
+        boolean = boolean_generic.asBoolean();
+
+        //statement list (may contain multiple rules such as in the example)
+        //extend winners with players.elements.collect(player, player.weapon = weapon.beats);
+        current_statement = statement_list.begin();
+    }
+
+  DataValue _runBurst(NameResolver &name_resolver) override {
+    DataValue return_value = DataValue::RuleStatus::NOTDONE;
+    //check if (!players.elements.weapon.contains(weapon.name)) == (true =>)
+    if(boolean != boolean_maker){
+        return return_value;
+    }
+    //check all of the rules
+    while (current_statement != statement_list.end()) {
+        // run the current sub-rule, and check whether it finished
+        auto rule_state = (*current_statement).runBurst(name_resolver);
+        if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
+            return return_value; // incomplete
+        }
+        current_statement++;
+    }
+    return_value = DataValue::RuleStatus::DONE;
+    return return_value; // complete
+  }
+  bool boolean;
+  bool booleanCheck
+  std::vector<Rule> statement_list;
+  std::vector<Rule>::iterator current_statement;
+  Rule &boolean_maker;
+};
