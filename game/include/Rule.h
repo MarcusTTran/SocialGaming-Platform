@@ -117,27 +117,31 @@ private:
 
 class ForRule : public Rule {
 public:
-    ForRule(std::string iterator_name, Rule &list_maker, std::vector<std::unique_ptr<Rule>> contents)
-        : iterator_name{std::move(iterator_name)}, list_maker{list_maker}, statement_list{std::move(contents)} {}
+    ForRule(std::string fresh_variable_name, Rule &list_maker, std::vector<std::unique_ptr<Rule>> contents)
+        : fresh_variable_name{std::move(fresh_variable_name)}, list_maker{list_maker}, statement_list{std::move(contents)} {}
 
     void _handle_dependencies(NameResolver &name_resolver) override {
+        // Run the rule that provides a list of values
         auto list_of_values_generic = list_maker.runBurst(name_resolver);
-        list_of_values = list_of_values_generic.asList(); // Ensure `asList` is implemented in `DataValue`
+        list_of_values = list_of_values_generic.asList();
+
+        // Initialize the iterators
         value_for_this_loop = list_of_values.begin();
-
-        if (!list_of_values.empty()) {
-            name_resolver.addNewValue(iterator_name, *value_for_this_loop);
-        }
-
         current_statement = statement_list.begin();
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        // Return type is DataValue; wrap RuleStatus appropriately
+        // Check for early return
         if (list_of_values.empty() || statement_list.empty()) {
-            return DataValue{DataValue::RuleStatus::DONE};
+            return DataValue({DataValue::RuleStatus::DONE});
         }
 
+        // Set up fresh variable
+        if (list_of_values.size() > 0) {
+            name_resolver.addNewValue(fresh_variable_name, *value_for_this_loop);
+        }
+
+        // Run 
         while (true) {
             assert(value_for_this_loop != list_of_values.end() && "Iterator for list_of_values is invalid");
             assert(current_statement != statement_list.end() && "Iterator for statement_list is invalid");
@@ -145,7 +149,7 @@ public:
             // Run the current statement
             auto rule_state = (*current_statement)->runBurst(name_resolver); // Dereference unique_ptr
             if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
-                return DataValue{DataValue::RuleStatus::NOTDONE}; // Incomplete
+                return DataValue({DataValue::RuleStatus::NOTDONE}); 
             }
 
             // Move to the next statement
@@ -153,24 +157,21 @@ public:
             if (current_statement != statement_list.end()) {
                 continue;
             }
-
-            // If all statements are done, move to the next iteration
             current_statement = statement_list.begin();
+            // set up next full iteration
             value_for_this_loop++;
             if (value_for_this_loop != list_of_values.end()) {
-                name_resolver.addNewValue(iterator_name, *value_for_this_loop);
+                name_resolver.setValue(fresh_variable_name, *value_for_this_loop);
                 continue;
             }
-
-            // All iterations are complete
-            return DataValue{DataValue::RuleStatus::DONE};
+            // every iteration complete
+            return DataValue({DataValue::RuleStatus::DONE});
         }
     }
 
 
 private:
-    std::string iterator_name;
-    DataValue iterator;
+    std::string fresh_variable_name;
 
     Rule &list_maker;
     std::vector<DataValue> list_of_values;
