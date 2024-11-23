@@ -1,6 +1,6 @@
 #include "Lobby.h"
 
-Lobby::Lobby(Game game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
+Lobby::Lobby(Game&& game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
              std::string lobbyCode)
     : game(std::make_unique<Game>(std::move(game))), server(server), lobbyCreator(lobbyCreator), lobbyCode(lobbyCode),
       state(LobbyState::Waiting) {

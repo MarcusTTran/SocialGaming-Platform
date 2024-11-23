@@ -50,6 +50,10 @@ const std::vector<DataValue::OrderedMapType> &ParsedGameData::getSetup() const {
 
 const vector<std::unique_ptr<Rule>>& ParsedGameData::getRules() const { return rules; }
 
+// vector<std::unique_ptr<Rule>> ParsedGameData::moveRules() {
+//     return std::move(rules);
+// }
+
 DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::string &source) {
     auto type = node.getType();
     auto currContent = std::string(node.getSourceRange(source));

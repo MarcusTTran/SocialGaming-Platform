@@ -48,6 +48,9 @@ public:
     const std::vector<DataValue::OrderedMapType> &getSetup() const;
     const vector<std::unique_ptr<Rule>>& getRules() const;
 
+    // For moving ownership of rules to Game object
+    // vector<std::unique_ptr<Rule>> moveRules();
+
     // helper functions to print result to the console
     // Note that anything related to print out will be removed eventually
     void printKeyValuePair();
@@ -65,7 +68,7 @@ private:
     DataValue::OrderedMapType perPlayer;
     DataValue::OrderedMapType perAudience;
     DataValue::OrderedMapType constants; // for RPS -> a vector of 2 pairs inside: { outerpair{pair1, pair2}, ... }
-    std::vector<std::unique_ptr<Rule>> rules;
+    vector<std::unique_ptr<Rule>> rules;
 
     DataValue handleExpression(const ts::Node &node, const std::string &source);
     void parseValueMap(const ts::Node &, const std::string &source, DataValue::OrderedMapType &output);

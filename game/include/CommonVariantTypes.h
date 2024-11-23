@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+// #include "Rule.h"
 
 class DataValue {
 
@@ -21,7 +22,7 @@ public:
     using EnumDescriptionType = std::vector<std::pair<std::string, DataValue>>;  // Swapped
     using ValueType = std::variant<std::string, int, bool, std::vector<DataValue>, EnumDescriptionType,
                                    OrderedMapType, // Updated positions in variant
-                                   std::pair<int, int>, RuleStatus, networking::Connection>;
+                                   std::pair<int, int>, RuleStatus, networking::Connection>; //Rule
 
     // Default constructor
     DataValue() : value("") {}

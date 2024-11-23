@@ -8,12 +8,18 @@ Game::Game(const ParsedGameData& parserObject, const std::string& gameName)
       configuration(parserObject),
       constants(parserObject),
       variables(parserObject),
-      // TODO: perhaps add rules?
       globalMap()  
 { 
+    // rules = parserObject.moveRules();
+    // auto rulesPtrs = parserObject.getRules();
+    // for (auto& rule : rulesPtrs) {
+    //     rules.emplace_back(DataValue(*rule));
+    // }
+
     // Populate the global map with other API variables held in Game object
     addObjectToGlobalMap("constants", DataValue(constants.getConstants()), *globalMap);
     addObjectToGlobalMap("variables", DataValue(variables.getVariables()), *globalMap);
+    // addObjectToGlobalMap("rules", DataValue(rules), *globalMap);
     
     // Add configuration to global map
     DataValue::OrderedMapType configurationMap;

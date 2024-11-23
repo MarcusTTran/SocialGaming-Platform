@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <random>
 
-void LobbyManager::createLobby(Game game, const networking::Connection &lobbyCreator) {
+void LobbyManager::createLobby(Game&& game, const networking::Connection &lobbyCreator) {
 
     // Check if the connection has already created a lobby
     // Dont allow a player to create multiple lobbies
