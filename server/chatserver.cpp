@@ -12,6 +12,7 @@
 #include "LobbyManager.h"
 #include "Messenger.h"
 #include "NameResolver.h"
+#include "GameParser.h"
 #include "GameNameDisplayer.h"
 #include <algorithm>
 #include <fstream>
@@ -32,6 +33,8 @@ std::vector<Connection> clients;
 // server object. refactor at a later date.
 Server *server_ptr = nullptr;
 std::unique_ptr<LobbyManager> lobbyManager;
+
+std::shared_ptr<Messenger> messenger;
 
 void onConnect(Connection c)
 {
@@ -79,13 +82,13 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
         const auto &text = message.text;
         const auto &connection = message.connection;
         auto currentMessageIsGameCreator = false;
-        GameCreators currentGameCreator;
-        for (auto i : listOfGameCreators)
+        GameCreators* currentGameCreator = nullptr;
+        for (auto& i : listOfGameCreators)
         {
             if (i.connectionID == message.connection.id)
             {
                 currentMessageIsGameCreator = true;
-                currentGameCreator = i;
+                currentGameCreator = &i;
             }
         }
 
@@ -97,17 +100,20 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
         else if (currentMessageIsGameCreator)
         { // if our current connection is in process of creating game.
 
-            if (!currentGameCreator.chosenGameToEdit)
+            if (!currentGameCreator->chosenGameToEdit)
             {
+                
+                const std::string gameConfigPath = getConfigMap().at(std::stoi(message.text));
+                auto serverPtr = std::static_pointer_cast<IServer>(messenger);
+                ParsedGameData parser(gameConfigPath, serverPtr);
 
-                ParsedGameData parser(getConfigMap().at(std::stoi(message.text)));
                 // // Game config now parses game selected by user.
                 GameConfiguration config(parser);
                 result << "You have chosen game " << message.text << " with config path: " << getConfigMap().at(std::stoi(message.text)) << '\n';
                 result << "Do you wish to edit this games setup? or do you want to keep its default settings? (Enter 'SAME' to choose default settings)" << '\n';
-                currentGameCreator.chosenGameToEdit = true;
+                currentGameCreator->chosenGameToEdit = true;
             }
-            else if (currentGameCreator.chosenGameToEdit && currentGameCreator.isCurrentlyEditingGame)
+            else if (currentGameCreator->chosenGameToEdit && currentGameCreator->isCurrentlyEditingGame)
             {
 
                 if (message.text == "SAME")
