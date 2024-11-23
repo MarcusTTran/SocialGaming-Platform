@@ -201,7 +201,7 @@ private:
                 statement_pair.second = StatementState::COMPLETED;
             }
         }
-        // check whether any statement in statements has a statement.second == StatementState::NOT_COMPLETED
+        // check whether any statement are not completed, and if so, return NOTDONE
         auto it = std::find_if(statements.begin(), statements.end(), [](const auto &statement_pair) {
             return statement_pair.second == StatementState::NOT_COMPLETED;
         });
