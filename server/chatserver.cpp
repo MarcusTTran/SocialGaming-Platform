@@ -12,6 +12,7 @@
 #include "LobbyManager.h"
 #include "Messenger.h"
 #include "NameResolver.h"
+#include "GameNameDisplayer.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -32,7 +33,8 @@ std::vector<Connection> clients;
 Server *server_ptr = nullptr;
 std::unique_ptr<LobbyManager> lobbyManager;
 
-void onConnect(Connection c) {
+void onConnect(Connection c)
+{
     std::cout << "New connection found: " << c.id << "\n";
     clients.push_back(c);
 
@@ -45,46 +47,122 @@ void onConnect(Connection c) {
     server_ptr->send(outgoing); // Sending the message to the newly connected client
 }
 
-void onDisconnect(Connection c) {
+void onDisconnect(Connection c)
+{
     std::cout << "Connection lost: " << c.id << "\n";
     auto eraseBegin = std::remove(std::begin(clients), std::end(clients), c);
     clients.erase(eraseBegin, std::end(clients));
 }
 
-struct MessageResult {
+struct MessageResult
+{
     std::string result;
     bool shouldShutdown;
 };
 
-MessageResult processMessages(Server &server, const std::deque<Message> &incoming) {
+struct GameCreators
+{
+    uintptr_t connectionID;
+    bool isCurrentlyEditingGame = true;
+    bool choseDefaultSettings = false;
+    bool chosenGameToEdit = false;
+    int currentStepInGameConfigEdit; // there are 5 if statement checks as described in main.cpp to check for values for setups, this will hold where we are in that process.
+};
+std::vector<GameCreators> listOfGameCreators;
+
+MessageResult processMessages(Server &server, const std::deque<Message> &incoming)
+{
     std::ostringstream result;
     bool quit = false;
-    for (const auto &message : incoming) {
+    for (const auto &message : incoming)
+    {
         const auto &text = message.text;
         const auto &connection = message.connection;
+        auto currentMessageIsGameCreator = false;
+        GameCreators currentGameCreator;
+        for (auto i : listOfGameCreators)
+        {
+            if (i.connectionID == message.connection.id)
+            {
+                currentMessageIsGameCreator = true;
+                currentGameCreator = i;
+            }
+        }
 
-        if (lobbyManager->isAwaitingDisplayName(connection)) { // Check if connection is awaiting display name
+        if (lobbyManager->isAwaitingDisplayName(connection))
+        { // Check if connection is awaiting display name
             std::string displayName = text;
             lobbyManager->addPlayerToLobbyWithDisplayName(connection, displayName);
-        } else if (text == "create") {
+        }
+        else if (currentMessageIsGameCreator)
+        { // if our current connection is in process of creating game.
+
+            if (!currentGameCreator.chosenGameToEdit)
+            {
+
+                ParsedGameData parser(getConfigMap().at(std::stoi(message.text)));
+                // // Game config now parses game selected by user.
+                GameConfiguration config(parser);
+                result << "You have chosen game " << message.text << " with config path: " << getConfigMap().at(std::stoi(message.text)) << '\n';
+                result << "Do you wish to edit this games setup? or do you want to keep its default settings? (Enter 'SAME' to choose default settings)" << '\n';
+                currentGameCreator.chosenGameToEdit = true;
+            }
+            else if (currentGameCreator.chosenGameToEdit && currentGameCreator.isCurrentlyEditingGame)
+            {
+
+                if (message.text == "SAME")
+                {
+                    // then game can be setup here as there is no edits to make.s
+                    auto new_end = std::remove_if(
+                        listOfGameCreators.begin(),
+                        listOfGameCreators.end(),
+                        [message](const GameCreators &creator)
+                        {
+                            return creator.connectionID == message.connection.id; // Replace 'id' with the actual field name.
+                        });
+                    listOfGameCreators.erase(new_end, listOfGameCreators.end());
+
+                    result << "Deault settings chosen for game! Game now being created. \n";
+                }
+            }
+        }
+        else if (text == "create")
+        {
 
             // TODO: This is a temporary solution to create a game. This will be replaced with a user
             // selected game with a game configuration file.
 
-            std::string gameName = "Rock Paper Scissors";
-            Game game(gameName);
-            lobbyManager->createLobby(game, connection);
-        } else if (text.find("join") == 0) {
-            if (text.length() <= 5) {
+            // assume we display this to the user
+            result << gameNameDisplayer();
+            result << "Please enter which game you would like to play by entering in its number (i.e 1): \n";
+
+            // add a creator to the list as we may have multiple people creating a game at the same time.
+            GameCreators creator;
+            creator.connectionID = message.connection.id;
+            creator.currentStepInGameConfigEdit = 0;
+            listOfGameCreators.emplace_back(creator);
+
+            // std::string gameName = "Rock Paper Scissors";
+            // Game game(gameName);
+            // lobbyManager->createLobby(game, connection);
+        }
+        else if (text.find("join") == 0)
+        {
+            if (text.length() <= 5)
+            {
                 std::string errorMessage = "Lobby code is missing. Please provide a valid lobby code.";
                 std::deque<Message> outgoing;
                 outgoing.push_back({connection, errorMessage});
                 server.send(outgoing);
-            } else {
+            }
+            else
+            {
                 std::string lobbyCode = text.substr(5);
                 lobbyManager->addPlayerToLobby(lobbyCode, connection);
             }
-        } else {
+        }
+        else
+        {
             std::cout << "Routing message to lobby manager\n";
             lobbyManager->routeMessage(connection, text);
         }
@@ -93,26 +171,33 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
     return MessageResult{result.str(), quit};
 }
 
-std::deque<Message> buildOutgoing(const std::string &log) {
+std::deque<Message> buildOutgoing(const std::string &log)
+{
     std::deque<Message> outgoing;
-    for (auto client : clients) {
+    for (auto client : clients)
+    {
         outgoing.push_back({client, log});
     }
     return outgoing;
 }
 
-std::string getHTTPMessage(const char *htmlLocation) {
-    if (access(htmlLocation, R_OK) != -1) {
+std::string getHTTPMessage(const char *htmlLocation)
+{
+    if (access(htmlLocation, R_OK) != -1)
+    {
         std::ifstream infile{htmlLocation};
         return std::string((std::istreambuf_iterator<char>(infile)), std::istreambuf_iterator<char>());
     }
 
-    std::cerr << "Unable to open HTML index file:\n" << htmlLocation << "\n";
+    std::cerr << "Unable to open HTML index file:\n"
+              << htmlLocation << "\n";
     std::exit(-1);
 }
 
-int main(int argc, char *argv[]) {
-    if (argc < 3) {
+int main(int argc, char *argv[])
+{
+    if (argc < 3)
+    {
         std::cerr << "Usage:\n  " << argv[0] << " <port> <html response>\n"
                   << "  e.g. " << argv[0] << " 4002 ./webchat.html\n";
         return 1;
@@ -124,11 +209,15 @@ int main(int argc, char *argv[]) {
     auto messenger = std::make_shared<Messenger>(server);
     lobbyManager = std::make_unique<LobbyManager>(messenger);
 
-    while (true) {
+    while (true)
+    {
         bool errorWhileUpdating = false;
-        try {
+        try
+        {
             server.update();
-        } catch (std::exception &e) {
+        }
+        catch (std::exception &e)
+        {
             std::cerr << "Exception from Server update:\n"
                       << " " << e.what() << "\n\n";
             errorWhileUpdating = true;
@@ -139,13 +228,15 @@ int main(int argc, char *argv[]) {
         const auto outgoing = buildOutgoing(log);
         server.send(outgoing);
 
-        if (shouldQuit || errorWhileUpdating) {
+        if (shouldQuit || errorWhileUpdating)
+        {
             break;
         }
 
         // TODO: need to loop through each lobby and update the game state
 
-        for (const auto &[lobbyCode, lobby] : lobbyManager->getLobbies()) {
+        for (const auto &[lobbyCode, lobby] : lobbyManager->getLobbies())
+        {
             lobby->update();
         }
 
