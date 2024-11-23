@@ -28,6 +28,6 @@ void GameVariables::setVariable(const std::string &key, DataValue content) {
     if (valueFinder != end(variables)) {
         valueFinder->second = std::move(content);
     } else {
-        variables.emplace_back(key, std::move(content));
+        variables.emplace(key, std::move(content));
     }
 }

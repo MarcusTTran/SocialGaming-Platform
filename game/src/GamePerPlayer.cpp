@@ -6,7 +6,7 @@ GamePerPlayer::GamePerPlayer(const ParsedGameData &parsedData) { perPlayerVariab
 DataValue::OrderedMapType GamePerPlayer::getPlayerVariables() { return perPlayerVariables; }
 
 void GamePerPlayer::addPerPlayerVariable(std::string key, DataValue value) {
-    perPlayerVariables.emplace_back(key, value);
+    perPlayerVariables.emplace(key, value);
 }
 
 // Returns the DataValue object by const reference if it exists with the key provided.
