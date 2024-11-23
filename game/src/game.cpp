@@ -1,15 +1,11 @@
 #include "game.h"
-#include <string_view>
 #include <ranges>
+#include <string_view>
 
 // Calls the constructors for the API objects and initializes the game name
-Game::Game(const ParsedGameData& parserObject, const std::string& gameName)
-    : gameName(gameName),
-      configuration(parserObject),
-      constants(parserObject),
-      variables(parserObject),
-      globalMap()  
-{ 
+Game::Game(const ParsedGameData &parserObject, const std::string &gameName)
+    : gameName(gameName), configuration(parserObject), constants(parserObject), variables(parserObject),
+      globalMap(std::make_shared<NameResolver>()) {
     // rules = parserObject.moveRules();
     // auto rulesPtrs = parserObject.getRules();
     // for (auto& rule : rulesPtrs) {
@@ -20,7 +16,7 @@ Game::Game(const ParsedGameData& parserObject, const std::string& gameName)
     addObjectToGlobalMap("constants", DataValue(constants.getConstants()), *globalMap);
     addObjectToGlobalMap("variables", DataValue(variables.getVariables()), *globalMap);
     // addObjectToGlobalMap("rules", DataValue(rules), *globalMap);
-    
+
     // Add configuration to global map
     DataValue::OrderedMapType configurationMap;
     configurationMap.emplace("name", DataValue(gameName));
@@ -29,9 +25,9 @@ Game::Game(const ParsedGameData& parserObject, const std::string& gameName)
 
     // Convert setup rules to a vector of DataValue
     std::vector<DataValue> setupData;
-    for (const auto& setup : parserObject.getSetup()) {
+    for (const auto &setup : parserObject.getSetup()) {
         DataValue::OrderedMapType setupRuleMap;
-        for (const auto& [key, value] : setup) {
+        for (const auto &[key, value] : setup) {
             setupRuleMap.emplace(key, value);
         }
         setupData.push_back(DataValue(setupRuleMap));
@@ -44,7 +40,7 @@ Game::Game(const ParsedGameData& parserObject, const std::string& gameName)
 // Game::Game(const std::string &gameName, NameResolver &nameResolver)
 //     : gameName(gameName), nameResolver(std::make_unique<NameResolver>(nameResolver)) {}
 
-Game::Game(const std::string &gameName) : gameName(gameName) {}
+Game::Game(const std::string &gameName) : gameName(gameName), globalMap(std::make_shared<NameResolver>()) {}
 
 std::string Game::getGameName() const { return gameName; }
 
@@ -60,11 +56,17 @@ void Game::addObjectToGlobalMap(const std::string &key, const DataValue &value, 
 
 void Game::startGame(const DataValue &players) {
     std::string key = "players";
+    auto playersMap = players.asOrderedMap();
 
-    // Todo: Add the players to the name resolver
-    // Need tp fix the types
+    globalMap->addNewValue(key, players);
 
-    // nameResolver->add_new_value(key, players);
+    auto playersMapValue = globalMap->getValue(key).asOrderedMap();
+
+    for (const auto &[playerName, playerData] : playersMapValue) {
+        auto player = playerData.asOrderedMap();
+        auto name = player["name"].asString();
+        std::cout << "Player name: " << name << std::endl;
+    }
 }
 
 void Game::insertIncomingMessages(const std::deque<Message> &incomingMessages) {

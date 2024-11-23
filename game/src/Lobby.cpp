@@ -1,8 +1,8 @@
 #include "Lobby.h"
 
-Lobby::Lobby(Game&& game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
-             std::string lobbyCode)
-    : game(std::make_unique<Game>(std::move(game))), server(server), lobbyCreator(lobbyCreator), lobbyCode(lobbyCode),
+Lobby::Lobby(std::unique_ptr<Game> game, std::shared_ptr<IServer> server,
+             std::shared_ptr<networking::Connection> lobbyCreator, std::string lobbyCode)
+    : game(std::move(game)), server(server), lobbyCreator(lobbyCreator), lobbyCode(lobbyCode),
       state(LobbyState::Waiting) {
     server->sendToConnection("Lobby created with code: " + lobbyCode, *lobbyCreator);
 
@@ -99,10 +99,10 @@ vector<Player> Lobby::getPlayers() const { return players; }
 void Lobby::update() {}
 
 DataValue Lobby::getPlayersMap() {
-    std::vector<DataValue> playersMap;
-    playersMap.reserve(players.size());
+    DataValue::OrderedMapType playersMap;
+
     for (auto &player : players) {
-        playersMap.push_back(DataValue(player.getMap(true)));
+        playersMap.emplace(player.getDisplayName(), player.getMap(true));
     }
     return DataValue(playersMap);
 }
@@ -120,9 +120,9 @@ void Lobby::handleStartEvent(const networking::Connection &connection, const std
 }
 
 void Lobby::handleDumpEvent(const networking::Connection &connection, const std::string &message) {
-    auto playersMap = getPlayersMap().asList();
+    auto playersMap = getPlayersMap().asOrderedMap();
     for (auto &player : playersMap) {
-        server->sendMessageToPlayerMap("You said: " + message, player.asOrderedMap());
+        server->sendMessageToPlayerMap("You said: " + message, player.second.asOrderedMap());
     }
 }
 

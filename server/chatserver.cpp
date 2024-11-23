@@ -78,8 +78,8 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
             std::cout << "Game name: " << gameData.getGameName() << "\n";
 
             std::string gameName = "Rock Paper Scissors";
-            Game game(gameName);
-            lobbyManager->createLobby(game, connection);
+            std::unique_ptr<Game> game = std::make_unique<Game>(gameName);
+            lobbyManager->createLobby(std::move(game), connection);
         } else if (text.find("join") == 0) {
             if (text.length() <= 5) {
                 std::string errorMessage = "Lobby code is missing. Please provide a valid lobby code.";
