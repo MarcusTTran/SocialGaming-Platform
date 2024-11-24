@@ -76,9 +76,8 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
             const std::string gameConfigFile = "../config/minimal.game";
             ParsedGameData gameData(gameConfigFile, messenger);
             std::cout << "Game name: " << gameData.getGameName() << "\n";
-
-            std::string gameName = "Rock Paper Scissors";
-            std::unique_ptr<Game> game = std::make_unique<Game>(gameName);
+            // std::cout << "Num rules: " << gameData.getRules().size() << "\n";
+            std::unique_ptr<Game> game = std::make_unique<Game>(gameData, gameData.getGameName());
             lobbyManager->createLobby(std::move(game), connection);
         } else if (text.find("join") == 0) {
             if (text.length() <= 5) {
@@ -127,7 +126,7 @@ int main(int argc, char *argv[]) {
     const unsigned short port = std::stoi(argv[1]);
     Server server = {port, getHTTPMessage(argv[2]), onConnect, onDisconnect};
     server_ptr = &server;
-    auto messenger = std::make_shared<Messenger>(server);
+    messenger = std::make_shared<Messenger>(server);
     lobbyManager = std::make_unique<LobbyManager>(messenger);
 
     while (true) {

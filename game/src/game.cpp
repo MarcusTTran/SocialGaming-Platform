@@ -3,14 +3,12 @@
 #include <string_view>
 
 // Calls the constructors for the API objects and initializes the game name
-Game::Game(const ParsedGameData &parserObject, const std::string &gameName)
+Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     : gameName(gameName), configuration(parserObject), constants(parserObject), variables(parserObject),
       globalMap(std::make_shared<NameResolver>()) {
-    // rules = parserObject.moveRules();
-    // auto rulesPtrs = parserObject.getRules();
-    // for (auto& rule : rulesPtrs) {
-    //     rules.emplace_back(DataValue(*rule));
-    // }
+
+    rules = parserObject.moveRules();
+    std::cout << "Rules size: " << rules.size() << std::endl;
 
     // Populate the global map with other API variables held in Game object
     addObjectToGlobalMap("constants", DataValue(constants.getConstants()), *globalMap);
@@ -66,6 +64,12 @@ void Game::startGame(const DataValue &players) {
         auto player = playerData.asOrderedMap();
         auto name = player["name"].asString();
         std::cout << "Player name: " << name << std::endl;
+    }
+
+    std::cout << "Game started." << std::endl;
+    // Start running rules here
+    for (const auto &rule : rules) {
+        rule->runBurst(*globalMap);
     }
 }
 

@@ -29,6 +29,7 @@ public:
      * Attempt to execute as much of the rule as possible.
      */
     DataValue runBurst(NameResolver &name_resolver) {
+        std::cout << "Running rule" << std::endl;
         if (first_time) {
             _handle_dependencies(name_resolver);
         }
@@ -36,6 +37,7 @@ public:
         name_resolver.addInnerScope();
         DataValue returnValue = _runBurst(name_resolver);
         name_resolver.removeInnerScope();
+        std::cout << returnValue.getType() << std::endl;
         if (returnValue.asRuleStatus() == DataValue::RuleStatus::DONE) {
             first_time = true;
         }
@@ -69,8 +71,13 @@ private:
 //     std::vector<Rule &> dependencies;
 // };
 
+// NOTE: Had to modify these two rules to have specific getters for the values they produce
+// This is because the base rule class expects the return value to be a RuleStatus, but these rules
+// return a string and a list of players, respectively. This is a temporary solution and should be
+// replaced with a more general solution in the future.
 class StringRule : public Rule {
 public:
+    std::string &getString() { return string; }
     StringRule(std::string_view string_literal) : string(string_literal) {}
 
 private:
@@ -78,50 +85,57 @@ private:
         // TODO: handle strings with {} braces
     }
 
-    DataValue _runBurst(NameResolver &name_resolver) override {
-        DataValue string_val(string);
-        return string_val;
-    }
+    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(DataValue::RuleStatus::DONE); }
 
     std::string string;
 };
 
 class AllPlayersRule : public Rule {
+public:
+    DataValue &getPlayers() { return players; }
+
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {}
 
     DataValue _runBurst(NameResolver &name_resolver) override {
         // TODO: handle error value returning
-        return name_resolver.getValue("players");
+        players = name_resolver.getValue("players");
+        return DataValue(DataValue::RuleStatus::DONE);
     }
+
+    DataValue players;
 };
 
 class MessageRule : public Rule {
 public:
-    // MessageRule();
-    MessageRule(std::shared_ptr<IServer> server, Rule &recipient_list_maker, Rule &string_maker)
-        : messager(server), recipient_list_maker(recipient_list_maker), string_maker(string_maker) {};
+    MessageRule(std::shared_ptr<IServer> server, std::unique_ptr<AllPlayersRule> recipient_list_maker,
+                std::unique_ptr<StringRule> string_maker)
+        : messager(server), recipient_list_maker(std::move(recipient_list_maker)),
+          string_maker(std::move(string_maker)) {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
-        auto recipients_generic = recipient_list_maker.runBurst(name_resolver);
-        recipients = recipients_generic.asList();
+        recipient_list_maker->runBurst(name_resolver);
+        recipients = recipient_list_maker->getPlayers().asOrderedMap();
 
-        auto message_generic = string_maker.runBurst(name_resolver);
-        message = message_generic.asString();
+        string_maker->runBurst(name_resolver);
+        message = string_maker->getString();
+        std::cout << "Message: from message rule: " << message << std::endl;
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        for (auto person : recipients) {
-            messager->sendMessageToPlayerMap(message, person.asOrderedMap());
+        for (const auto &[key, value] : recipients) {
+            std::cout << "Sending message to: " << key << std::endl;
+            messager->sendMessageToPlayerMap(message, value.asOrderedMap());
         }
-        return {}; // void TODO: change to error return type
+
+        return DataValue(DataValue::RuleStatus::DONE);
     }
 
     std::shared_ptr<IServer> messager;
-    Rule &recipient_list_maker;
-    Rule &string_maker;
-    std::vector<DataValue> recipients;
+    std::unique_ptr<AllPlayersRule> recipient_list_maker;
+    std::unique_ptr<StringRule> string_maker;
+    DataValue::OrderedMapType recipients;
     std::string message;
 };
 
@@ -234,7 +248,6 @@ public:
             return DataValue{DataValue::RuleStatus::DONE};
         }
     }
-
 
 private:
     std::string iterator_name;

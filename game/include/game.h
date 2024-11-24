@@ -31,7 +31,7 @@ public:
         Player player;
     };
 
-    Game(const ParsedGameData &parserObject, const std::string &gameName);
+    Game(ParsedGameData &parserObject, const std::string &gameName);
     Game(const std::string &gameName);
     ~Game() = default;
 
