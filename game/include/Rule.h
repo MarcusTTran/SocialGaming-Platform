@@ -4,10 +4,10 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
 #include "CommonVariantTypes.h"
 #include "Messenger.h"
 #include "NameResolver.h"
+#include <stdexcept>
 
 // Example variables state
 // vector([
@@ -53,7 +53,8 @@ private:
 };
 
 class StringRule : public Rule {
-    StringRule(std::string string_literal) : string(string_literal) {}
+public:
+    StringRule(std::string_view string_literal) : string(string_literal) {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
@@ -66,7 +67,6 @@ private:
     }
 
     std::string string;
-    std::vector<Rule &> dependencies;
 };
 
 class AllPlayersRule : public Rule {
@@ -74,12 +74,19 @@ private:
     void _handle_dependencies(NameResolver &name_resolver) override {}
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        // TODO: handle error value returning
-        return name_resolver.getValue("players");
+        auto playersMap = name_resolver.getValue("players");
+
+        if (playersMap.has_value()) {
+            return playersMap.value();
+        } else {
+            throw std::runtime_error("Players map was not found in global map");
+        }
     }
 };
 
+
 class MessageRule : public Rule {
+public:
     MessageRule(std::shared_ptr<IServer> server, Rule &recipient_list_maker, Rule &string_maker)
         : messager(server), recipient_list_maker(recipient_list_maker), string_maker(string_maker) {};
 
@@ -108,13 +115,14 @@ private:
 
 class ForRule : public Rule {
 public:
-    ForRule(std::string fresh_variable_name, Rule &list_maker, std::vector<Rule> contents)
-        : fresh_variable_name{fresh_variable_name}, list_maker{list_maker}, statement_list{contents} {}
+    ForRule(std::string fresh_variable_name, std::unique_ptr<Rule> list_maker, std::vector<std::unique_ptr<Rule>> contents)
+        : fresh_variable_name{std::move(fresh_variable_name)},
+          list_maker{std::move(list_maker)}, // Move the unique_ptr
+          statement_list{std::move(contents)} {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
-        // Run the rule that provides a list of values
-        auto list_of_values_generic = list_maker.runBurst(name_resolver);
+        auto list_of_values_generic = list_maker->runBurst(name_resolver); 
         list_of_values = list_of_values_generic.asList();
 
         // Initialize the iterators
@@ -133,40 +141,43 @@ private:
             name_resolver.addNewValue(fresh_variable_name, *value_for_this_loop);
         }
 
-        // Run 
         while (true) {
-            assert(value_for_this_loop != list_of_values.end() && "The next iterator to run should always be valid");
-            assert(current_statement != statement_list.end() && "The next statement to run should always be valid");
-            // run the current sub-rule, and check whether it finished
-            auto rule_state = (*current_statement).runBurst(name_resolver);
+            assert(value_for_this_loop != list_of_values.end() && "Iterator for list_of_values is invalid");
+            assert(current_statement != statement_list.end() && "Iterator for statement_list is invalid");
+
+            // Run 
+            auto rule_state = (*current_statement)->runBurst(name_resolver); // Dereference unique_ptr
             if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
-                return DataValue(rule_state);
+                return DataValue({DataValue::RuleStatus::NOTDONE});
             }
-            // set up next rule to run
+
+            // Move to the next statement
             current_statement++;
             if (current_statement != statement_list.end()) {
                 continue;
             }
+
+            // Move to the next full iteration
             current_statement = statement_list.begin();
-            // set up next full iteration
             value_for_this_loop++;
             if (value_for_this_loop != list_of_values.end()) {
                 name_resolver.setValue(fresh_variable_name, *value_for_this_loop);
                 continue;
             }
-            // every iteration complete
+
+            // Every iteration complete
             return DataValue({DataValue::RuleStatus::DONE});
         }
     }
 
     std::string fresh_variable_name;
 
-    Rule &list_maker;
+    std::unique_ptr<Rule> list_maker; // Changed to unique_ptr
     std::vector<DataValue> list_of_values;
     std::vector<DataValue>::iterator value_for_this_loop;
 
-    std::vector<Rule> statement_list;
-    std::vector<Rule>::iterator current_statement;
+    std::vector<std::unique_ptr<Rule>> statement_list;
+    std::vector<std::unique_ptr<Rule>>::iterator current_statement; 
 };
 
 class UpfromRule : public Rule {
