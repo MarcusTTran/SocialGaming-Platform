@@ -120,6 +120,7 @@ public:
           list_maker{std::move(list_maker)}, // Move the unique_ptr
           statement_list{std::move(contents)} {}
 
+private:
     void _handle_dependencies(NameResolver &name_resolver) override {
         auto list_of_values_generic = list_maker->runBurst(name_resolver); 
         list_of_values = list_of_values_generic.asList();
@@ -169,7 +170,6 @@ public:
         }
     }
 
-private:
     std::string fresh_variable_name;
 
     std::unique_ptr<Rule> list_maker; // Changed to unique_ptr
@@ -180,4 +180,34 @@ private:
     std::vector<std::unique_ptr<Rule>>::iterator current_statement; 
 };
 
+class UpfromRule : public Rule {
+public:
+    UpfromRule(Rule &number_maker, int starting_value)
+        : number_maker(number_maker), starting_value(starting_value) {}
 
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        auto ending_value_generic = number_maker.runBurst(name_resolver);
+        ending_value = ending_value_generic.asNumber();
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // return empty list, not a decreasing list
+        if (ending_value < starting_value) {
+            return DataValue(std::vector<DataValue>());
+        }
+        // construct vector
+        std::vector<DataValue> list_of_ints;
+        int number_of_values = ending_value - starting_value;
+        list_of_ints.reserve(number_of_values);
+        for (int val = starting_value; val <= ending_value; val++) {
+            list_of_ints.emplace_back(DataValue(val));
+        }
+        return DataValue(list_of_ints);
+    }
+
+    Rule &number_maker;
+    int ending_value;
+
+    int starting_value;
+};
