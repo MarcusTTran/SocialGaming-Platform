@@ -17,10 +17,10 @@ class DataValue {
 public:
     enum RuleStatus { DONE, NOTDONE };
 
-    using OrderedMapType = std::vector<std::pair<std::string, DataValue>>;
-    using EnumDescriptionType = std::map<std::string, DataValue>;
-    using ValueType = std::variant<std::string, int, bool, std::vector<DataValue>, OrderedMapType,
-                                   EnumDescriptionType, // For example, look at project description.
+    using OrderedMapType = std::map<std::string, DataValue>;  // Swapped
+    using EnumDescriptionType = std::vector<std::pair<std::string, DataValue>>;  // Swapped
+    using ValueType = std::variant<std::string, int, bool, std::vector<DataValue>, EnumDescriptionType,
+                                   OrderedMapType, // Updated positions in variant
                                    std::pair<int, int>, RuleStatus, networking::Connection>;
 
     // Default constructor
@@ -54,19 +54,19 @@ public:
         value = std::move(v);
         return *this;
     }
-    DataValue &operator=(const OrderedMapType &v) {
+    DataValue &operator=(const EnumDescriptionType &v) {  // Updated type
         value = v;
         return *this;
     }
-    DataValue &operator=(OrderedMapType &&v) {
+    DataValue &operator=(EnumDescriptionType &&v) {  // Updated type
         value = std::move(v);
         return *this;
     }
-    DataValue &operator=(const EnumDescriptionType &v) {
+    DataValue &operator=(const OrderedMapType &v) {  // Updated type
         value = v;
         return *this;
     }
-    DataValue &operator=(EnumDescriptionType &&v) {
+    DataValue &operator=(OrderedMapType &&v) {  // Updated type
         value = std::move(v);
         return *this;
     }
@@ -88,8 +88,8 @@ public:
     int asNumber() const { return std::get<int>(value); }
     bool asBoolean() const { return std::get<bool>(value); }
     const std::vector<DataValue> &asList() const { return std::get<std::vector<DataValue>>(value); }
-    const OrderedMapType &asOrderedMap() const { return std::get<OrderedMapType>(value); }
-    const EnumDescriptionType &asEnumDescription() const { return std::get<EnumDescriptionType>(value); }
+    const OrderedMapType &asOrderedMap() const { return std::get<OrderedMapType>(value); }  // Updated type
+    const EnumDescriptionType &asEnumDescription() const { return std::get<EnumDescriptionType>(value); }  // Updated type
     const std::pair<int, int> &asRange() const { return std::get<std::pair<int, int>>(value); }
     const RuleStatus &asRuleStatus() const { return std::get<RuleStatus>(value); }
     const networking::Connection &asConnection() const { return std::get<networking::Connection>(value); }
@@ -106,10 +106,10 @@ public:
             return "BOOLEAN";
         if (std::holds_alternative<std::vector<DataValue>>(value))
             return "LIST";
-        if (std::holds_alternative<OrderedMapType>(value))
-            return "ORDERED_MAP";
-        if (std::holds_alternative<EnumDescriptionType>(value))
+        if (std::holds_alternative<EnumDescriptionType>(value))  // Updated condition
             return "ENUM_DESCRIPTION";
+        if (std::holds_alternative<OrderedMapType>(value))  // Updated condition
+            return "ORDERED_MAP";
         if (std::holds_alternative<std::pair<int, int>>(value))
             return "RANGE";
         if (std::holds_alternative<RuleStatus>(value))
@@ -117,71 +117,8 @@ public:
         return "UNKNOWN";
     }
 
-    // // Friend function to overload the << operator for DataValue
-    // friend std::ostream &operator<<(std::ostream &os, const DataValue &dataValue) {
-    //     if (std::holds_alternative<std::string>(dataValue.value)) {
-    //         os << std::get<std::string>(dataValue.value);
-    //     } else if (std::holds_alternative<int>(dataValue.value)) {
-    //         os << std::get<int>(dataValue.value);
-    //     } else if (std::holds_alternative<bool>(dataValue.value)) {
-    //         os << (std::get<bool>(dataValue.value) ? "true" : "false");
-    //     } else if (std::holds_alternative<std::vector<DataValue>>(dataValue.value)) {
-    //         os << "[";
-    //         const auto &list = std::get<std::vector<DataValue>>(dataValue.value);
-    //         for (size_t i = 0; i < list.size(); ++i) {
-    //             os << list[i];
-    //             if (i < list.size() - 1) {
-    //                 os << ", ";
-    //             }
-    //         }
-    //         os << "]";
-    //     } else if (std::holds_alternative<OrderedMapType>(dataValue.value)) {
-    //         os << "{";
-    //         const auto &map = std::get<OrderedMapType>(dataValue.value);
-    //         for (size_t i = 0; i < map.size(); ++i) {
-    //             os << "\"" << map[i].first << "\": " << map[i].second;
-    //             if (i < map.size() - 1) {
-    //                 os << ", ";
-    //             }
-    //         }
-    //         os << "}";
-    //     } else if (std::holds_alternative<EnumDescriptionType>(dataValue.value)) {
-    //         os << "{";
-    //         const auto &enumDesc = std::get<EnumDescriptionType>(dataValue.value);
-    //         for (auto it = enumDesc.begin(); it != enumDesc.end(); ++it) {
-    //             os << "\"" << it->first << "\": " << it->second;
-    //             if (std::next(it) != enumDesc.end()) {
-    //                 os << ", ";
-    //             }
-    //         }
-    //         os << "}";
-    //     } else if (std::holds_alternative<std::pair<int, int>>(dataValue.value)) {
-    //         const auto &pair = std::get<std::pair<int, int>>(dataValue.value);
-    //         os << "(" << pair.first << ", " << pair.second << ")";
-    //     } else if (std::holds_alternative<RuleStatus>(dataValue.value)) {
-    //         os << (std::get<RuleStatus>(dataValue.value) == DONE ? "DONE" : "NOTDONE");
-    //     }
-    //     return os;
-    // }
-
-    // Might not need this, mainly for debugging
-    friend std::ostream &operator<<(std::ostream &os, const RuleStatus &ruleStatus) {
-        switch (ruleStatus) {
-        case DONE:
-            os << "DONE";
-            break;
-        case NOTDONE:
-            os << "NOTDONE";
-            break;
-        default:
-            os << "UNKNOWN";
-            break;
-        }
-        return os;
-    }
-
-    // Note: this is for teammate testing, will be removed eventually
-    void print(std::ostream& os, int indentLevel = 0) const {
+    // Updated `print` function
+    void print(std::ostream &os, int indentLevel = 0) const {
         std::string indent(indentLevel, ' ');
         if (std::holds_alternative<std::string>(value)) {
             os << indent << "\"" << asString() << "\"";
@@ -190,34 +127,35 @@ public:
         } else if (std::holds_alternative<bool>(value)) {
             os << indent << (asBoolean() ? "true" : "false");
         } else if (std::holds_alternative<std::vector<DataValue>>(value)) {
-            std::cout << indent << "[\n";
+            os << indent << "[\n";
             for (const auto &item : asList()) {
                 item.print(os, indentLevel + 2);
+                os << "\n";
             }
             os << indent << "]";
-        } else if (std::holds_alternative<OrderedMapType>(value)) {
-            std::cout << indent << "{\n";
+        } else if (std::holds_alternative<OrderedMapType>(value)) {  // Updated logic
+            os << indent << "{\n";
             for (const auto &[key, subValue] : asOrderedMap()) {
-                std::cout << indent << "  \"" << key << "\": ";
+                os << indent << "  \"" << key << "\": ";
                 subValue.print(os, indentLevel + 2);
+                os << "\n";
             }
             os << indent << "}";
-        } else if (std::holds_alternative<EnumDescriptionType>(value)) {
-            std::cout << indent << "{\n";
+        } else if (std::holds_alternative<EnumDescriptionType>(value)) {  // Updated logic
+            os << indent << "[\n";
             for (const auto &[key, val] : asEnumDescription()) {
-                std::cout << indent << "  \"" << key << "\": ";
+                os << indent << "  {\"" << key << "\": ";
                 val.print(os, indentLevel + 2);
+                os << "},\n";
             }
-            os << indent << "}";
+            os << indent << "]";
         } else if (std::holds_alternative<std::pair<int, int>>(value)) {
             auto range = asRange();
             os << indent << "(" << range.first << ", " << range.second << ")";
         } else if (std::holds_alternative<RuleStatus>(value)) {
-            std::cout << indent << "(" << asRuleStatus() << ")" << std::endl;
-        }
-
-        else {
-            std::cout << indent << "UNKNOWN" << std::endl;
+            os << indent << (asRuleStatus() == RuleStatus::DONE ? "DONE" : "NOTDONE");
+        } else {
+            os << indent << "UNKNOWN";
         }
     }
 
@@ -225,8 +163,9 @@ private:
     ValueType value;
 };
 
-// for debugging, it will be removed eventually
-inline std::ostream& operator<<(std::ostream& os, const DataValue& data) {
+// Overloaded `<<` operator
+inline std::ostream &operator<<(std::ostream &os, const DataValue &data) {
     data.print(os);
     return os;
 }
+

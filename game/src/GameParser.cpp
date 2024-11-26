@@ -11,7 +11,8 @@ extern "C" {
 TSLanguage *tree_sitter_socialgaming();
 }
 
-ParsedGameData::ParsedGameData(const string &config) {
+ParsedGameData::ParsedGameData(const string &config, std::shared_ptr<IServer>& server) :
+    server(server) {
     string fileContent = readFileContent(config);
     if (!fileContent.empty()) {
         parseConfig(fileContent);
@@ -47,7 +48,7 @@ const DataValue::OrderedMapType &ParsedGameData::getPerAudience() const { return
 
 const std::vector<DataValue::OrderedMapType> &ParsedGameData::getSetup() const { return configuration.setup; }
 
-vector<Rule> ParsedGameData::getRules() { return rules; }
+const vector<std::unique_ptr<Rule>>& ParsedGameData::getRules() const { return rules; }
 
 DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::string &source) {
     auto type = node.getType();
@@ -65,7 +66,6 @@ DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::stri
         int curr = std::stoi(currContent);
         return DataValue(curr);
     } else if (type == "number_range") {
-        // Example: Parsing a range string like "(2, 4)"
         size_t start = currContent.find('(');
         size_t comma = currContent.find(',');
         size_t end = currContent.find(')');
@@ -101,7 +101,7 @@ DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::stri
         parseValueMap(node, source, subContent);
         return DataValue(std::move(subContent));
     } else if (type == "enum_description") {
-        DataValue::EnumDescriptionType enumMap;
+        DataValue::EnumDescriptionType enumVector;
         auto keyNode = node.getChildByFieldName("name");
         auto valueNode = node.getChildByFieldName("description");
         if (!keyNode.isNull() && !valueNode.isNull()) {
@@ -110,13 +110,11 @@ DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::stri
             if (!value.empty() && value.front() == '"' && value.back() == '"') {
                 value = value.substr(1, value.length() - 2);
             }
-            enumMap[key] = DataValue(value);
+            enumVector.emplace_back(key, DataValue(value));
         }
+        return DataValue(std::move(enumVector));
+    }
 
-        return DataValue(std::move(enumMap));
-    } 
-    
-    // Fallback: recursively handle any child nodes
     for (const auto &child : ts::Children{node}) {
         return handleExpression(child, source);
     }
@@ -124,10 +122,8 @@ DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::stri
     return DataValue("");
 }
 
-    
 
 void ParsedGameData::parseValueMap(const ts::Node &node, const std::string &source, DataValue::OrderedMapType &output) {
-
     for (const auto &child : ts::Children{node}) {
         if (child.getType() == "map_entry") {
             ts::Node keyNode = child.getChildByFieldName("key");
@@ -136,7 +132,7 @@ void ParsedGameData::parseValueMap(const ts::Node &node, const std::string &sour
             if (!keyNode.isNull() && !valueNode.isNull()) {
                 auto key = std::string(keyNode.getSourceRange(source));
                 DataValue content = handleExpression(valueNode, source);
-                output.emplace_back(key, std::move(content));
+                output.emplace(key, std::move(content));
             }
         }
     }
@@ -148,54 +144,50 @@ DataValue::OrderedMapType ParsedGameData::handleSetup(const ts::Node &node, cons
     ts::Node nameNode = node.getChildByFieldName("name");
     if (!nameNode.isNull()) {
         std::string key = std::string(nameNode.getSourceRange(source));
-        DataValue::OrderedMapType content; // Use OrderedMapType to store key-value pairs
+        DataValue::OrderedMapType content;
 
         ts::Node kindNode = node.getChildByFieldName("kind");
         if (!kindNode.isNull()) {
             std::string kindContent = std::string(kindNode.getSourceRange(source));
-            content.emplace_back("kind", DataValue(kindContent));
+            content.emplace("kind", DataValue(kindContent));
         }
 
         ts::Node promptNode = node.getChildByFieldName("prompt");
         if (!promptNode.isNull()) {
             std::string promptContent = std::string(promptNode.getSourceRange(source));
             promptContent = promptContent.substr(1, promptContent.length() - 2);
-            content.emplace_back("prompt", DataValue(promptContent));
+            content.emplace("prompt", DataValue(promptContent));
         }
 
         ts::Node rangeNode = node.getChildByFieldName("range");
         if (!rangeNode.isNull()) {
             auto rangeValue = handleExpression(rangeNode, source);
-            content.emplace_back("range", std::move(rangeValue));
+            content.emplace("range", std::move(rangeValue));
         }
 
         ts::Node choiceNode = node.getChildByFieldName("choices");
         if (!choiceNode.isNull()) {
-            DataValue::EnumDescriptionType enumMap;
-            ts::Cursor cursor = choiceNode.getCursor();
-            auto curr = cursor.getCurrentNode();
-            while (!curr.getNextSibling().isNull()) {
-                DataValue enumValue = handleExpression(curr, source);
-                if (std::holds_alternative<DataValue::EnumDescriptionType>(enumValue.getValue())) {
-                    auto singleEnumMap = std::get<DataValue::EnumDescriptionType>(enumValue.getValue());
-                    enumMap.insert(singleEnumMap.begin(), singleEnumMap.end());
-                }
-                curr = curr.getNextSibling();
+            DataValue::EnumDescriptionType enumVector;
+            for (const auto &child : ts::Children{choiceNode}) {
+                auto key = std::string(child.getSourceRange(source));
+                auto value = handleExpression(child, source);
+                enumVector.emplace_back(key, std::move(value));
             }
-            content.emplace_back("choice", DataValue(std::move(enumMap)));
+            content.emplace("choices", DataValue(std::move(enumVector)));
         }
 
         ts::Node defaultNode = node.getChildByFieldName("default");
         if (!defaultNode.isNull()) {
             auto defaultValue = handleExpression(defaultNode, source);
-            content.emplace_back("default", std::move(defaultValue));
+            content.emplace("default", std::move(defaultValue));
         }
 
-        setup.emplace_back(std::move(key), DataValue(std::move(content)));
+        setup.emplace(key, DataValue(std::move(content)));
     }
 
     return setup;
 }
+
 
 void ParsedGameData::parseConstantsSection(const ts::Node &node, const string &source) {
     parseValueMap(node.getChildByFieldName("map"), source, constants);
@@ -289,79 +281,70 @@ void ParsedGameData::parseConfig(const string &fileContent) {
         } else if (sectionType == "per_audience") {
             parsePerAudienceSection(curr, fileContent);
         } else if (sectionType == "rules") {
-            Rule rule;
-            parseRuleSection(curr, fileContent, rule);
-            rules.push_back(rule);
+            // auto rule = std::make_unique<Rule>();
+            // parseRuleSection(curr, fileContent, rule.get());
+            // rules.push_back(std::move(rule));
+            parseRuleSection(curr, fileContent);
         }
     }
 }
 
-string ParsedGameData::ruleTypeToString(Rule::Type type) {
+// This will be removed eventually 
+string ParsedGameData::ruleTypeToString(RuleT::Type type) {
     switch (type) {
-    case Rule::Type::For:
+    case RuleT::Type::For:
         return "For";
-    case Rule::Type::Loop:
+    case RuleT::Type::Loop:
         return "Loop";
-    case Rule::Type::ParallelFor:
+    case RuleT::Type::ParallelFor:
         return "ParallelFor";
-    case Rule::Type::InParallel:
+    case RuleT::Type::InParallel:
         return "InParallel";
-    case Rule::Type::Match:
+    case RuleT::Type::Match:
         return "Match";
-    case Rule::Type::Extend:
+    case RuleT::Type::Extend:
         return "Extend";
-    case Rule::Type::Reverse:
+    case RuleT::Type::Reverse:
         return "Reverse";
-    case Rule::Type::Shuffle:
+    case RuleT::Type::Shuffle:
         return "Shuffle";
-    case Rule::Type::Sort:
+    case RuleT::Type::Sort:
         return "Sort";
-    case Rule::Type::Deal:
+    case RuleT::Type::Deal:
         return "Deal";
-    case Rule::Type::Discard:
+    case RuleT::Type::Discard:
         return "Discard";
-    case Rule::Type::Timer:
+    case RuleT::Type::Timer:
         return "Timer";
-    case Rule::Type::InputChoice:
+    case RuleT::Type::InputChoice:
         return "InputChoice";
-    case Rule::Type::InputText:
+    case RuleT::Type::InputText:
         return "InputText";
-    case Rule::Type::InputVote:
+    case RuleT::Type::InputVote:
         return "InputVote";
-    case Rule::Type::InputRange:
+    case RuleT::Type::InputRange:
         return "InputRange";
-    case Rule::Type::Message:
+    case RuleT::Type::Message:
         return "Message";
-    case Rule::Type::Scores:
+    case RuleT::Type::Scores:
         return "Scores";
-    case Rule::Type::Assignment:
+    case RuleT::Type::Assignment:
         return "Assignment";
-    case Rule::Type::Body:
+    case RuleT::Type::Body:
         return "Body";
     default:
         return "Unknown";
     }
 }
 
-void ParsedGameData::DFS(const ts::Node& node, const std::string& source, Rule& rule){
+void ParsedGameData::DFS(const ts::Node& node, const std::string& source, std::string& str){
     // Check if node is a leaf or an identifier
     if (!node.getNumNamedChildren() || node.getType() == "identifier") {
         auto content = std::string(node.getSourceRange(source));
         // Only proceed if `content` is not in the `toSkip` list
         if (find(begin(GameConstantsType::toSkip), end(GameConstantsType::toSkip), content) == end(GameConstantsType::toSkip)) {
-            DataValue identifier(content);
-            
-            // Check if `identifier` already exists in `parameters`
-            auto exists = std::find_if(rule.parameters.begin(), rule.parameters.end(), [&](const DataValue& param) {
-                return param.getType() == "STRING" && param.asString() == content;
-            }) != rule.parameters.end();
-            
-            if (!exists) {
-                if (rule.type == Rule::Type::Default) {
-                    rule.type = Rule::Type::Body;
-                }
-                rule.parameters.emplace_back(std::move(identifier));
-            }
+            str = content + str;
+            return;
         }
     }
     // Skip "builtin" nodes
@@ -370,163 +353,160 @@ void ParsedGameData::DFS(const ts::Node& node, const std::string& source, Rule& 
     }
 
     for (const auto &child : ts::Children{node}) {
-        DFS(child, source, rule);
+        DFS(child, source, str);
     }
 }
 
-void ParsedGameData::handleForRule(const ts::Node& node, const std::string& source, Rule& outerRule){
+void ParsedGameData::handleForRule(const ts::Node& node, const std::string& source) {
     ts::Node elementNode = node.getChildByFieldName("element"); // round or weapon
     ts::Node listNode = node.getChildByFieldName("list");       // configuration.rounds or weapons
     ts::Node bodyNode = node.getChildByFieldName("body");
 
-    if (!elementNode.isNull()) {
-        outerRule.parameters.emplace_back(std::string(elementNode.getSourceRange(source)));
-    }
+    auto iteratorName = std::string(elementNode.getSourceRange(source));
 
+    std::string listContent;
     if (!listNode.isNull()) {
-        DFS(listNode, source, outerRule);
+        DFS(listNode, source, listContent);
     }
+    std::unique_ptr<Rule> conditions = listContent.empty() ? nullptr : std::make_unique<StringRule>(listContent);
 
+    std::vector<std::unique_ptr<Rule>> content;
     if (!bodyNode.isNull()) {
-        for (const auto &child : ts::Children{bodyNode}) {
-            Rule subRule;
-            parseRuleSection(child, source, subRule);
-            if(!subRule.parameters.empty()){
-                outerRule.subRules.emplace_back(std::move(subRule));
+        for (const auto& child : ts::Children{bodyNode}) {
+            auto subRule = parseRuleSection(child, source);
+            if (subRule) {
+                content.emplace_back(std::move(subRule));
             }
         }
-    }  
+    }
+
+    std::unique_ptr<ForRule> forRule = std::make_unique<ForRule>(
+    iteratorName, std::move(conditions), std::move(content));
+    rules.emplace_back(std::move(forRule));
 }
 
-void ParsedGameData::handleMessageSection(const ts::Node& node, const std::string& source, Rule& outerRule) {
+
+void ParsedGameData::handleMessageSection(const ts::Node& node, const std::string& source) {
     auto playersKeyword = node.getChildByFieldName("players").getSourceRange(source); // Keyword indicating players
     auto content = node.getChildByFieldName("content").getSourceRange(source);        // Message content
 
     // currently we assume all will be there all the time
     // TODO: we need to create more rule types to deal with mutiple keyword
-    // auto allPlayersRule = std::make_unique<AllPlayersRule>();  
-    // auto stringRule = std::make_unique<StringRule>(content);
+    auto allPlayersRule = std::make_unique<AllPlayersRule>();  
+    auto stringRule = std::make_unique<StringRule>(content);
 
-    // IO messager; // TODO: Ensure this is properly initialized or passed in
-    // MessageRule messageRule(messager, *allPlayersRule, *stringRule);
+    auto messageRule = std::make_unique<MessageRule>(server, *allPlayersRule, *stringRule);
+    rules.emplace_back(std::move(messageRule));
 }
 
-
+// TODO: will have to modify logic for future rule object
 void ParsedGameData::traverseHelper(const ts::Node& node, const string& source, Rule& rule){
-    if(node.getType() == "match_entry"){
-        ts::Node guard = node.getChildByFieldName("guard");
-        DFS(guard, source, rule);
-        ts::Node body = node.getChildByFieldName("body");
-        parseRuleSection(body, source, rule);
-    }
+    // if(node.getType() == "match_entry"){
+    //     ts::Node guard = node.getChildByFieldName("guard");
+    //     DFS(guard, source, rule);
+    //     ts::Node body = node.getChildByFieldName("body");
+    //     parseRuleSection(body, source, rule);
+    // }
 
-    for (const auto &child : ts::Children{node}) {
-        traverseHelper(child, source, rule);
-    }
+    // for (const auto &child : ts::Children{node}) {
+    //     traverseHelper(child, source, rule);
+    // }
 }
 
+// TODO: will have to modify logic for future rule object
 void ParsedGameData::handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule) {
-    ts::Node targetNode = node.getChildByFieldName("target"); // True
-    for (const auto &child : ts::Children{targetNode}) {
-        DFS(child, source, outerRule);
-    }
+    // ts::Node targetNode = node.getChildByFieldName("target"); // True
+    // for (const auto &child : ts::Children{targetNode}) {
+    //     DFS(child, source, outerRule);
+    // }
 
-    for (size_t i = 3; i < node.getNumChildren() - 1; ++i) {
-        auto curr = node.getChild(i);
-        Rule subRule;
-        // TODO: need to figure out how to call it
-        // auto subRule = std::make_unique<MatchRule>();
-        traverseHelper(curr, source, subRule);
-        outerRule.subRules.emplace_back(std::move(subRule));
-    }
+    // for (size_t i = 3; i < node.getNumChildren() - 1; ++i) {
+    //     auto curr = node.getChild(i);
+    //     Rule subRule;
+    //     // TODO: need to figure out how to call it
+    //     // auto subRule = std::make_unique<MatchRule>();
+    //     traverseHelper(curr, source, subRule);
+    //     outerRule.subRules.emplace_back(std::move(subRule));
+    // }
 }
 
 // TODO: need to check node type or how to use in txt file.
 void ParsedGameData::handleWhileSection(const ts::Node& node, const std::string& source, Rule& outerRule){
-    ts::Node condition = node.getChildByFieldName("condition");
-    ts::Node loopBody = node.getChildByFieldName("body");
-    if (!condition.isNull()) {
-        DFS(condition, source, outerRule);
-    }
-    if (!loopBody.isNull()) {
-        for (const auto &child : ts::Children{loopBody}) {
-            Rule subRule;
-            DFS(loopBody, source, subRule);
-            if(!subRule.parameters.empty()){
-                outerRule.subRules.emplace_back(std::move(subRule));
-            }
-        }
-    }
+    // ts::Node condition = node.getChildByFieldName("condition");
+    // ts::Node loopBody = node.getChildByFieldName("body");
+    // if (!condition.isNull()) {
+    //     DFS(condition, source, outerRule);
+    // }
+    // if (!loopBody.isNull()) {
+    //     for (const auto &child : ts::Children{loopBody}) {
+    //         Rule subRule;
+    //         DFS(loopBody, source, subRule);
+    //         if(!subRule.parameters.empty()){
+    //             outerRule.subRules.emplace_back(std::move(subRule));
+    //         }
+    //     }
+    // }
 }
 
-void ParsedGameData::parseRuleSection(const ts::Node& node, const std::string& source, Rule& outerRule){
+std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node& node, const std::string& source){
     for (const auto& child : ts::Children{node}) {
         std::string_view ruleType = child.getType();
 
         if (ruleType == "for") {
-            outerRule.type = getRuleType(std::string(ruleType));
-            // TODO: figure out how to call constructor correctly
-            // outerRule = std::make_unique<ForRule>();
-            handleForRule(child, source, outerRule);
+            handleForRule(child, source);
         } else if(ruleType == "parallel_for"){
-            outerRule.type = getRuleType(std::string(ruleType));
-            // TODO: figure out how to call constructor correctly
-            // outerRule = std::make_unique<ForRule>();
-            handleForRule(child, source, outerRule);
+            handleForRule(child, source);
         }
         else if (ruleType == "match") {
-            outerRule.type = getRuleType(std::string(ruleType));
+            // outerRule.type = getRuleType(std::string(ruleType));
             // TODO: figure out how to call constructor correctly
             // outerRule = std::make_unique<MatchRule>();
-            handleMatchRule(child, source, outerRule);
+            // handleMatchRule(child, source, outerRule);
         }
         else if (ruleType == "message") {
-            outerRule.type = getRuleType(std::string(ruleType));
-            // TODO: need an IO messager passed over parser in order to call default
-            //       constructor.
-            // outerRule = std::make_unique<MessageRule>();
-            handleMessageSection(child, source, outerRule);
-            // outerRule.subRules.emplace_back(messageRule);
+            handleMessageSection(child, source);
         }
         else if(ruleType == "loop"){
-            outerRule.type = getRuleType(std::string(ruleType));
+            // outerRule.type = getRuleType(std::string(ruleType));
             // outerRule = std::make_unique<LoopRule>();
             // TODO: figure out how to call constructor correctly
-            handleWhileSection(child, source, outerRule);
+            // handleWhileSection(child, source, outerRule);
             // outerRule.subRules.emplace_back(whileRule);
         }
         else {
             // Recursively handle other types of rules
-            parseRuleSection(child, source, outerRule);
+            parseRuleSection(child, source);
         }
     }
+    return nullptr;
 }
 
-Rule::Type ParsedGameData::getRuleType(const string &type) {
+// This will be removed eventually
+RuleT::Type ParsedGameData::getRuleType(const string &type) {
     string sanitizedType = type;
     sanitizedType.erase(std::remove_if(sanitizedType.begin(), sanitizedType.end(), ::isspace), sanitizedType.end());
     std::transform(sanitizedType.begin(), sanitizedType.end(), sanitizedType.begin(), ::tolower);
 
-    static const map<string, Rule::Type> typeMap = {{"for", Rule::Type::For},
-                                                    {"loop", Rule::Type::Loop},
-                                                    {"parallel_for", Rule::Type::ParallelFor},
-                                                    {"in_parallel", Rule::Type::InParallel},
-                                                    {"match", Rule::Type::Match},
-                                                    {"extend", Rule::Type::Extend},
-                                                    {"reverse", Rule::Type::Reverse},
-                                                    {"shuffle", Rule::Type::Shuffle},
-                                                    {"sort", Rule::Type::Sort},
-                                                    {"deal", Rule::Type::Deal},
-                                                    {"discard", Rule::Type::Discard},
-                                                    {"timer", Rule::Type::Timer},
-                                                    {"input_choice", Rule::Type::InputChoice},
-                                                    {"input_text", Rule::Type::InputText},
-                                                    {"input_vote", Rule::Type::InputVote},
-                                                    {"input_range", Rule::Type::InputRange},
-                                                    {"message", Rule::Type::Message},
-                                                    {"scores", Rule::Type::Scores},
-                                                    {"assignment", Rule::Type::Assignment},
-                                                    {"body", Rule::Type::Body}};
+    static const map<string, RuleT::Type> typeMap = {{"for", RuleT::Type::For},
+                                                    {"loop", RuleT::Type::Loop},
+                                                    {"parallel_for", RuleT::Type::ParallelFor},
+                                                    {"in_parallel", RuleT::Type::InParallel},
+                                                    {"match", RuleT::Type::Match},
+                                                    {"extend", RuleT::Type::Extend},
+                                                    {"reverse", RuleT::Type::Reverse},
+                                                    {"shuffle", RuleT::Type::Shuffle},
+                                                    {"sort", RuleT::Type::Sort},
+                                                    {"deal", RuleT::Type::Deal},
+                                                    {"discard", RuleT::Type::Discard},
+                                                    {"timer", RuleT::Type::Timer},
+                                                    {"input_choice", RuleT::Type::InputChoice},
+                                                    {"input_text", RuleT::Type::InputText},
+                                                    {"input_vote", RuleT::Type::InputVote},
+                                                    {"input_range", RuleT::Type::InputRange},
+                                                    {"message", RuleT::Type::Message},
+                                                    {"scores", RuleT::Type::Scores},
+                                                    {"assignment", RuleT::Type::Assignment},
+                                                    {"body", RuleT::Type::Body}};
 
     auto it = typeMap.find(sanitizedType);
     if (it != typeMap.end()) {

@@ -22,7 +22,7 @@ DataValue::OrderedMapType GamePerAudience::getAudienceVariables() { return perAu
 // Note: might delete this if we don't need to add mor perAudience variables after
 // initially creating the game
 void GamePerAudience::addPerAudienceVariable(std::string key, DataValue value) {
-    perAudienceVariables.emplace_back(key, value);
+    perAudienceVariables.emplace(key, value);
 }
 
 const DataValue &GamePerAudience::getPerAudienceVariable(const std::string &key) const {

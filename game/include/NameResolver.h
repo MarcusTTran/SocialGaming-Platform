@@ -3,6 +3,7 @@
 #include "CommonVariantTypes.h"
 #include <string>
 #include <unordered_map>
+#include <optional>
 
 using Map = std::unordered_map<std::string, DataValue>;
 
@@ -33,7 +34,8 @@ public:
         }
         return false;
     }
-    DataValue getValue(const std::string &key) {
+    // Returns a nullopt if value is not found. You can use the .hasvalue() method.
+    std::optional<DataValue> getValue(const std::string &key) {
         for (auto it : full_scope) {
             auto &map = it;
             auto mapIt = map.find(key);
@@ -42,7 +44,7 @@ public:
                 return mapIt->second;
             }
         }
-        return {}; // null TODO: change to error value
+        return std::nullopt;
     }
 
 private:
