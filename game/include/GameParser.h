@@ -19,7 +19,6 @@
 #include "Messenger.h"
 #include <memory>
 
-
 /*
     This is game parser class, which is responsible for parsing data from txt input file
     via tree-sitter and extract, store into certain data structure.
@@ -30,9 +29,11 @@ using std::pair;
 using std::string;
 using std::vector;
 
-class ParsedGameData {
+class ParsedGameData
+{
 public:
-    ParsedGameData(const string &configFileContent, std::shared_ptr<IServer>& server);
+    // ParsedGameData(const string &configFileContent);
+    ParsedGameData(const string &configFileContent, std::shared_ptr<Messenger> &server);
 
     string getGameName() const;
     pair<int, int> getPlayerRange() const;
@@ -46,7 +47,7 @@ public:
     const DataValue::OrderedMapType &getPerPlayer() const;
     const DataValue::OrderedMapType &getPerAudience() const;
     const std::vector<DataValue::OrderedMapType> &getSetup() const;
-    const vector<std::unique_ptr<Rule>>& getRules() const;
+    const vector<std::unique_ptr<Rule>> &getRules() const;
 
     // helper functions to print result to the console
     // Note that anything related to print out will be removed eventually
@@ -58,7 +59,7 @@ private:
     pair<int, int> playerRange;
     bool audience;
     Configuration configuration;
-    std::shared_ptr<IServer> server; // For constructing messaging rules
+    std::shared_ptr<Messenger> server; // For constructing messaging rules
 
     // using variant types to do a map-like data structure while preserving data order
     DataValue::OrderedMapType variables;
@@ -76,7 +77,7 @@ private:
     void parseVariablesSection(const ts::Node &, const string &);
     void parsePerPlayerSection(const ts::Node &, const string &);
     void parsePerAudienceSection(const ts::Node &, const string &);
-    void DFS(const ts::Node &node, const string &source, std::string& str);
+    void DFS(const ts::Node &node, const string &source, std::string &str);
     void handleForRule(const ts::Node &node, const string &source);
     void handleMessageSection(const ts::Node &node, const string &source);
     void traverseHelper(const ts::Node &node, const string &source, Rule &rule);

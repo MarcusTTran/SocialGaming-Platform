@@ -13,6 +13,7 @@
 #include "Messenger.h"
 #include "NameResolver.h"
 #include "GameParser.h"
+#include "GameConfigEdit.h"
 #include "GameNameDisplayer.h"
 #include <algorithm>
 #include <fstream>
@@ -63,14 +64,7 @@ struct MessageResult
     bool shouldShutdown;
 };
 
-struct GameCreators
-{
-    uintptr_t connectionID;
-    bool isCurrentlyEditingGame = true;
-    bool choseDefaultSettings = false;
-    bool chosenGameToEdit = false;
-    int currentStepInGameConfigEdit; // there are 5 if statement checks as described in main.cpp to check for values for setups, this will hold where we are in that process.
-};
+
 std::vector<GameCreators> listOfGameCreators;
 
 MessageResult processMessages(Server &server, const std::deque<Message> &incoming)
@@ -82,8 +76,8 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
         const auto &text = message.text;
         const auto &connection = message.connection;
         auto currentMessageIsGameCreator = false;
-        GameCreators* currentGameCreator = nullptr;
-        for (auto& i : listOfGameCreators)
+        GameCreators *currentGameCreator = nullptr;
+        for (auto &i : listOfGameCreators)
         {
             if (i.connectionID == message.connection.id)
             {
@@ -102,16 +96,38 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
 
             if (!currentGameCreator->chosenGameToEdit)
             {
-                
+                try
+                {
+                    auto number = std::stoi(message.text);
+                    if(getConfigMap().find(number) == getConfigMap().end()){
+                        result << "Error, invalid entry, please enter an integer that exists within list of games: " << '\n';
+                            break; 
+                    }
+                    else{
+                         const std::string gameConfigPath = getConfigMap().at(number);
+                    }
+                    
+                }
+                catch (const std::exception &e)
+                {
+                    // Catch any type of error-> std::exception
+                    result << "Error, invalid entry, please enter an integer: " << e.what() << '\n';
+                    break; 
+                }
+
                 const std::string gameConfigPath = getConfigMap().at(std::stoi(message.text));
-                auto serverPtr = std::static_pointer_cast<IServer>(messenger);
-                ParsedGameData parser(gameConfigPath, serverPtr);
+                //auto serverPtr = std::static_pointer_cast<IServer>(messenger);
+                ParsedGameData parser(gameConfigPath, messenger);
 
                 // // Game config now parses game selected by user.
                 GameConfiguration config(parser);
                 result << "You have chosen game " << message.text << " with config path: " << getConfigMap().at(std::stoi(message.text)) << '\n';
-                result << "Do you wish to edit this games setup? or do you want to keep its default settings? (Enter 'SAME' to choose default settings)" << '\n';
+                result << "Do you wish to edit this games setup? or do you want to keep its default settings?" << '\n';
+                result << "(Enter 'SAME' to choose default settings! )" << '\n';
+                result << "(Enter 'CHANGE' to edit game settings! )" << '\n';
                 currentGameCreator->chosenGameToEdit = true;
+                currentGameCreator->adminGame = config;
+                currentGameCreator->howManyGamesAdminHasToSet = config.getSetup().size();
             }
             else if (currentGameCreator->chosenGameToEdit && currentGameCreator->isCurrentlyEditingGame)
             {
@@ -128,7 +144,28 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                         });
                     listOfGameCreators.erase(new_end, listOfGameCreators.end());
 
-                    result << "Deault settings chosen for game! Game now being created. \n";
+                    result << "Default settings chosen for game! Game now being created. \n";
+                }
+                else if(message.text == "CHANGE")
+                {
+                    auto configStatusResult = editingGameConfig(currentGameCreator->adminGame,currentGameCreator);
+
+                    if(configStatusResult.status == EditState::Success){
+                        result << configStatusResult.message;
+                        currentGameCreator->gameConfigIterator++;
+                        currentGameCreator->howManyGamesAdminHasToSet--;
+                        break;
+                    }
+                    else if(configStatusResult.status == EditState::Error){
+
+                    }
+                    else if(configStatusResult.status == EditState::Done){
+
+                    }
+                    //going to need to figure out how to signal user is done editing game and then create said game.
+                }
+                else{
+                    result << "Error invalid entry, please enter SAME or CHANGE to configure game settings. \n";
                 }
             }
         }

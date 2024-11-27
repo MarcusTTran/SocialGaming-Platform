@@ -10,6 +10,11 @@ configuration {
       prompt: "The number of rounds to play"
       range: (1, 20)
     }
+    rounds {
+      kind: integer
+      prompt: "The duplicate number of rounds to play"
+      range: (1, 20)
+    }
   }
 }
 
