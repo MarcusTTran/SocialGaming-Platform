@@ -69,7 +69,11 @@ void Game::startGame(const DataValue &players) {
     std::cout << "Game started." << std::endl;
     // Start running rules here
     for (const auto &rule : rules) {
-        rule->runBurst(*globalMap);
+        auto returnValue = rule->runBurst(*globalMap);
+
+        if (!returnValue.isCompleted()) {
+            break;
+        }
     }
 }
 
