@@ -38,7 +38,7 @@ public:
         DataValue returnValue = _runBurst(name_resolver);
         name_resolver.removeInnerScope();
         std::cout << returnValue.getType() << std::endl;
-        if (returnValue.asRuleStatus() == DataValue::RuleStatus::DONE) {
+        if (returnValue.isCompleted()) {
             first_time = true;
         }
         return returnValue;
@@ -77,7 +77,6 @@ private:
 // replaced with a more general solution in the future.
 class StringRule : public Rule {
 public:
-    std::string &getString() { return string; }
     StringRule(std::string_view string_literal) : string(string_literal) {}
 
 private:
@@ -85,41 +84,34 @@ private:
         // TODO: handle strings with {} braces
     }
 
-    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(DataValue::RuleStatus::DONE); }
+    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(string); }
 
     std::string string;
 };
 
 class AllPlayersRule : public Rule {
 public:
-    DataValue &getPlayers() { return players; }
-
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {}
 
     DataValue _runBurst(NameResolver &name_resolver) override {
         // TODO: handle error value returning
-        players = name_resolver.getValue("players");
-        return DataValue(DataValue::RuleStatus::DONE);
+        return name_resolver.getValue("players");
     }
-
-    DataValue players;
 };
 
 class MessageRule : public Rule {
 public:
-    MessageRule(std::shared_ptr<IServer> server, std::unique_ptr<AllPlayersRule> recipient_list_maker,
-                std::unique_ptr<StringRule> string_maker)
+    MessageRule(std::shared_ptr<IServer> server, std::unique_ptr<Rule> recipient_list_maker,
+                std::unique_ptr<Rule> string_maker)
         : messager(server), recipient_list_maker(std::move(recipient_list_maker)),
           string_maker(std::move(string_maker)) {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
-        recipient_list_maker->runBurst(name_resolver);
-        recipients = recipient_list_maker->getPlayers().asOrderedMap();
+        recipients = recipient_list_maker->runBurst(name_resolver).asOrderedMap();
 
-        string_maker->runBurst(name_resolver);
-        message = string_maker->getString();
+        message = string_maker->runBurst(name_resolver).asString();
         std::cout << "Message: from message rule: " << message << std::endl;
     }
 
@@ -133,8 +125,8 @@ private:
     }
 
     std::shared_ptr<IServer> messager;
-    std::unique_ptr<AllPlayersRule> recipient_list_maker;
-    std::unique_ptr<StringRule> string_maker;
+    std::unique_ptr<Rule> recipient_list_maker;
+    std::unique_ptr<Rule> string_maker;
     DataValue::OrderedMapType recipients;
     std::string message;
 };
