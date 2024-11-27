@@ -18,9 +18,7 @@ void Messenger::sendMessages(const std::deque<networking::Message> &messages) { 
 void Messenger::sendMessageToPlayerMap(const std::string &message, const DataValue::OrderedMapType &playerMap) {
     std::string connectionKey = "connection";
 
-    // Find the connection in the map
-    auto connectionIt = std::find_if(playerMap.begin(), playerMap.end(),
-                                     [connectionKey](const auto &pair) { return pair.first == connectionKey; });
+    auto connectionIt = playerMap.find(connectionKey);
 
     // Should always be found
     if (connectionIt == playerMap.end()) {
