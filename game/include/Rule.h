@@ -75,26 +75,6 @@ private:
     const bool boolean;
 };
 
-class NumberRule : public Rule {
-public:
-    NumberRule(int number) : number(number) {}
-
-private:
-    void _handle_dependencies(NameResolver &name_resolver) override {}
-    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(number); }
-    const int number;
-};
-
-class BooleanRule : public Rule {
-public:
-    BooleanRule(bool boolean) : boolean(boolean) {}
-
-private:
-    void _handle_dependencies(NameResolver &name_resolver) override {}
-    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(boolean); }
-    const bool boolean;
-};
-
 class StringRule : public Rule {
 public:
     StringRule(std::string_view string_literal) : string(string_literal) {}
@@ -254,44 +234,44 @@ private:
     int starting_value;
 };
 
-class InParallelRule : public Rule {
-    enum class StatementState { NOT_COMPLETED, COMPLETED };
+// class InParallelRule : public Rule {
+//     enum class StatementState { NOT_COMPLETED, COMPLETED };
 
-public:
-    InParallelRule(std::vector<Rule> &statements) {
-        for (auto &statement : statements) {
-            this->statements.emplace_back(statement, StatementState::NOT_COMPLETED);
-        }
-    }
+// public:
+//     InParallelRule(std::vector<Rule> &statements) {
+//         for (auto &statement : statements) {
+//             this->statements.emplace_back(statement, StatementState::NOT_COMPLETED);
+//         }
+//     }
 
-private:
-    void _handle_dependencies(NameResolver &name_resolver) override {
-        // Initialize all statements to be not completed
-        for (auto statement : statements) {
-            statement.second = StatementState::NOT_COMPLETED;
-        }
-    }
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {
+//         // Initialize all statements to be not completed
+//         for (auto &statement : statements) {
+//             statement.second = StatementState::NOT_COMPLETED;
+//         }
+//     }
 
-    DataValue _runBurst(NameResolver &name_resolver) override {
-        for (auto statement_pair : statements) {
-            if (statement_pair.second == StatementState::COMPLETED) {
-                continue;
-            }
-            // run the current statement, and check whether it finished
-            auto rule_state = statement_pair.first.runBurst(name_resolver);
-            if (rule_state.asRuleStatus() != DataValue::RuleStatus::NOTDONE) {
-                statement_pair.second = StatementState::COMPLETED;
-            }
-        }
-        // check whether any statement are not completed, and if so, return NOTDONE
-        auto it = std::find_if(statements.begin(), statements.end(), [](const auto &statement_pair) {
-            return statement_pair.second == StatementState::NOT_COMPLETED;
-        });
-        if (it != statements.end()) {
-            return DataValue({DataValue::RuleStatus::NOTDONE});
-        }
-        return DataValue({DataValue::RuleStatus::DONE});
-    }
+//     DataValue _runBurst(NameResolver &name_resolver) override {
+//         for (auto &statement_pair : statements) {
+//             if (statement_pair.second == StatementState::COMPLETED) {
+//                 continue;
+//             }
+//             // run the current statement, and check whether it finished
+//             auto rule_state = statement_pair.first->runBurst(name_resolver);
+//             if (rule_state.asRuleStatus() != DataValue::RuleStatus::NOTDONE) {
+//                 statement_pair.second = StatementState::COMPLETED;
+//             }
+//         }
+//         // check whether any statement are not completed, and if so, return NOTDONE
+//         auto it = std::find_if(statements.begin(), statements.end(), [](const auto &statement_pair) {
+//             return statement_pair.second == StatementState::NOT_COMPLETED;
+//         });
+//         if (it != statements.end()) {
+//             return DataValue({DataValue::RuleStatus::NOTDONE});
+//         }
+//         return DataValue({DataValue::RuleStatus::DONE});
+//     }
 
-    std::vector<std::pair<Rule, StatementState>> statements;
-};
+//     std::vector<std::pair<std::unique_ptr<Rule>, StatementState>> statements;
+// };

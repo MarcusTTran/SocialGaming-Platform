@@ -172,26 +172,19 @@ DataValue::OrderedMapType ParsedGameData::handleSetup(const ts::Node &node, cons
                 auto key = std::string(child.getSourceRange(source));
                 auto value = handleExpression(child, source);
                 enumVector.emplace_back(key, std::move(value));
-                DataValue::EnumDescriptionType enumVector;
-                for (const auto &child : ts::Children{choiceNode}) {
-                    auto key = std::string(child.getSourceRange(source));
-                    auto value = handleExpression(child, source);
-                    enumVector.emplace_back(key, std::move(value));
-                }
-                content.emplace("choices", DataValue(std::move(enumVector)));
             }
-
-            ts::Node defaultNode = node.getChildByFieldName("default");
-            if (!defaultNode.isNull()) {
-                auto defaultValue = handleExpression(defaultNode, source);
-                content.emplace("default", std::move(defaultValue));
-            }
-
-            setup.emplace(key, DataValue(std::move(content)));
+            content.emplace("choices", DataValue(std::move(enumVector)));
         }
 
-        return setup;
+        ts::Node defaultNode = node.getChildByFieldName("default");
+        if (!defaultNode.isNull()) {
+            auto defaultValue = handleExpression(defaultNode, source);
+            content.emplace("default", std::move(defaultValue));
+        }
+
+        setup.emplace(key, DataValue(std::move(content)));
     }
+    return setup;
 }
 
 void ParsedGameData::parseConstantsSection(const ts::Node &node, const string &source) {
@@ -286,13 +279,7 @@ void ParsedGameData::parseConfig(const string &fileContent) {
         } else if (sectionType == "per_audience") {
             parsePerAudienceSection(curr, fileContent);
         } else if (sectionType == "rules") {
-            // auto rule = std::make_unique<Rule>();
-            // parseRuleSection(curr, fileContent, rule.get());
-            // rules.push_back(std::move(rule));
-            parseRuleSection(curr, fileContent);
-            // auto rule = std::make_unique<Rule>();
-            // parseRuleSection(curr, fileContent, rule.get());
-            // rules.push_back(std::move(rule));
+
             parseRuleSection(curr, fileContent);
         }
     }
@@ -364,7 +351,6 @@ void ParsedGameData::DFS(const ts::Node &node, const std::string &source, std::s
 
     for (const auto &child : ts::Children{node}) {
         DFS(child, source, str);
-        DFS(child, source, str);
     }
 }
 
@@ -374,18 +360,13 @@ void ParsedGameData::handleForRule(const ts::Node &node, const std::string &sour
     ts::Node bodyNode = node.getChildByFieldName("body");
 
     auto iteratorName = std::string(elementNode.getSourceRange(source));
-    auto iteratorName = std::string(elementNode.getSourceRange(source));
 
-    std::string listContent;
     std::string listContent;
     if (!listNode.isNull()) {
         DFS(listNode, source, listContent);
-        DFS(listNode, source, listContent);
     }
     std::unique_ptr<Rule> conditions = listContent.empty() ? nullptr : std::make_unique<StringRule>(listContent);
-    std::unique_ptr<Rule> conditions = listContent.empty() ? nullptr : std::make_unique<StringRule>(listContent);
 
-    std::vector<std::unique_ptr<Rule>> content;
     std::vector<std::unique_ptr<Rule>> content;
     if (!bodyNode.isNull()) {
         for (const auto &child : ts::Children{bodyNode}) {
@@ -396,7 +377,8 @@ void ParsedGameData::handleForRule(const ts::Node &node, const std::string &sour
         }
     }
 
-    std::unique_ptr<ForRule> forRule = std::make_unique<ForRule>(iteratorName, *conditions, std::move(content));
+    std::unique_ptr<ForRule> forRule =
+        std::make_unique<ForRule>(iteratorName, std::move(conditions), std::move(content));
     rules.emplace_back(std::move(forRule));
 }
 
@@ -498,15 +480,12 @@ std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, con
             // outerRule = std::make_unique<LoopRule>();
             // TODO: figure out how to call constructor correctly
             // handleWhileSection(child, source, outerRule);
-            // handleWhileSection(child, source, outerRule);
             // outerRule.subRules.emplace_back(whileRule);
         } else {
             // Recursively handle other types of rules
             parseRuleSection(child, source);
-            parseRuleSection(child, source);
         }
     }
-    return nullptr;
     return nullptr;
 }
 

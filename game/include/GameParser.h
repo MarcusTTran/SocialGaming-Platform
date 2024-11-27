@@ -87,9 +87,6 @@ private:
     std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
     string ruleTypeToString(RuleT::Type type);
     RuleT::Type getRuleType(const string &type);
-    std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
-    string ruleTypeToString(RuleT::Type type);
-    RuleT::Type getRuleType(const string &type);
 
     // print tree strucutre to console for debugging
     void printTree(const ts::Node &node, const string &source, int indent = 0);
