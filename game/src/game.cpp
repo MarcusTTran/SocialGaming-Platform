@@ -58,7 +58,7 @@ void Game::startGame(const DataValue &players) {
 
     globalMap->addNewValue(key, players);
 
-    auto playersMapValue = globalMap->getValue(key).asOrderedMap();
+    auto playersMapValue = globalMap->getValue(key).value().asOrderedMap();
 
     for (const auto &[playerName, playerData] : playersMapValue) {
         auto player = playerData.asOrderedMap();

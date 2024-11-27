@@ -1,13 +1,14 @@
 #pragma once
 
-#include <cassert>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
 #include "CommonVariantTypes.h"
 #include "Messenger.h"
 #include "NameResolver.h"
+#include <algorithm>
+#include <cassert>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 // Example variables state
 // vector([
@@ -54,27 +55,46 @@ private:
     virtual DataValue _runBurst(NameResolver &name_resolver) = 0;
 };
 
-// class StringRule : public Rule {
-//     StringRule(std::string string_literal) : string(string_literal) {}
+class NumberRule : public Rule {
+public:
+    NumberRule(int number) : number(number) {}
 
-// private:
-//     void _handle_dependencies(NameResolver &name_resolver) override {
-//         // TODO: handle strings with {} braces
-//     }
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {}
+    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(number); }
+    const int number;
+};
 
-//     DataValue _runBurst(NameResolver &name_resolver) override {
-//         DataValue string_val(string);
-//         return string_val;
-//     }
+class BooleanRule : public Rule {
+public:
+    BooleanRule(bool boolean) : boolean(boolean) {}
 
-//     std::string string;
-//     std::vector<Rule &> dependencies;
-// };
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {}
+    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(boolean); }
+    const bool boolean;
+};
 
-// NOTE: Had to modify these two rules to have specific getters for the values they produce
-// This is because the base rule class expects the return value to be a RuleStatus, but these rules
-// return a string and a list of players, respectively. This is a temporary solution and should be
-// replaced with a more general solution in the future.
+class NumberRule : public Rule {
+public:
+    NumberRule(int number) : number(number) {}
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {}
+    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(number); }
+    const int number;
+};
+
+class BooleanRule : public Rule {
+public:
+    BooleanRule(bool boolean) : boolean(boolean) {}
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {}
+    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(boolean); }
+    const bool boolean;
+};
+
 class StringRule : public Rule {
 public:
     StringRule(std::string_view string_literal) : string(string_literal) {}
@@ -95,8 +115,13 @@ private:
     void _handle_dependencies(NameResolver &name_resolver) override {}
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        // TODO: handle error value returning
-        return name_resolver.getValue("players");
+        auto playersMap = name_resolver.getValue("players");
+
+        if (playersMap.has_value()) {
+            return playersMap.value();
+        } else {
+            throw std::runtime_error("Players map was not found in global map");
+        }
     }
 };
 
@@ -131,95 +156,42 @@ private:
     std::string message;
 };
 
-// class ForRule : public Rule {
-// public:
-//     ForRule(std::string iterator_name, Rule &list_maker, std::vector<Rule> contents)
-//         : iterator_name{iterator_name}, list_maker{list_maker}, statement_list{contents} {}
-
-//     void _handle_dependencies(NameResolver &name_resolver) override {
-//         auto list_of_values_generic = list_maker.runBurst(name_resolver);
-//         list_of_values = list_of_values_generic.asList(); // TODO: figure out this error
-//         value_for_this_loop = list_of_values.begin();
-//         if (list_of_values.size() > 0) {
-//             name_resolver.addNewValue(iterator_name, (*value_for_this_loop));
-//         }
-
-//         current_statement = statement_list.begin();
-//     }
-
-//     DataValue _runBurst(NameResolver &name_resolver) override {
-//         DataValue return_value;
-//         if (list_of_values.size() < 1 || statement_list.size() < 1) {
-//             return_value = DataValue::RuleStatus::DONE;
-//             return return_value; // complete
-//         }
-//         while (true) {
-//             assert(value_for_this_loop != list_of_values.end() && "The next iterator to run should always be valid");
-//             assert(current_statement != statement_list.end() && "The next statement to run should always be valid");
-//             // run the current sub-rule, and check whether it finished
-//             auto rule_state = (*current_statement).runBurst(name_resolver);
-//             if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
-//                 return return_value; // incomplete
-//             }
-//             // set up next rule to run
-//             current_statement++;
-//             if (current_statement != statement_list.end()) {
-//                 continue;
-//             }
-//             // set up next full iteration
-//             current_statement = statement_list.begin();
-//             value_for_this_loop++;
-//             if (value_for_this_loop != list_of_values.end()) {
-//                 continue;
-//             }
-//             // every iteration complete
-//             return_value = DataValue::RuleStatus::DONE;
-//             return return_value; // complete
-//         }
-//     }
-
-// private:
-//     std::string iterator_name;
-//     DataValue iterator;
-
-//     Rule &list_maker;
-//     std::vector<DataValue> list_of_values;
-//     std::vector<DataValue>::iterator value_for_this_loop;
-
-//     std::vector<Rule> statement_list;
-//     std::vector<Rule>::iterator current_statement;
-// };
 class ForRule : public Rule {
 public:
-    ForRule(std::string iterator_name, Rule &list_maker, std::vector<std::unique_ptr<Rule>> contents)
-        : iterator_name{std::move(iterator_name)}, list_maker{list_maker}, statement_list{std::move(contents)} {}
+    ForRule(std::string fresh_variable_name, std::unique_ptr<Rule> list_maker,
+            std::vector<std::unique_ptr<Rule>> contents)
+        : fresh_variable_name{std::move(fresh_variable_name)}, list_maker{std::move(list_maker)}, // Move the unique_ptr
+          statement_list{std::move(contents)} {}
 
+private:
     void _handle_dependencies(NameResolver &name_resolver) override {
-        auto list_of_values_generic = list_maker.runBurst(name_resolver);
-        list_of_values = list_of_values_generic.asList(); // Ensure `asList` is implemented in `DataValue`
+        auto list_of_values_generic = list_maker->runBurst(name_resolver);
+        list_of_values = list_of_values_generic.asList();
+
+        // Initialize the iterators
         value_for_this_loop = list_of_values.begin();
-
-        if (!list_of_values.empty()) {
-            name_resolver.addNewValue(iterator_name, *value_for_this_loop);
-        }
-
         current_statement = statement_list.begin();
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        // Return type is DataValue; wrap RuleStatus appropriately
+        // Check for early return
         if (list_of_values.empty() || statement_list.empty()) {
-            return DataValue{DataValue::RuleStatus::DONE};
+            return DataValue({DataValue::RuleStatus::DONE});
+        }
+
+        // Set up fresh variable
+        if (list_of_values.size() > 0) {
+            name_resolver.addNewValue(fresh_variable_name, *value_for_this_loop);
         }
 
         while (true) {
             assert(value_for_this_loop != list_of_values.end() && "Iterator for list_of_values is invalid");
             assert(current_statement != statement_list.end() && "Iterator for statement_list is invalid");
 
-            // Run the current statement
+            // Run
             auto rule_state = (*current_statement)->runBurst(name_resolver); // Dereference unique_ptr
             if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
-                return DataValue{DataValue::RuleStatus::NOTDONE}; // Incomplete
+                return DataValue({DataValue::RuleStatus::NOTDONE});
             }
 
             // Move to the next statement
@@ -228,27 +200,98 @@ public:
                 continue;
             }
 
-            // If all statements are done, move to the next iteration
+            // Move to the next full iteration
             current_statement = statement_list.begin();
             value_for_this_loop++;
             if (value_for_this_loop != list_of_values.end()) {
-                name_resolver.addNewValue(iterator_name, *value_for_this_loop);
+                name_resolver.setValue(fresh_variable_name, *value_for_this_loop);
                 continue;
             }
 
-            // All iterations are complete
-            return DataValue{DataValue::RuleStatus::DONE};
+            // Every iteration complete
+            return DataValue({DataValue::RuleStatus::DONE});
         }
     }
 
-private:
-    std::string iterator_name;
-    DataValue iterator;
+    std::string fresh_variable_name;
 
-    Rule &list_maker;
+    std::unique_ptr<Rule> list_maker; // Changed to unique_ptr
     std::vector<DataValue> list_of_values;
     std::vector<DataValue>::iterator value_for_this_loop;
 
     std::vector<std::unique_ptr<Rule>> statement_list;
-    std::vector<std::unique_ptr<Rule>>::iterator current_statement; // Correct iterator type
+    std::vector<std::unique_ptr<Rule>>::iterator current_statement;
+};
+
+class UpfromRule : public Rule {
+public:
+    UpfromRule(Rule &number_maker, int starting_value) : number_maker(number_maker), starting_value(starting_value) {}
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        auto ending_value_generic = number_maker.runBurst(name_resolver);
+        ending_value = ending_value_generic.asNumber();
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // return empty list, not a decreasing list
+        if (ending_value < starting_value) {
+            return DataValue(std::vector<DataValue>());
+        }
+        // construct vector
+        std::vector<DataValue> list_of_ints;
+        int number_of_values = ending_value - starting_value;
+        list_of_ints.reserve(number_of_values);
+        for (int val = starting_value; val <= ending_value; val++) {
+            list_of_ints.emplace_back(DataValue(val));
+        }
+        return DataValue(list_of_ints);
+    }
+
+    Rule &number_maker;
+    int ending_value;
+
+    int starting_value;
+};
+
+class InParallelRule : public Rule {
+    enum class StatementState { NOT_COMPLETED, COMPLETED };
+
+public:
+    InParallelRule(std::vector<Rule> &statements) {
+        for (auto &statement : statements) {
+            this->statements.emplace_back(statement, StatementState::NOT_COMPLETED);
+        }
+    }
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        // Initialize all statements to be not completed
+        for (auto statement : statements) {
+            statement.second = StatementState::NOT_COMPLETED;
+        }
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        for (auto statement_pair : statements) {
+            if (statement_pair.second == StatementState::COMPLETED) {
+                continue;
+            }
+            // run the current statement, and check whether it finished
+            auto rule_state = statement_pair.first.runBurst(name_resolver);
+            if (rule_state.asRuleStatus() != DataValue::RuleStatus::NOTDONE) {
+                statement_pair.second = StatementState::COMPLETED;
+            }
+        }
+        // check whether any statement are not completed, and if so, return NOTDONE
+        auto it = std::find_if(statements.begin(), statements.end(), [](const auto &statement_pair) {
+            return statement_pair.second == StatementState::NOT_COMPLETED;
+        });
+        if (it != statements.end()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+        return DataValue({DataValue::RuleStatus::DONE});
+    }
+
+    std::vector<std::pair<Rule, StatementState>> statements;
 };

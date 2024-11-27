@@ -1,0 +1,16 @@
+// Minimal game that tests a the upfrom function
+configuration {
+  name: "minimal"
+  player range: (1, 20)
+  audience: false
+  setup: {}
+}
+constants {value: 5}
+variables {}
+per-player {}
+per-audience {}
+rules {
+    for val in value.upfrom(1) {
+        message all "Hi\n";
+    }
+}
