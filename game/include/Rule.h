@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <chrono>
 #include <string>
 #include <unordered_map>
 #include <algorithm>
@@ -90,6 +91,45 @@ private:
     }
 
     std::string string;
+};
+
+class SimpleTimerRule : public Rule {
+public:
+    SimpleTimerRule(long seconds) : seconds(seconds) {}
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        end_time = std::chrono::steady_clock::now() + std::chrono::seconds(seconds);
+    }
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        if (std::chrono::steady_clock::now() < end_time) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+        return DataValue({DataValue::RuleStatus::DONE});
+    }
+    long seconds;
+    std::chrono::_V2::steady_clock::time_point end_time;
+};
+
+class SimpleInputRule : public Rule {
+    public:
+    SimpleInputRule(std::shared_ptr<IServer> server) : messager(server) {}
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        // get the first player and send a message
+        auto player = name_resolver.getValue("players").value().asList().begin().base();
+        user = player;
+        messager->sendMessageToPlayerMap("Write something!", player->asOrderedMap());
+    }
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // check for message
+        //auto maybe_message = messager->checkMessagesFromPlayerMap(player->asOrderedMap());
+        //if (!maybe_message.hasValue()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        //}
+        //return DataValue({maybe_message.value()});
+    }
+    std::shared_ptr<IServer> messager;
+    DataValue *user;
 };
 
 class AllPlayersRule : public Rule {
