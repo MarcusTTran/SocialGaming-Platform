@@ -203,6 +203,27 @@ private:
     std::vector<std::unique_ptr<Rule>>::iterator current_statement;
 };
 
+class discardRule : public Rule {
+public:
+    discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
+        : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
+    
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
+        listToDiscard = list_maker->runBurst(name_resolver);
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // TODO:
+    }
+
+    std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
+    std::unique_ptr<Rule> list_maker;   // NameResolverRule
+    int integerExpression; 
+    DataValue listToDiscard;
+};
+
 class UpfromRule : public Rule {
 public:
     UpfromRule(Rule &number_maker, int starting_value) : number_maker(number_maker), starting_value(starting_value) {}
@@ -275,3 +296,25 @@ private:
 
 //     std::vector<std::pair<std::unique_ptr<Rule>, StatementState>> statements;
 // };
+
+class NameResolverRule : public Rule {
+public:
+    NameResolverRule(std::vector<std::string>& key) : search_keys(key) {}
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {}
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // TODO: implement this
+
+        // - Will check in current scope for the key/value pair associated with string from search_keys
+            // - If not found, will check in parent scope -> until reaching the outermost scope 
+            // - If found, will get the next string value from search keys and check if it matches with
+            //   any of the keys within the value found. Keep doing this until last string in search_keys 
+            //   has found its associated value.
+    }
+
+    // This vector has the individual components of the desired value in order,
+    // separated by its periods (ie. configuration.setup -> ["configuration", "setup"]) )
+    std::vector<std::string>& search_keys;
+};
