@@ -2,8 +2,9 @@
 #pragma once
 
 #include "CommonVariantTypes.h"
-#include "RuleTypes.h"
+#include "Messenger.h"
 #include "Rule.h"
+#include "RuleTypes.h"
 #include "tree_sitter/api.h"
 #include <algorithm>
 #include <cpp-tree-sitter.h>
@@ -11,14 +12,12 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <regex>
 #include <sstream>
 #include <string>
 #include <variant>
 #include <vector>
-#include "Messenger.h"
-#include <memory>
-
 
 /*
     This is game parser class, which is responsible for parsing data from txt input file
@@ -32,7 +31,7 @@ using std::vector;
 
 class ParsedGameData {
 public:
-    ParsedGameData(const string &configFileContent, std::shared_ptr<IServer>& server);
+    ParsedGameData(const string &configFileContent, std::shared_ptr<IServer> server);
 
     string getGameName() const;
     pair<int, int> getPlayerRange() const;
@@ -46,7 +45,10 @@ public:
     const DataValue::OrderedMapType &getPerPlayer() const;
     const DataValue::OrderedMapType &getPerAudience() const;
     const std::vector<DataValue::OrderedMapType> &getSetup() const;
-    const vector<std::unique_ptr<Rule>>& getRules() const;
+    const vector<std::unique_ptr<Rule>> &getRules() const;
+
+    // For moving ownership of rules to Game object
+    vector<std::unique_ptr<Rule>> moveRules();
 
     // helper functions to print result to the console
     // Note that anything related to print out will be removed eventually
@@ -65,7 +67,7 @@ private:
     DataValue::OrderedMapType perPlayer;
     DataValue::OrderedMapType perAudience;
     DataValue::OrderedMapType constants; // for RPS -> a vector of 2 pairs inside: { outerpair{pair1, pair2}, ... }
-    std::vector<std::unique_ptr<Rule>> rules;
+    vector<std::unique_ptr<Rule>> rules;
 
     DataValue handleExpression(const ts::Node &node, const std::string &source);
     void parseValueMap(const ts::Node &, const std::string &source, DataValue::OrderedMapType &output);
@@ -76,7 +78,7 @@ private:
     void parseVariablesSection(const ts::Node &, const string &);
     void parsePerPlayerSection(const ts::Node &, const string &);
     void parsePerAudienceSection(const ts::Node &, const string &);
-    void DFS(const ts::Node &node, const string &source, std::string& str);
+    void DFS(const ts::Node &node, const string &source, std::string &str);
     void handleForRule(const ts::Node &node, const string &source);
     void handleMessageSection(const ts::Node &node, const string &source);
     void traverseHelper(const ts::Node &node, const string &source, Rule &rule);
