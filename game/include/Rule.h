@@ -203,6 +203,8 @@ private:
     std::vector<std::unique_ptr<Rule>>::iterator current_statement;
 };
 
+// - Takes in an integer that represents how many elements we remove from the list
+// - Start removal from the last element in the list
 class discardRule : public Rule {
 public:
     discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
