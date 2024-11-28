@@ -16,11 +16,6 @@ using EventHandler = std::function<void(const networking::Connection &, const st
 class Lobby {
 
 public:
-    struct Message {
-        Player player;
-        std::string message;
-    };
-
     // State of the lobby (e.g. waiting for players, in progress, finished)
     enum class LobbyState { Waiting, InProgress, Finished };
 
@@ -33,7 +28,7 @@ public:
     void sendToPlayer(const Player &player, const std::string &message);
     void sendWelcomeMessage(const Player &player);
     void processIncomingMessage(const networking::Connection &connection, const std::string &message);
-    void addMessage(const Message &message);
+    void addMessage(const networking::Message &message);
     LobbyState getState();
 
     vector<Player> getPlayers() const;
@@ -57,7 +52,7 @@ private:
     std::vector<Player> players;
     std::shared_ptr<IServer> server;
     // A queue for messages to be processed on game.update()
-    std::deque<Message> incomingMessages;
+    std::deque<networking::Message> incomingMessages;
 
     // The state of the lobby
     LobbyState state;

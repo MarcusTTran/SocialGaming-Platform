@@ -85,7 +85,7 @@ public:
     const std::string &asString() const { return std::get<std::string>(value); }
     int asNumber() const { return std::get<int>(value); }
     bool asBoolean() const { return std::get<bool>(value); }
-    std::vector<DataValue> &asList() const { return std::get<std::vector<DataValue>>(value); }
+    const std::vector<DataValue> &asList() const { return std::get<std::vector<DataValue>>(value); }
     const OrderedMapType &asOrderedMap() const { return std::get<OrderedMapType>(value); } // Updated type
     const EnumDescriptionType &asEnumDescription() const {
         return std::get<EnumDescriptionType>(value);

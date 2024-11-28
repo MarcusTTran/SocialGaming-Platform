@@ -28,6 +28,7 @@ void Messenger::sendMessageToPlayerMap(const std::string &message, const DataVal
     // Get the connection from the map
     auto connection = connectionIt->second.asConnection();
 
+    std::cout << "Sending message to player: " << connection.id << std::endl;
     // Send the message to the connection
     server.send({{connection, message}});
 }

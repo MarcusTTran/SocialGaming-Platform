@@ -26,13 +26,9 @@
 class Game {
 public:
     // For compilation purposes (remove later)
-    struct Message {
-        std::string message;
-        Player player;
-    };
 
     Game(ParsedGameData &parserObject, const std::string &gameName);
-    Game(const std::string &gameName);
+    Game(const std::string &gameName, std::shared_ptr<IServer> server);
     ~Game() = default;
 
     std::string getGameName() const;
@@ -41,7 +37,7 @@ public:
     // TODO: Implement these methods
     void startGame(const DataValue &players);
     void updateGame();
-    void insertIncomingMessages(const std::deque<Message> &incomingMessages);
+    void insertIncomingMessages(const std::deque<networking::Message> &incomingMessages);
     void addObjectToGlobalMap(const std::string &key, const DataValue &value, NameResolver &globalMap);
 
 private:
@@ -56,7 +52,8 @@ private:
 
     // TODO: add rules to the Game once it is parseable and instantiable
     std::vector<std::unique_ptr<Rule>> rules;
-    // std::vector<Rule> rules;    UNCOMMENT THIS LINE AND STUFF IN THE CONSTRUCTOR TO MAKE RULES NOT USE POINTERS
+
+    std::vector<std::unique_ptr<Rule>>::iterator currentRule;
 
     // void setGameCode(const std::string &gameCode);
 };

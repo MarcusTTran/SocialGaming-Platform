@@ -73,11 +73,12 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
             // TODO: This is a temporary solution to create a game. This will be replaced with a user
             // selected game with a game configuration file.
 
-            const std::string gameConfigFile = "../config/minimal.game";
-            ParsedGameData gameData(gameConfigFile, messenger);
-            std::cout << "Game name: " << gameData.getGameName() << "\n";
-            // std::cout << "Num rules: " << gameData.getRules().size() << "\n";
-            std::unique_ptr<Game> game = std::make_unique<Game>(gameData, gameData.getGameName());
+            // const std::string gameConfigFile = "../config/minimal.game";
+            // ParsedGameData gameData(gameConfigFile, messenger);
+            // std::cout << "Game name: " << gameData.getGameName() << "\n";
+            // // std::cout << "Num rules: " << gameData.getRules().size() << "\n";
+            // std::unique_ptr<Game> game = std::make_unique<Game>(gameData, gameData.getGameName());
+            std::unique_ptr<Game> game = std::make_unique<Game>("Test Game", messenger);
             lobbyManager->createLobby(std::move(game), connection);
         } else if (text.find("join") == 0) {
             if (text.length() <= 5) {

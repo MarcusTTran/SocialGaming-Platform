@@ -33,12 +33,21 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     configurationMap.emplace("setup", DataValue(setupData));
 
     addObjectToGlobalMap("configuration", DataValue(configurationMap), *globalMap);
+
+    currentRule = rules.begin();
 }
 
 // Game::Game(const std::string &gameName, NameResolver &nameResolver)
 //     : gameName(gameName), nameResolver(std::make_unique<NameResolver>(nameResolver)) {}
 
-Game::Game(const std::string &gameName) : gameName(gameName), globalMap(std::make_shared<NameResolver>()) {}
+Game::Game(const std::string &gameName, std::shared_ptr<IServer> server)
+    : gameName(gameName), globalMap(std::make_shared<NameResolver>()) {
+
+    // Add a simple input rule to the game
+    std::unique_ptr<Rule> rule = std::make_unique<SimpleInputRule>(server);
+    rules.push_back(std::move(rule));
+    currentRule = rules.begin();
+}
 
 std::string Game::getGameName() const { return gameName; }
 
@@ -68,20 +77,62 @@ void Game::startGame(const DataValue &players) {
 
     std::cout << "Game started." << std::endl;
     // Start running rules here
-    for (const auto &rule : rules) {
-        auto returnValue = rule->runBurst(*globalMap);
 
-        if (!returnValue.isCompleted()) {
+    while (currentRule != rules.end()) {
+        auto returnValue = (*currentRule)->runBurst(*globalMap);
+
+        if (returnValue.isCompleted()) {
+            currentRule++;
+        } else {
             break;
         }
     }
+
+    if (currentRule == rules.end()) {
+        std::cout << "All rules completed." << std::endl;
+    }
 }
 
-void Game::insertIncomingMessages(const std::deque<Message> &incomingMessages) {
-    std::string key = "incomingMessages";
-    std::unordered_map<std::string, std::deque<Message>> incomingMessagesMap;
-    incomingMessagesMap[key] = incomingMessages;
+// Inserts incoming messages into the the NameResolver
+void Game::insertIncomingMessages(const std::deque<networking::Message> &incomingMessages) {
 
-    // TODO: Add the incoming messages to the name resolver
-    // nameResolver->add_new_value(key, incomingMessagesMap);
+    if (incomingMessages.empty()) {
+        return;
+    }
+
+    std::string key = "incoming_messages";
+    DataValue::OrderedMapType incomingMessagesMap;
+
+    for (const auto &message : incomingMessages) {
+        std::string messageKey = std::to_string(message.connection.id);
+        incomingMessagesMap.emplace(messageKey, DataValue(message.text));
+    }
+
+    DataValue incomingMessagesValue(incomingMessagesMap);
+    globalMap->addNewValue(key, incomingMessagesValue);
+
+    std::cout << "Incoming messages inserted into global map." << std::endl;
+
+    for (const auto &[key, value] : incomingMessagesMap) {
+        std::cout << "Key: " << key << " Value: " << value.asString() << std::endl;
+    }
+}
+
+void Game::updateGame() {
+
+    // start off from the last rules that was not completed
+
+    while (currentRule != rules.end()) {
+        auto returnValue = (*currentRule)->runBurst(*globalMap);
+
+        if (returnValue.isCompleted()) {
+            currentRule++;
+        } else {
+            break;
+        }
+    }
+
+    if (currentRule == rules.end()) {
+        std::cout << "All rules completed." << std::endl;
+    }
 }

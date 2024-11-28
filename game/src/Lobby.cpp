@@ -73,7 +73,7 @@ void Lobby::sendCurrentListOfPlayers() {
     server->sendToConnection(message, *lobbyCreator);
 }
 
-void Lobby::addMessage(const Message &message) { incomingMessages.push_back(message); }
+void Lobby::addMessage(const networking::Message &message) { incomingMessages.push_back(message); }
 
 void Lobby::processIncomingMessage(const networking::Connection &connection, const std::string &message) {
 
@@ -88,15 +88,23 @@ void Lobby::processIncomingMessage(const networking::Connection &connection, con
         } else {
             auto player = std::find_if(players.begin(), players.end(),
                                        [&](const Player &p) { return p.getConnection().id == connection.id; });
-            Message newMessage = {(*player), message};
-            addMessage(newMessage);
+            if (player != players.end()) {
+                addMessage(networking::Message{connection, message});
+            }
         }
     }
 }
 
 vector<Player> Lobby::getPlayers() const { return players; }
 
-void Lobby::update() {}
+void Lobby::update() {
+
+    if (state == LobbyState::InProgress) {
+        game->insertIncomingMessages(incomingMessages);
+        game->updateGame();
+        incomingMessages.clear();
+    }
+}
 
 DataValue Lobby::getPlayersMap() {
     DataValue::OrderedMapType playersMap;
@@ -111,8 +119,9 @@ void Lobby::handleStartEvent(const networking::Connection &connection, const std
     if (connection.id == lobbyCreator->id) {
         sendToAll("Game starting!");
         auto playersMap = getPlayersMap();
-        game->startGame(playersMap);
         state = LobbyState::InProgress;
+        game->startGame(playersMap);
+
     } else {
         std::string errorMessage = "Only the lobby creator can start the game.";
         server->sendToConnection(errorMessage, connection);

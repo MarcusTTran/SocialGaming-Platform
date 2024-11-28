@@ -1,14 +1,11 @@
 #pragma once
 
-#include <cassert>
-#include <chrono>
-#include <string>
-#include <unordered_map>
 #include "CommonVariantTypes.h"
 #include "Messenger.h"
 #include "NameResolver.h"
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -96,6 +93,7 @@ private:
 class SimpleTimerRule : public Rule {
 public:
     SimpleTimerRule(long seconds) : seconds(seconds) {}
+
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
         end_time = std::chrono::steady_clock::now() + std::chrono::seconds(seconds);
@@ -107,29 +105,72 @@ private:
         return DataValue({DataValue::RuleStatus::DONE});
     }
     long seconds;
-    std::chrono::_V2::steady_clock::time_point end_time;
+    std::chrono::steady_clock::time_point end_time;
 };
 
 class SimpleInputRule : public Rule {
-    public:
+public:
     SimpleInputRule(std::shared_ptr<IServer> server) : messager(server) {}
+
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
         // get the first player and send a message
-        auto player = name_resolver.getValue("players").value().asList().begin().base();
-        user = player;
-        messager->sendMessageToPlayerMap("Write something!", player->asOrderedMap());
+        std::cout << "getting first player" << std::endl;
+        player = name_resolver.getValue("players").value().asOrderedMap().begin()->second.asOrderedMap();
+        std::cout << name_resolver.getValue("players").value().asOrderedMap().size() << std::endl;
+        std::cout << "got first player" << std::endl;
+
+        std::cout << "getting connection" << std::endl;
+        std::string connection_id = std::to_string(player["connection"].asConnection().id);
+        std::cout << "got connection" << std::endl;
+        std::cout << "connection id: " << connection_id << std::endl;
+        std::string pending_connections_key = "pending_connections";
+
+        std::vector<DataValue> pending_connections;
+        pending_connections.push_back(DataValue({connection_id}));
+        name_resolver.addNewValue(pending_connections_key, DataValue(pending_connections));
+
+        messager->sendMessageToPlayerMap("Write something!", player);
+        std::cout << "sent message" << std::endl;
     }
     DataValue _runBurst(NameResolver &name_resolver) override {
         // check for message
-        //auto maybe_message = messager->checkMessagesFromPlayerMap(player->asOrderedMap());
-        //if (!maybe_message.hasValue()) {
+
+        auto pending_connections = name_resolver.getValue("pending_connections");
+        auto incoming_messages = name_resolver.getValue("incoming_messages");
+
+        if (!pending_connections.has_value()) {
             return DataValue({DataValue::RuleStatus::NOTDONE});
-        //}
-        //return DataValue({maybe_message.value()});
+        }
+
+        if (!incoming_messages.has_value()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+
+        auto pending_connections_value = pending_connections.value().asList();
+        auto incoming_messages_value = incoming_messages.value().asOrderedMap();
+
+        if (pending_connections_value.empty()) {
+            return DataValue({DataValue::RuleStatus::DONE});
+        }
+
+        if (incoming_messages_value.empty()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+
+        for (const DataValue &connection_id : pending_connections_value) {
+            auto message = incoming_messages_value.find(connection_id.asString());
+            if (message != incoming_messages_value.end()) {
+                messager->sendMessageToPlayerMap("Thank you for your input, You said: " + message->second.asString(),
+                                                 player);
+                return DataValue({DataValue::RuleStatus::DONE});
+            }
+        }
+
+        return DataValue({DataValue::RuleStatus::NOTDONE});
     }
     std::shared_ptr<IServer> messager;
-    DataValue *user;
+    DataValue::OrderedMapType player;
 };
 
 class AllPlayersRule : public Rule {
