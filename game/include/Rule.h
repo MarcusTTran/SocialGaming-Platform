@@ -20,6 +20,9 @@
 //   Execution-time - entering parallel-for
 // ])
 
+// fullscope[0] = top level stuff
+// fullscope[1] = for rule for RPS
+
 using Scope = Map;
 
 class Rule {
@@ -205,6 +208,8 @@ private:
 
 // - Takes in an integer that represents how many elements we remove from the list
 // - Start removal from the last element in the list
+// POSTCONDITION: If integer expression <= 0 or list is of incorrect type or empty, return -1.
+//                Otherwise, return 1.
 class discardRule : public Rule {
 public:
     discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
@@ -217,7 +222,21 @@ private:
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        // TODO:
+        // Check certain invariants for this functions
+        bool listIsIncorrectType = listToDiscard.getType() != DataValue::Type::LIST;
+       
+        bool listIsEmpty = true;
+        if (!listIsIncorrectType) {
+            listIsEmpty = listToDiscard.asList().empty();
+        } else { // List was incorrect type 
+            return DataValue({-1});
+        }
+
+        if (integerExpression <= 0 ) {
+            return DataValue({1});
+        }
+
+
     }
 
     std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
@@ -304,7 +323,11 @@ public:
     NameResolverRule(std::vector<std::string>& key) : search_keys(key) {}
 
 private:
-    void _handle_dependencies(NameResolver &name_resolver) override {}
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        if (search_keys.empty()) {
+            std::cout << "NameResolverRule called without arguments!" << std::endl;
+        }
+    }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
         // TODO: implement this
@@ -314,6 +337,8 @@ private:
             // - If found, will get the next string value from search keys and check if it matches with
             //   any of the keys within the value found. Keep doing this until last string in search_keys 
             //   has found its associated value.
+        
+        
     }
 
     // This vector has the individual components of the desired value in order,
