@@ -45,7 +45,12 @@ Game::Game(const std::string &gameName, std::shared_ptr<IServer> server)
 
     // Add a simple input rule to the game
     std::unique_ptr<Rule> rule = std::make_unique<SimpleInputRule>(server);
+    std::unique_ptr<AllPlayersRule> allPlayersRule = std::make_unique<AllPlayersRule>();
+    std::unique_ptr<StringRule> simpleStringRule = std::make_unique<StringRule>("Hello, World!");
+    std::unique_ptr<Rule> rule2 =
+        std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(simpleStringRule));
     rules.push_back(std::move(rule));
+    rules.push_back(std::move(rule2));
     currentRule = rules.begin();
 }
 
