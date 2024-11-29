@@ -325,23 +325,19 @@ public:
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
         if (search_keys.empty()) {
-            std::cout << "NameResolverRule called without arguments!" << std::endl;
+            std::cerr << "NameResolverRule called without arguments!" << std::endl;
         }
-        
-        top_level_key = search_keys[0];
         isNested = search_keys.size() > 1;
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        auto valueInTopScope = name_resolver.getValue(top_level_key);
+        auto valueInTopScope = name_resolver.getValue(search_keys[0]);
         if (valueInTopScope == std::nullopt) {
             return DataValue("ERROR");
         }
         
         if (isNested && valueInTopScope->getType() == "ORDERED_MAP") {
-            // Erase the top level since we have it already
-            top_level_map.erase(top_level_map.begin()); 
-            auto valueInMap = name_resolver.findInMap(valueInTopScope->asOrderedMap(), search_keys);
+            auto valueInMap = name_resolver.getNestedValue(search_keys);    
             if (valueInMap == std::nullopt) {
                 return DataValue("ERROR");
             }
@@ -358,7 +354,5 @@ private:
     // separated by its periods (ie. configuration.setup -> ["configuration", "setup"]) )
     std::vector<std::string>& search_keys;
     bool isNested = false;
-    std::string top_level_key;
-    DataValue::OrderedMapType top_level_map; 
     DataValue result;
 };

@@ -43,7 +43,7 @@ private:
 
 
     // BINARY EXPRESSION RULES
-// ex. +, -, *, /, assignment(x <- 5), 
+// ex. +, -, *, /, assignment(x <- 5), ||, =(equality) 
 
 
 // takes 1) a list of maps map before the keyword ".elements." and 2) a string key after           
