@@ -3,6 +3,7 @@
 #include "CommonVariantTypes.h"
 #include <string>
 #include <unordered_map>
+#include <optional>
 
 using Map = std::unordered_map<std::string, DataValue>;
 
@@ -12,6 +13,11 @@ public:
     void removeInnerScope() { full_scope.pop_back(); }
 
     bool addNewValue(const std::string &key, const DataValue &value) {
+
+        if (full_scope.empty()) {
+            full_scope.push_back({});
+        }
+
         // return false if the key already exists in the inner-most scope
         if (full_scope.back().find(key) != full_scope.back().end()) {
             return false;
@@ -33,7 +39,8 @@ public:
         }
         return false;
     }
-    DataValue getValue(const std::string &key) {
+    // Returns a nullopt if value is not found. You can use the .hasvalue() method.
+    std::optional<DataValue> getValue(const std::string &key) {
         for (auto it : full_scope) {
             auto &map = it;
             auto mapIt = map.find(key);
@@ -42,7 +49,7 @@ public:
                 return mapIt->second;
             }
         }
-        return {}; // null TODO: change to error value
+        return std::nullopt;
     }
 
 private:

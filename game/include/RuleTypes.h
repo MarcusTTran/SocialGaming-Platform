@@ -24,7 +24,7 @@ struct Configuration {
     Configuration() : name(""), audience(false), range({0, 0}), setup({}) {}
 };
 
-struct Rule {
+struct RuleT {
     enum class Type {
         Default,
         For,
@@ -50,5 +50,5 @@ struct Rule {
     };
     Type type = Type::Default;
     std::vector<DataValue> parameters;
-    std::vector<Rule> subRules;
+    std::vector<RuleT> subRules;
 };

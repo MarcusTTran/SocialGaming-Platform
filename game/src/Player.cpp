@@ -29,20 +29,20 @@ void Player::addPerVariableMap(DataValue::OrderedMapType perVariableMap, bool id
 };
 
 void Player::addPlayerVariable(std::string key, DataValue value, bool identity) {
-    identity ? playerObjects.emplace_back(std::move(key), std::move(value))
-             : audienceObjects.emplace_back(key, std::move(value));
+    identity ? playerObjects.emplace(std::move(key), std::move(value))
+             : audienceObjects.emplace(key, std::move(value));
 };
 
 DataValue::OrderedMapType Player::getMap(bool identity) {
     if (identity) {
-        playerObjects.emplace_back(std::string("__id__"), static_cast<int>(id));
-        playerObjects.emplace_back(std::string("name"), std::string(displayName));
-        playerObjects.emplace_back(std::string("connection"), connection);
+        playerObjects.emplace(std::string("__id__"), static_cast<int>(id));
+        playerObjects.emplace(std::string("name"), std::string(displayName));
+        playerObjects.emplace(std::string("connection"), connection);
         return playerObjects;
     } else {
-        audienceObjects.emplace_back(std::string("__id__"), static_cast<int>(id));
-        audienceObjects.emplace_back(std::string("name"), std::string(displayName));
-        audienceObjects.emplace_back(std::string("connection"), connection);
+        audienceObjects.emplace(std::string("__id__"), static_cast<int>(id));
+        audienceObjects.emplace(std::string("name"), std::string(displayName));
+        audienceObjects.emplace(std::string("connection"), connection);
         return audienceObjects;
     }
 };

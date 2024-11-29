@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <random>
 
-void LobbyManager::createLobby(Game &game, const networking::Connection &lobbyCreator) {
+void LobbyManager::createLobby(std::unique_ptr<Game> game, const networking::Connection &lobbyCreator) {
 
     // Check if the connection has already created a lobby
     // Dont allow a player to create multiple lobbies
@@ -13,8 +13,9 @@ void LobbyManager::createLobby(Game &game, const networking::Connection &lobbyCr
     }
 
     std::string lobbyCode = generateLobbyCode();
-    lobbies.emplace(lobbyCode, std::make_unique<Lobby>(
-                                   game, server, std::make_shared<networking::Connection>(lobbyCreator), lobbyCode));
+    lobbies.emplace(lobbyCode,
+                    std::make_unique<Lobby>(std::move(game), server,
+                                            std::make_shared<networking::Connection>(lobbyCreator), lobbyCode));
 
     // Track that this connection is the creator of the lobby
     lobbyCreators[lobbyCreator.id] = lobbyCode;
