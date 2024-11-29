@@ -21,6 +21,11 @@ public:
     bool isInLobby(const networking::Connection &connection) const;
     bool isLobbyCreator(const networking::Connection &connection) const;
     bool isDisplayNameUnique(const std::string &lobbyCode, const std::string &displayName) const;
+    bool isLobbyCodeValid(const std::string &lobbyCode) const;
+    bool isWaitingForLobbyCode(const networking::Connection &connection) const;
+    void addConnectionWaitingForLobbyCode(const networking::Connection &connection);
+    void updateLobbies();
+    std::string generateWelcomeMessage();
     std::map<std::string, std::unique_ptr<Lobby>> &getLobbies() { return lobbies; }
 
 private:
@@ -41,4 +46,5 @@ private:
     // Used for routing messages to the correct lobby
     std::map<uintptr_t, std::string> playersInLobbies;
     std::map<uintptr_t, std::string> lobbyCreators;
+    std::vector<networking::Connection> waitingForLobbyCode;
 };

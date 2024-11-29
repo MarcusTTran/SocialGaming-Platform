@@ -29,6 +29,7 @@ public:
     void sendWelcomeMessage(const Player &player);
     void processIncomingMessage(const networking::Connection &connection, const std::string &message);
     void addMessage(const networking::Message &message);
+    networking::Connection &getLobbyCreator() const;
     LobbyState getState();
 
     vector<Player> getPlayers() const;

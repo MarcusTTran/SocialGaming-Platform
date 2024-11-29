@@ -142,3 +142,63 @@ bool LobbyManager::isDisplayNameUnique(const std::string &lobbyCode, const std::
 
     return false;
 }
+
+void LobbyManager::updateLobbies() {
+    for (auto it = lobbies.begin(); it != lobbies.end();) {
+        if (it->second->getState() == Lobby::LobbyState::Finished) {
+            // Get the list of players in the lobby
+            auto players = it->second->getPlayers();
+            auto lobbyCreator = it->second->getLobbyCreator();
+
+            // Remove the lobby
+            it = lobbies.erase(it);
+
+            // Reinitialize players
+            for (const auto &player : players) {
+                // Remove player from playersInLobbies map
+                playersInLobbies.erase(player.getConnection().id);
+
+                // Call onConnect to display the welcome message
+                server->sendToConnection("The game has ended. Thank you for playing!", player.getConnection());
+                server->sendToConnection(generateWelcomeMessage(), player.getConnection());
+            }
+
+            lobbyCreators.erase(lobbyCreator.id);
+            server->sendToConnection("Game Over!", lobbyCreator);
+            server->sendToConnection(generateWelcomeMessage(), lobbyCreator);
+        } else {
+            it->second->update();
+            ++it;
+        }
+    }
+}
+
+std::string LobbyManager::generateWelcomeMessage() {
+    std::ostringstream oss;
+    oss << "******************************************\n";
+    oss << "*                                        *\n";
+    oss << "* Welcome to the Social Gaming Platform! *\n";
+    oss << "*                                        *\n";
+    oss << "******************************************\n";
+    oss << "*                                        *\n";
+    oss << "*  Options:                              *\n";
+    oss << "*    1. Create a new lobby               *\n";
+    oss << "*    2. Join an existing lobby           *\n";
+    oss << "*                                        *\n";
+    oss << "******************************************\n";
+    return oss.str();
+}
+
+bool LobbyManager::isLobbyCodeValid(const std::string &lobbyCode) const {
+    return lobbies.find(lobbyCode) != lobbies.end();
+}
+
+bool LobbyManager::isWaitingForLobbyCode(const networking::Connection &connection) const {
+    auto found = std::find(waitingForLobbyCode.begin(), waitingForLobbyCode.end(), connection);
+
+    return found != waitingForLobbyCode.end();
+}
+
+void LobbyManager::addConnectionWaitingForLobbyCode(const networking::Connection &connection) {
+    waitingForLobbyCode.push_back(connection);
+}

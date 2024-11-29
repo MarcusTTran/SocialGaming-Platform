@@ -139,5 +139,6 @@ void Game::updateGame() {
 
     if (currentRule == rules.end()) {
         std::cout << "All rules completed." << std::endl;
+        isDone = true;
     }
 }

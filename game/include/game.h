@@ -34,16 +34,17 @@ public:
     std::string getGameName() const;
     std::string getGameCode() const;
 
-    // TODO: Implement these methods
     void startGame(const DataValue &players);
     void updateGame();
     void insertIncomingMessages(const std::deque<networking::Message> &incomingMessages);
     void addObjectToGlobalMap(const std::string &key, const DataValue &value, NameResolver &globalMap);
+    bool isGameDone() const { return isDone; }
 
 private:
     std::shared_ptr<NameResolver> globalMap;
     std::string gameName;
     std::string gameCode;
+    bool isDone = false;
 
     // API objects
     GameConfiguration configuration;

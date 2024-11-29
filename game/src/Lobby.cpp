@@ -103,6 +103,9 @@ void Lobby::update() {
         game->insertIncomingMessages(incomingMessages);
         game->updateGame();
         incomingMessages.clear();
+        if (game->isGameDone()) {
+            state = LobbyState::Finished;
+        }
     }
 }
 
@@ -147,3 +150,5 @@ void Lobby::handleUnknownEvent(const networking::Connection &connection, const s
     std::string errorMessage = "Unknown command: " + message;
     server->sendToConnection(errorMessage, connection);
 }
+
+networking::Connection &Lobby::getLobbyCreator() const { return *lobbyCreator; }
