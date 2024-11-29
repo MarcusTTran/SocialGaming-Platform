@@ -344,28 +344,54 @@ void ParsedGameData::DFS(const ts::Node &node, const std::string &source, std::s
             return;
         }
     }
-    // Skip "builtin" nodes
-    if (node.getType() == "builtin") {
-        return;
-    }
 
     for (const auto &child : ts::Children{node}) {
+        if (child.getType() == "builtin"){
+            return;
+        }
         DFS(child, source, str);
+    }
+}
+
+Rule& ParsedGameData::handleBuiltin(const ts::Node &node, const std::string &source){
+    auto content = node.getSourceRange(source);
+
+    if (content.find("upfrom") != std::string::npos) {
+        int value = std::stoi(std::string(node.getNextSibling().getSourceRange(source)));
+        // name_resolver type
+        std::unique_ptr<Rule> numberMaker = std::make_unique<StringRule>();
+        std::unique_ptr<Rule> upfromRule = std::make_unique<UpfromRule>(*numberMaker, value);
+        return upfromRule;
+    } else if (content.find("contains") != std::string::npos) {
+        std::cout << "THIS IS CONTAINS" << std::endl;
+        // TODO: add rule into rule.h
+    } else if (content.find("collect") != std::string::npos) {
+        // TODO: add rule into rule.h
+        std::cout << "THIS IS COLLECT" << std::endl;
+    } else {
+        // TODO: add rule into rule.h
+        std::cout << "THIS IS SIZE" << std::endl;
     }
 }
 
 void ParsedGameData::handleForRule(const ts::Node &node, const std::string &source) {
     ts::Node elementNode = node.getChildByFieldName("element"); // round or weapon
     ts::Node listNode = node.getChildByFieldName("list");       // configuration.rounds or weapons
+    ts::Node builtInNode = listNode.getChildByFieldName("builtin");
     ts::Node bodyNode = node.getChildByFieldName("body");
 
     auto iteratorName = std::string(elementNode.getSourceRange(source));
 
-    std::string listContent;
+    std::string listContent; // vec = {configuration, rounds}
     if (!listNode.isNull()) {
         DFS(listNode, source, listContent);
     }
+    // configuration.rounds.upfrom(1) -> upfromRule
     std::unique_ptr<Rule> conditions = listContent.empty() ? nullptr : std::make_unique<StringRule>(listContent);
+
+    if(!builtInNode.isNull()){
+        Rule builtInRule = handleBuiltin(builtInNode, source);
+    }
 
     std::vector<std::unique_ptr<Rule>> content;
     if (!bodyNode.isNull()) {

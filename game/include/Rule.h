@@ -136,6 +136,8 @@ private:
     std::string message;
 };
 
+// for round in configuration.rounds.upfrom(1)
+// for round in configuration.rounds
 class ForRule : public Rule {
 public:
     ForRule(std::string fresh_variable_name, std::unique_ptr<Rule> list_maker,

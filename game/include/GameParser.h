@@ -84,6 +84,7 @@ private:
     void traverseHelper(const ts::Node &node, const string &source, Rule &rule);
     void handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule);
     void handleWhileSection(const ts::Node &node, const string &source, Rule &outerRule);
+    Rule& handleBuiltin(const ts::Node &node, const std::string &source)
     std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
     string ruleTypeToString(RuleT::Type type);
     RuleT::Type getRuleType(const string &type);
