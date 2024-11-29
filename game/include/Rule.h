@@ -210,40 +210,40 @@ private:
 // - Start removal from the last element in the list
 // POSTCONDITION: If integer expression <= 0 or list is of incorrect type or empty, return -1.
 //                Otherwise, return 1.
-class discardRule : public Rule {
-public:
-    discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
-        : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
+// class discardRule : public Rule {
+// public:
+//     discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
+//         : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
     
-private:
-    void _handle_dependencies(NameResolver &name_resolver) override {
-        integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
-        listToDiscard = list_maker->runBurst(name_resolver);
-    }
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {
+//         integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
+//         listToDiscard = list_maker->runBurst(name_resolver);
+//     }
 
-    DataValue _runBurst(NameResolver &name_resolver) override {
-        // Check certain invariants for this functions
-        bool listIsIncorrectType = listToDiscard.getType() != DataValue::Type::LIST;
+//     DataValue _runBurst(NameResolver &name_resolver) override {
+//         // Check certain invariants for this functions
+//         bool listIsIncorrectType = listToDiscard.getType() != DataValue::Type::LIST;
        
-        bool listIsEmpty = true;
-        if (!listIsIncorrectType) {
-            listIsEmpty = listToDiscard.asList().empty();
-        } else { // List was incorrect type 
-            return DataValue({-1});
-        }
+//         bool listIsEmpty = true;
+//         if (!listIsIncorrectType) {
+//             listIsEmpty = listToDiscard.asList().empty();
+//         } else { // List was incorrect type 
+//             return DataValue({-1});
+//         }
 
-        if (integerExpression <= 0 ) {
-            return DataValue({1});
-        }
+//         if (integerExpression <= 0 ) {
+//             return DataValue({1});
+//         }
 
 
-    }
+//     }
 
-    std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
-    std::unique_ptr<Rule> list_maker;   // NameResolverRule
-    int integerExpression; 
-    DataValue listToDiscard;
-};
+//     std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
+//     std::unique_ptr<Rule> list_maker;   // NameResolverRule
+//     int integerExpression; 
+//     DataValue listToDiscard;
+// };
 
 class UpfromRule : public Rule {
 public:
@@ -327,21 +327,38 @@ private:
         if (search_keys.empty()) {
             std::cout << "NameResolverRule called without arguments!" << std::endl;
         }
+        
+        top_level_key = search_keys[0];
+        isNested = search_keys.size() > 1;
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        // TODO: implement this
+        auto valueInTopScope = name_resolver.getValue(top_level_key);
+        if (valueInTopScope == std::nullopt) {
+            return DataValue("ERROR");
+        }
+        
+        if (isNested && valueInTopScope->getType() == "ORDERED_MAP") {
+            // Erase the top level since we have it already
+            top_level_map.erase(top_level_map.begin()); 
+            auto valueInMap = name_resolver.findInMap(valueInTopScope->asOrderedMap(), search_keys);
+            if (valueInMap == std::nullopt) {
+                return DataValue("ERROR");
+            }
+            result = *valueInMap;
+        } 
+        else {
+            result = *valueInTopScope;
+        }
 
-        // - Will check in current scope for the key/value pair associated with string from search_keys
-            // - If not found, will check in parent scope -> until reaching the outermost scope 
-            // - If found, will get the next string value from search keys and check if it matches with
-            //   any of the keys within the value found. Keep doing this until last string in search_keys 
-            //   has found its associated value.
-        
-        
+        return result;
     }
 
     // This vector has the individual components of the desired value in order,
     // separated by its periods (ie. configuration.setup -> ["configuration", "setup"]) )
     std::vector<std::string>& search_keys;
+    bool isNested = false;
+    std::string top_level_key;
+    DataValue::OrderedMapType top_level_map; 
+    DataValue result;
 };

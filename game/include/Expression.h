@@ -3,6 +3,9 @@
 #include "Rule.h"
 #include <string>
 #include <cassert>
+
+// TODO: add this to cmakeLists when ready
+
 /* 
 - Expressions are subsets of rules, thus they are derived from the Rule interface. 
 
@@ -30,7 +33,6 @@ public:
 private: 
     void _handle_dependencies(NameResolver &name_resolver){
         operand = operand_maker->runBurst(name_resolver);
-        assert(operation == "size");
     }    
     DataValue _runBurst(NameResolver &name_resolver){}
     
