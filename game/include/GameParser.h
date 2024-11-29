@@ -80,7 +80,7 @@ private:
     void parseVariablesSection(const ts::Node &, const string &);
     void parsePerPlayerSection(const ts::Node &, const string &);
     void parsePerAudienceSection(const ts::Node &, const string &);
-    void DFS(const ts::Node &node, const string &source, std::string &str);
+    void DFS(const ts::Node &node, const string &source, std::vector<std::string> &str);
     void handleForRule(const ts::Node &node, const string &source);
     void handleMessageSection(const ts::Node &node, const string &source);
     void traverseHelper(const ts::Node &node, const string &source, Rule &rule);

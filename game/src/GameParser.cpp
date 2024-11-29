@@ -333,14 +333,14 @@ string ParsedGameData::ruleTypeToString(RuleT::Type type) {
     }
 }
 
-void ParsedGameData::DFS(const ts::Node &node, const std::string &source, std::string &str) {
+void ParsedGameData::DFS(const ts::Node &node, const std::string &source, std::vector<std::string> &str) {
     // Check if node is a leaf or an identifier
     if (!node.getNumNamedChildren() || node.getType() == "identifier") {
         auto content = std::string(node.getSourceRange(source));
         // Only proceed if `content` is not in the `toSkip` list
         if (find(begin(GameConstantsType::toSkip), end(GameConstantsType::toSkip), content) ==
             end(GameConstantsType::toSkip)) {
-            str = content + str;
+            str.emplace_back(content);
             return;
         }
     }
@@ -382,12 +382,12 @@ void ParsedGameData::handleForRule(const ts::Node &node, const std::string &sour
 
     auto iteratorName = std::string(elementNode.getSourceRange(source));
 
-    std::string listContent; // vec = {configuration, rounds}
+    std::vector<std::string >listContent; // vec = {configuration, rounds}
     if (!listNode.isNull()) {
         DFS(listNode, source, listContent);
     }
     // configuration.rounds.upfrom(1) -> upfromRule
-    std::unique_ptr<Rule> conditions = listContent.empty() ? nullptr : std::make_unique<StringRule>(listContent);
+    std::unique_ptr<Rule> conditions = listContent.empty() ? nullptr : std::make_unique<NameResolverRule>(listContent);
 
     if(!builtInNode.isNull()){
         Rule builtInRule = handleBuiltin(builtInNode, source);
