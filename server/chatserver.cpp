@@ -64,7 +64,6 @@ struct MessageResult
     bool shouldShutdown;
 };
 
-
 std::vector<GameCreators> listOfGameCreators;
 
 MessageResult processMessages(Server &server, const std::deque<Message> &incoming)
@@ -99,24 +98,25 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                 try
                 {
                     auto number = std::stoi(message.text);
-                    if(getConfigMap().find(number) == getConfigMap().end()){
+                    if (getConfigMap().find(number) == getConfigMap().end())
+                    {
                         result << "Error, invalid entry, please enter an integer that exists within list of games: " << '\n';
-                            break; 
+                        break;
                     }
-                    else{
-                         const std::string gameConfigPath = getConfigMap().at(number);
+                    else
+                    {
+                        const std::string gameConfigPath = getConfigMap().at(number);
                     }
-                    
                 }
                 catch (const std::exception &e)
                 {
                     // Catch any type of error-> std::exception
                     result << "Error, invalid entry, please enter an integer: " << e.what() << '\n';
-                    break; 
+                    break;
                 }
 
                 const std::string gameConfigPath = getConfigMap().at(std::stoi(message.text));
-                //auto serverPtr = std::static_pointer_cast<IServer>(messenger);
+                // auto serverPtr = std::static_pointer_cast<IServer>(messenger);
                 ParsedGameData parser(gameConfigPath, messenger);
 
                 // // Game config now parses game selected by user.
@@ -127,13 +127,23 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                 result << "(Enter 'CHANGE' to edit game settings! )" << '\n';
                 currentGameCreator->chosenGameToEdit = true;
                 currentGameCreator->adminGame = config;
-                currentGameCreator->howManyGamesAdminHasToSet = config.getSetup().size();
+                currentGameCreator->howManyGamesAdminHasToSet = config.getSetup().size() - 1; // the reason for minus 1 is for some reason the setup size is 1 bigger than it has to be.
+                std::cout << "admin has this many games to set: " << currentGameCreator->howManyGamesAdminHasToSet << '\n';
+                // messenger->sendToConnection(result.str(),connection);
             }
-            else if (currentGameCreator->chosenGameToEdit && currentGameCreator->isCurrentlyEditingGame)
+            else if (currentGameCreator->chosenGameToEdit)
             {
 
-                if (message.text == "SAME")
+                if (message.text == "SAME" || currentGameCreator->howManyGamesAdminHasToSet == 0)
                 {
+                    if (currentGameCreator->howManyGamesAdminHasToSet == 0)
+                    {
+                        result << "Default settings chosen for game due to no setups existing in config! Game now being created. \n";
+                    }
+                    else
+                    {
+                        result << "Default settings chosen for game! Game now being created. \n";
+                    }
                     // then game can be setup here as there is no edits to make.s
                     auto new_end = std::remove_if(
                         listOfGameCreators.begin(),
@@ -143,28 +153,58 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                             return creator.connectionID == message.connection.id; // Replace 'id' with the actual field name.
                         });
                     listOfGameCreators.erase(new_end, listOfGameCreators.end());
-
-                    result << "Default settings chosen for game! Game now being created. \n";
+                    
                 }
-                else if(message.text == "CHANGE")
+                else if (message.text == "CHANGE" || currentGameCreator->chosenGameToEdit)
                 {
-                    auto configStatusResult = editingGameConfig(currentGameCreator->adminGame,currentGameCreator);
+                    auto configStatusResult = editingGameConfig(currentGameCreator->adminGame, currentGameCreator, message.text);
 
-                    if(configStatusResult.status == EditState::Success){
+                    if (configStatusResult.status == EditState::Success)
+                    {
                         result << configStatusResult.message;
-                        currentGameCreator->gameConfigIterator++;
-                        currentGameCreator->howManyGamesAdminHasToSet--;
+                        if (currentGameCreator->editingSetup)
+                        {
+                            // just break as were currently editing things
+                            break;
+                        }
+                        else
+                        { // not editing a setup so were done and can move to next setup
+                            currentGameCreator->gameConfigIterator++;
+                            currentGameCreator->howManyGamesAdminHasToSet--;
+                        }
+                    }
+                    if (configStatusResult.status == EditState::Error)
+                    {
+                    }
+                    if (configStatusResult.status == EditState::Done || currentGameCreator->gameConfigIterator >= currentGameCreator->howManyGamesAdminHasToSet)
+                    {
+                        result << configStatusResult.message;
+                        auto setups = currentGameCreator->adminGame.getSetup();
+                        auto &setup = setups.at(0);
+                        // if (setup.getRange().has_value())
+                        // {
+                        //     auto range = setup.getRange().value();
+                        //     result << "NEWLY SET Range: (" << range.first << ", " << range.second << ")" << '\n';
+                        // }
+
+                        result << "NEWLY SET Choice: " << setup.chosenChoice << '\n';
+
+                        auto new_end = std::remove_if(
+                            listOfGameCreators.begin(),
+                            listOfGameCreators.end(),
+                            [message](const GameCreators &creator)
+                            {
+                                return creator.connectionID == message.connection.id; // Replace 'id' with the actual field name.
+                            });
+                        listOfGameCreators.erase(new_end, listOfGameCreators.end());
+
+                        result << "Game now being created. \n";
                         break;
                     }
-                    else if(configStatusResult.status == EditState::Error){
-
-                    }
-                    else if(configStatusResult.status == EditState::Done){
-
-                    }
-                    //going to need to figure out how to signal user is done editing game and then create said game.
+                    // going to need to figure out how to signal user is done editing game and then create said game.
                 }
-                else{
+                else
+                {
                     result << "Error invalid entry, please enter SAME or CHANGE to configure game settings. \n";
                 }
             }
