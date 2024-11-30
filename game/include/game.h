@@ -50,8 +50,6 @@ private:
     GameConfiguration configuration;
     GameConstants constants;
     GameVariables variables;
-
-    // TODO: add rules to the Game once it is parseable and instantiable
     std::vector<std::unique_ptr<Rule>> rules;
 
     std::vector<std::unique_ptr<Rule>>::iterator currentRule;
