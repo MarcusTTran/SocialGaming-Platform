@@ -20,6 +20,9 @@
 //   Execution-time - entering parallel-for
 // ])
 
+// fullscope[0] = top level stuff
+// fullscope[1] = for rule for RPS
+
 using Scope = Map;
 
 class Rule
@@ -163,8 +166,9 @@ private:
     std::string message;
 };
 
-class ForRule : public Rule
-{
+// for round in configuration.rounds.upfrom(1)
+// for round in configuration.rounds
+class ForRule : public Rule {
 public:
     ForRule(std::string fresh_variable_name, std::unique_ptr<Rule> list_maker,
             std::vector<std::unique_ptr<Rule>> contents)
@@ -238,6 +242,45 @@ private:
     std::vector<std::unique_ptr<Rule>>::iterator current_statement;
 };
 
+// - Takes in an integer that represents how many elements we remove from the list
+// - Start removal from the last element in the list
+// POSTCONDITION: If integer expression <= 0 or list is of incorrect type or empty, return -1.
+//                Otherwise, return 1.
+// class discardRule : public Rule {
+// public:
+//     discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
+//         : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
+    
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {
+//         integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
+//         listToDiscard = list_maker->runBurst(name_resolver);
+//     }
+
+//     DataValue _runBurst(NameResolver &name_resolver) override {
+//         // Check certain invariants for this functions
+//         bool listIsIncorrectType = listToDiscard.getType() != DataValue::Type::LIST;
+       
+//         bool listIsEmpty = true;
+//         if (!listIsIncorrectType) {
+//             listIsEmpty = listToDiscard.asList().empty();
+//         } else { // List was incorrect type 
+//             return DataValue({-1});
+//         }
+
+//         if (integerExpression <= 0 ) {
+//             return DataValue({1});
+//         }
+
+
+//     }
+
+//     std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
+//     std::unique_ptr<Rule> list_maker;   // NameResolverRule
+//     int integerExpression; 
+//     DataValue listToDiscard;
+// };
+
 class UpfromRule : public Rule {
 public:
     UpfromRule(Rule &number_maker, int starting_value) : number_maker(number_maker), starting_value(starting_value) {}
@@ -310,3 +353,42 @@ private:
 
 //     std::vector<std::pair<std::unique_ptr<Rule>, StatementState>> statements;
 // };
+
+class NameResolverRule : public Rule {
+public:
+    NameResolverRule(std::vector<std::string>& key) : search_keys(key) {}
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        if (search_keys.empty()) {
+            std::cerr << "NameResolverRule called without arguments!" << std::endl;
+        }
+        isNested = search_keys.size() > 1;
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        auto valueInTopScope = name_resolver.getValue(search_keys[0]);
+        if (valueInTopScope == std::nullopt) {
+            return DataValue("ERROR");
+        }
+        
+        if (isNested && valueInTopScope->getType() == "ORDERED_MAP") {
+            auto valueInMap = name_resolver.getNestedValue(search_keys);    
+            if (valueInMap == std::nullopt) {
+                return DataValue("ERROR");
+            }
+            result = *valueInMap;
+        } 
+        else {
+            result = *valueInTopScope;
+        }
+
+        return result;
+    }
+
+    // This vector has the individual components of the desired value in order,
+    // separated by its periods (ie. configuration.setup -> ["configuration", "setup"]) )
+    std::vector<std::string>& search_keys;
+    bool isNested = false;
+    DataValue result;
+};

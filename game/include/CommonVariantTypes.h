@@ -13,7 +13,7 @@
 class DataValue {
 
 public:
-    enum RuleStatus { DONE, NOTDONE };
+    enum RuleStatus { DONE, NOTDONE, ERROR}; // TODO: add more this
 
     using OrderedMapType = std::map<std::string, DataValue>;                    // Swapped
     using EnumDescriptionType = std::vector<std::pair<std::string, DataValue>>; // Swapped
