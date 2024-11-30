@@ -34,9 +34,7 @@ std::vector<Connection> clients;
 // TODO: Tempory solution to allow the onConnect and onDisconnect to access the
 // server object. refactor at a later date.
 Server *server_ptr = nullptr;
-std::shared_ptr<Messenger> messenger;
 std::unique_ptr<LobbyManager> lobbyManager;
-
 std::shared_ptr<Messenger> messenger;
 
 void onConnect(Connection c)
@@ -103,6 +101,7 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                     if (getConfigMap().find(number) == getConfigMap().end())
                     {
                         result << "Error, invalid entry, please enter an integer that exists within list of games: " << '\n';
+                        messenger->sendToConnection(result.str(), connection);
                         break;
                     }
                     else
@@ -114,21 +113,23 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                 {
                     // Catch any type of error-> std::exception
                     result << "Error, invalid entry, please enter an integer: " << e.what() << '\n';
+                    messenger->sendToConnection(result.str(), connection);
                     break;
                 }
 
                 const std::string gameConfigPath = getConfigMap().at(std::stoi(message.text));
-                // auto serverPtr = std::static_pointer_cast<IServer>(messenger);
-                ParsedGameData parser(gameConfigPath, messenger);
+
+                std::shared_ptr<ParsedGameData> parser = std::make_shared<ParsedGameData>(gameConfigPath, messenger); // need to this to manage lifetime to later pass to create lobby.
 
                 // // Game config now parses game selected by user.
-                GameConfiguration config(parser);
+                GameConfiguration config(*parser);
                 result << "You have chosen game " << message.text << " with config path: " << getConfigMap().at(std::stoi(message.text)) << '\n';
                 result << "Do you wish to edit this games setup? or do you want to keep its default settings?" << '\n';
                 result << "(Enter 'SAME' to choose default settings! )" << '\n';
                 result << "(Enter 'CHANGE' to edit game settings! )" << '\n';
                 currentGameCreator->chosenGameToEdit = true;
                 currentGameCreator->adminGame = config;
+                currentGameCreator->parserObject = parser;
                 currentGameCreator->howManyGamesAdminHasToSet = config.getSetup().size() - 1; // the reason for minus 1 is for some reason the setup size is 1 bigger than it has to be.
                 std::cout << "admin has this many games to set: " << currentGameCreator->howManyGamesAdminHasToSet << '\n';
                 // messenger->sendToConnection(result.str(),connection);
@@ -147,6 +148,11 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                         result << "Default settings chosen for game! Game now being created. \n";
                     }
                     // then game can be setup here as there is no edits to make.s
+
+                    std::string gameName = currentGameCreator->adminGame.getGameName().getName();
+
+                    std::unique_ptr<Game> game = std::make_unique<Game>(*currentGameCreator->parserObject, gameName);
+
                     auto new_end = std::remove_if(
                         listOfGameCreators.begin(),
                         listOfGameCreators.end(),
@@ -155,7 +161,9 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                             return creator.connectionID == message.connection.id; // Replace 'id' with the actual field name.
                         });
                     listOfGameCreators.erase(new_end, listOfGameCreators.end());
-                    
+
+                    lobbyManager->createLobby(std::move(game), connection);
+                    // messenger->sendToConnection(result.str(),connection);
                 }
                 else if (message.text == "CHANGE" || currentGameCreator->chosenGameToEdit)
                 {
@@ -179,7 +187,7 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                     {
                     }
                     if (configStatusResult.status == EditState::Done || currentGameCreator->gameConfigIterator >= currentGameCreator->howManyGamesAdminHasToSet)
-                    {
+                    { // this is where game creationg will take place for EDIT scenario.
                         result << configStatusResult.message;
                         auto setups = currentGameCreator->adminGame.getSetup();
                         auto &setup = setups.at(0);
@@ -189,8 +197,9 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                         //     result << "NEWLY SET Range: (" << range.first << ", " << range.second << ")" << '\n';
                         // }
 
-                        result << "NEWLY SET Choice: " << setup.chosenChoice << '\n';
-
+                        // result << "NEWLY SET Choice: " << setup.chosenChoice << '\n';
+                        std::string gameName = currentGameCreator->adminGame.getGameName().getName();
+                        std::unique_ptr<Game> game = std::make_unique<Game>(*currentGameCreator->parserObject, gameName);
                         auto new_end = std::remove_if(
                             listOfGameCreators.begin(),
                             listOfGameCreators.end(),
@@ -201,13 +210,17 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                         listOfGameCreators.erase(new_end, listOfGameCreators.end());
 
                         result << "Game now being created. \n";
+                        // messenger->sendToConnection(result.str(),connection);
+
+                        lobbyManager->createLobby(std::move(game), connection);
                         break;
                     }
-                    // going to need to figure out how to signal user is done editing game and then create said game.
+                    
                 }
                 else
                 {
                     result << "Error invalid entry, please enter SAME or CHANGE to configure game settings. \n";
+                    // messenger->sendToConnection(result.str(),connection);
                 }
             }
         }
@@ -226,14 +239,16 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
             creator.connectionID = message.connection.id;
             creator.currentStepInGameConfigEdit = 0;
             listOfGameCreators.emplace_back(creator);
+            // messenger->sendToConnection(result.str(),connection);
 
             // std::string gameName = "Rock Paper Scissors";
             // Game game(gameName);
             // lobbyManager->createLobby(game, connection);
+
             // const std::string gameConfigFile = "../config/minimal.game";
             // ParsedGameData gameData(gameConfigFile, messenger);
             // std::cout << "Game name: " << gameData.getGameName() << "\n";
-            // // std::cout << "Num rules: " << gameData.getRules().size() << "\n";
+            // std::cout << "Num rules: " << gameData.getRules().size() << "\n";
             // std::unique_ptr<Game> game = std::make_unique<Game>(gameData, gameData.getGameName());
             // lobbyManager->createLobby(std::move(game), connection);
         }

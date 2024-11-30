@@ -56,25 +56,25 @@ private:
     virtual DataValue _runBurst(NameResolver &name_resolver) = 0;
 };
 
-class NumberRule : public Rule {
-public:
-    NumberRule(int number) : number(number) {}
+// class NumberRule : public Rule {
+// public:
+//     NumberRule(int number) : number(number) {}
 
-private:
-    void _handle_dependencies(NameResolver &name_resolver) override {}
-    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(number); }
-    const int number;
-};
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {}
+//     DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(number); }
+//     const int number;
+// };
 
-class BooleanRule : public Rule {
-public:
-    BooleanRule(bool boolean) : boolean(boolean) {}
+// class BooleanRule : public Rule {
+// public:
+//     BooleanRule(bool boolean) : boolean(boolean) {}
 
-private:
-    void _handle_dependencies(NameResolver &name_resolver) override {}
-    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(boolean); }
-    const bool boolean;
-};
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {}
+//     DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(boolean); }
+//     const bool boolean;
+// };
 
 class NumberRule : public Rule {
 public:

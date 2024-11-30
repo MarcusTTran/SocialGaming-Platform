@@ -11,7 +11,7 @@ extern "C" {
 TSLanguage *tree_sitter_socialgaming();
 }
 
-ParsedGameData::ParsedGameData(const string &config, std::shared_ptr<IServer> server) : server(server) {
+ParsedGameData::ParsedGameData(const string &config, std::shared_ptr<IServer> server) : server(std::static_pointer_cast<Messenger>(server)){
     string fileContent = readFileContent(config);
     if (!fileContent.empty()) {
         parseConfig(fileContent);
