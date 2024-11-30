@@ -53,6 +53,4 @@ private:
     std::vector<std::unique_ptr<Rule>> rules;
 
     std::vector<std::unique_ptr<Rule>>::iterator currentRule;
-
-    // void setGameCode(const std::string &gameCode);
 };
