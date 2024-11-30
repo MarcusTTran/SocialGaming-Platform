@@ -9,6 +9,7 @@
 
 #include "optionsDisplay.h"
 
+#include "GameParser.h"
 #include "LobbyManager.h"
 #include "Messenger.h"
 #include "NameResolver.h"
@@ -33,6 +34,7 @@ std::vector<Connection> clients;
 // TODO: Tempory solution to allow the onConnect and onDisconnect to access the
 // server object. refactor at a later date.
 Server *server_ptr = nullptr;
+std::shared_ptr<Messenger> messenger;
 std::unique_ptr<LobbyManager> lobbyManager;
 
 std::shared_ptr<Messenger> messenger;
@@ -228,6 +230,12 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
             // std::string gameName = "Rock Paper Scissors";
             // Game game(gameName);
             // lobbyManager->createLobby(game, connection);
+            // const std::string gameConfigFile = "../config/minimal.game";
+            // ParsedGameData gameData(gameConfigFile, messenger);
+            // std::cout << "Game name: " << gameData.getGameName() << "\n";
+            // // std::cout << "Num rules: " << gameData.getRules().size() << "\n";
+            // std::unique_ptr<Game> game = std::make_unique<Game>(gameData, gameData.getGameName());
+            // lobbyManager->createLobby(std::move(game), connection);
         }
         else if (text.find("join") == 0)
         {
@@ -289,7 +297,7 @@ int main(int argc, char *argv[])
     const unsigned short port = std::stoi(argv[1]);
     Server server = {port, getHTTPMessage(argv[2]), onConnect, onDisconnect};
     server_ptr = &server;
-    auto messenger = std::make_shared<Messenger>(server);
+    messenger = std::make_shared<Messenger>(server);
     lobbyManager = std::make_unique<LobbyManager>(messenger);
 
     while (true)

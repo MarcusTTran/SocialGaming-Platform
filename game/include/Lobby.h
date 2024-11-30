@@ -6,6 +6,8 @@
 #include <deque>
 #include <memory>
 
+using EventHandler = std::function<void(const networking::Connection &, const std::string &)>;
+
 /*
  *  A Lobby is a collection of Players who are waiting to play a Game. The
  *  Lobby is responsible for managing the Players and the Game, and for
@@ -22,7 +24,7 @@ public:
     // State of the lobby (e.g. waiting for players, in progress, finished)
     enum class LobbyState { Waiting, InProgress, Finished };
 
-    Lobby(const Game &game, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
+    Lobby(std::unique_ptr<Game>, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
           std::string lobbyCode);
     ~Lobby() = default;
     void addPlayer(const Player &player);
@@ -41,6 +43,12 @@ public:
     void update();
 
 private:
+    // Events
+    void handleStartEvent(const networking::Connection &connection, const std::string &message);
+    void handleDumpEvent(const networking::Connection &connection, const std::string &message);
+    void handleLeaveEvent(const networking::Connection &connection, const std::string &message);
+    void handleUnknownEvent(const networking::Connection &connection, const std::string &message);
+
     void sendCurrentListOfPlayers();
 
     DataValue getPlayersMap();
@@ -59,4 +67,6 @@ private:
     // Can use this to send messages to the lobby creator
     std::shared_ptr<networking::Connection> lobbyCreator;
     std::string lobbyCode;
+
+    std::unordered_map<std::string, EventHandler> eventHandlers;
 };
