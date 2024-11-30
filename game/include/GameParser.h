@@ -5,6 +5,7 @@
 #include "Messenger.h"
 #include "Rule.h"
 #include "RuleTypes.h"
+// #include "Expression.h"
 #include "tree_sitter/api.h"
 #include <algorithm>
 #include <cpp-tree-sitter.h>
@@ -18,6 +19,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+
 
 /*
     This is game parser class, which is responsible for parsing data from txt input file
@@ -78,12 +80,13 @@ private:
     void parseVariablesSection(const ts::Node &, const string &);
     void parsePerPlayerSection(const ts::Node &, const string &);
     void parsePerAudienceSection(const ts::Node &, const string &);
-    void DFS(const ts::Node &node, const string &source, std::string &str);
+    void DFS(const ts::Node &node, const string &source, std::vector<std::string> &str);
     void handleForRule(const ts::Node &node, const string &source);
     void handleMessageSection(const ts::Node &node, const string &source);
     void traverseHelper(const ts::Node &node, const string &source, Rule &rule);
     void handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule);
     void handleWhileSection(const ts::Node &node, const string &source, Rule &outerRule);
+    std::unique_ptr<Rule> handleBuiltin(const ts::Node &node, const std::string &source, std::unique_ptr<Rule> rule);
     std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
     string ruleTypeToString(RuleT::Type type);
     RuleT::Type getRuleType(const string &type);

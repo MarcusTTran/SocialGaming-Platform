@@ -53,10 +53,6 @@ private:
     GameConfiguration configuration;
     GameConstants constants;
     GameVariables variables;
-
-    // TODO: add rules to the Game once it is parseable and instantiable
     std::vector<std::unique_ptr<Rule>> rules;
-    // std::vector<Rule> rules;    UNCOMMENT THIS LINE AND STUFF IN THE CONSTRUCTOR TO MAKE RULES NOT USE POINTERS
 
-    // void setGameCode(const std::string &gameCode);
 };

@@ -333,39 +333,67 @@ string ParsedGameData::ruleTypeToString(RuleT::Type type) {
     }
 }
 
-void ParsedGameData::DFS(const ts::Node &node, const std::string &source, std::string &str) {
+void ParsedGameData::DFS(const ts::Node &node, const std::string &source, std::vector<std::string> &str) {
     // Check if node is a leaf or an identifier
     if (!node.getNumNamedChildren() || node.getType() == "identifier") {
         auto content = std::string(node.getSourceRange(source));
-        // Only proceed if `content` is not in the `toSkip` list
         if (find(begin(GameConstantsType::toSkip), end(GameConstantsType::toSkip), content) ==
             end(GameConstantsType::toSkip)) {
-            str = content + str;
+            str.emplace_back(content);
             return;
         }
     }
-    // Skip "builtin" nodes
-    if (node.getType() == "builtin") {
-        return;
-    }
 
     for (const auto &child : ts::Children{node}) {
+        if (child.getType() == "builtin"){
+            return;
+        }
         DFS(child, source, str);
     }
 }
 
+std::unique_ptr<Rule> ParsedGameData::handleBuiltin(const ts::Node &node, const std::string &source, std::unique_ptr<Rule> rule) {
+    auto content = node.getSourceRange(source);
+
+    if (content.find("upfrom") != std::string::npos) {
+        int value = std::stoi(std::string(node.getNextSibling().getSourceRange(source)));
+        return std::make_unique<UpfromRule>(*rule, value);
+    } else if (content.find("contains") != std::string::npos) {
+        std::cout << "THIS IS CONTAINS" << std::endl;
+        // TODO: Create and return ContainsRule
+    } else if (content.find("collect") != std::string::npos) {
+        std::cout << "THIS IS COLLECT" << std::endl;
+        // TODO: Create and return CollectRule
+    } else {
+        std::cout << "THIS IS SIZE" << std::endl;
+        // TODO: Create and return SizeRule
+    }
+
+    return nullptr; 
+}
+
+
 void ParsedGameData::handleForRule(const ts::Node &node, const std::string &source) {
-    ts::Node elementNode = node.getChildByFieldName("element"); // round or weapon
-    ts::Node listNode = node.getChildByFieldName("list");       // configuration.rounds or weapons
+    ts::Node elementNode = node.getChildByFieldName("element");
+    ts::Node listNode = node.getChildByFieldName("list");
+    ts::Node builtInNode = listNode.getChildByFieldName("builtin");
     ts::Node bodyNode = node.getChildByFieldName("body");
 
     auto iteratorName = std::string(elementNode.getSourceRange(source));
 
-    std::string listContent;
+    std::vector<std::string> listContent;
     if (!listNode.isNull()) {
         DFS(listNode, source, listContent);
     }
-    std::unique_ptr<Rule> conditions = listContent.empty() ? nullptr : std::make_unique<StringRule>(listContent);
+
+    std::unique_ptr<Rule> temp = std::make_unique<NameResolverRule>(listContent);
+    std::unique_ptr<Rule> conditions;
+
+    if (!builtInNode.isNull()) {
+        conditions = handleBuiltin(builtInNode, source, std::move(temp));
+    } else {
+        conditions = std::move(temp);
+    }
 
     std::vector<std::unique_ptr<Rule>> content;
     if (!bodyNode.isNull()) {
@@ -377,10 +405,10 @@ void ParsedGameData::handleForRule(const ts::Node &node, const std::string &sour
         }
     }
 
-    std::unique_ptr<ForRule> forRule =
-        std::make_unique<ForRule>(iteratorName, std::move(conditions), std::move(content));
+    auto forRule = std::make_unique<ForRule>(iteratorName, std::move(conditions), std::move(content));
     rules.emplace_back(std::move(forRule));
 }
+
 
 void ParsedGameData::handleMessageSection(const ts::Node &node, const std::string &source) {
     auto playersKeyword = node.getChildByFieldName("players").getSourceRange(source); // Keyword indicating players
@@ -412,7 +440,6 @@ void ParsedGameData::traverseHelper(const ts::Node &node, const string &source, 
     // }
 }
 
-// TODO: will have to modify logic for future rule object
 // TODO: will have to modify logic for future rule object
 void ParsedGameData::handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule) {
     // ts::Node targetNode = node.getChildByFieldName("target"); // True
