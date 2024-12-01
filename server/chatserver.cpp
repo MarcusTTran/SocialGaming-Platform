@@ -48,6 +48,7 @@ void onConnect(Connection c)
         "'join' followed by the code of the game you would like to join to join an existing game.";
     std::deque<Message> outgoing;
     outgoing.push_back({c, welcomeMessage});
+    outgoing.push_back({c, gameNameDisplayer()});
     server_ptr->send(outgoing); // Sending the message to the newly connected client
 }
 
@@ -95,35 +96,39 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
 
             if (!currentGameCreator->chosenGameToEdit)
             {
+                std::string gameConfigPath;
+                int number;
                 try
                 {
-                    auto number = std::stoi(message.text);
+                    number = std::stoi(message.text);
+                    for (auto i : getConfigMap())
+                    {
+                        std::cout << "number: " << i.first << '\n';
+                    }
                     if (getConfigMap().find(number) == getConfigMap().end())
                     {
                         result << "Error, invalid entry, please enter an integer that exists within list of games: " << '\n';
-                        messenger->sendToConnection(result.str(), connection);
+                        // messenger->sendToConnection(result.str(), connection);
                         break;
                     }
                     else
                     {
-                        const std::string gameConfigPath = getConfigMap().at(number);
+                        gameConfigPath = getConfigMap().at(number);
                     }
                 }
                 catch (const std::exception &e)
                 {
                     // Catch any type of error-> std::exception
                     result << "Error, invalid entry, please enter an integer: " << e.what() << '\n';
-                    messenger->sendToConnection(result.str(), connection);
+                    //messenger->sendToConnection(result.str(), connection);
                     break;
                 }
-
-                const std::string gameConfigPath = getConfigMap().at(std::stoi(message.text));
 
                 std::shared_ptr<ParsedGameData> parser = std::make_shared<ParsedGameData>(gameConfigPath, messenger); // need to this to manage lifetime to later pass to create lobby.
 
                 // // Game config now parses game selected by user.
                 GameConfiguration config(*parser);
-                result << "You have chosen game " << message.text << " with config path: " << getConfigMap().at(std::stoi(message.text)) << '\n';
+                result << "You have chosen game " << message.text << " with config path: " << getConfigMap().at(number) << '\n';
                 result << "Do you wish to edit this games setup? or do you want to keep its default settings?" << '\n';
                 result << "(Enter 'SAME' to choose default settings! )" << '\n';
                 result << "(Enter 'CHANGE' to edit game settings! )" << '\n';
@@ -215,7 +220,6 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
                         lobbyManager->createLobby(std::move(game), connection);
                         break;
                     }
-                    
                 }
                 else
                 {
@@ -231,7 +235,7 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
             // selected game with a game configuration file.
 
             // assume we display this to the user
-            result << gameNameDisplayer();
+            //result << gameNameDisplayer();
             result << "Please enter which game you would like to play by entering in its number (i.e 1): \n";
 
             // add a creator to the list as we may have multiple people creating a game at the same time.
