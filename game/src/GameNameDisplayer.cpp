@@ -33,7 +33,7 @@ Key: 3 value: ../../config/testDisplay.game
 Key: 4 value: ../../config/minimal.game */
 std::string gameNameDisplayer()
 {
-    std::string configFolder = "../../config"; // path from build/bin directory.
+    std::string configFolder = "../../config"; // path from build/bin directory.NOTE: must run game_server from bin directory for this to work.
     std::vector<std::string> gameNames;
     std::ostringstream output;
 

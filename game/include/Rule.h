@@ -26,7 +26,8 @@
 
 using Scope = Map;
 
-class Rule {
+class Rule
+{
 public:
     virtual ~Rule() = default;
 
@@ -59,6 +60,26 @@ private:
     virtual DataValue _runBurst(NameResolver &name_resolver) = 0;
 };
 
+// class NumberRule : public Rule {
+// public:
+//     NumberRule(int number) : number(number) {}
+
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {}
+//     DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(number); }
+//     const int number;
+// };
+
+// class BooleanRule : public Rule {
+// public:
+//     BooleanRule(bool boolean) : boolean(boolean) {}
+
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {}
+//     DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(boolean); }
+//     const bool boolean;
+// };
+
 class NumberRule : public Rule {
 public:
     NumberRule(int number) : number(number) {}
@@ -79,12 +100,14 @@ private:
     const bool boolean;
 };
 
-class StringRule : public Rule {
+class StringRule : public Rule
+{
 public:
     StringRule(std::string_view string_literal) : string(string_literal) {}
 
 private:
-    void _handle_dependencies(NameResolver &name_resolver) override {
+    void _handle_dependencies(NameResolver &name_resolver) override
+    {
         // TODO: handle strings with {} braces
     }
 
@@ -181,12 +204,16 @@ public:
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {}
 
-    DataValue _runBurst(NameResolver &name_resolver) override {
+    DataValue _runBurst(NameResolver &name_resolver) override
+    {
         auto playersMap = name_resolver.getValue("players");
 
-        if (playersMap.has_value()) {
+        if (playersMap.has_value())
+        {
             return playersMap.value();
-        } else {
+        }
+        else
+        {
             throw std::runtime_error("Players map was not found in global map");
         }
     }
@@ -242,37 +269,44 @@ private:
         current_statement = statement_list.begin();
     }
 
-    DataValue _runBurst(NameResolver &name_resolver) override {
+    DataValue _runBurst(NameResolver &name_resolver) override
+    {
         // Check for early return
-        if (list_of_values.empty() || statement_list.empty()) {
+        if (list_of_values.empty() || statement_list.empty())
+        {
             return DataValue({DataValue::RuleStatus::DONE});
         }
 
         // Set up fresh variable
-        if (list_of_values.size() > 0) {
+        if (list_of_values.size() > 0)
+        {
             name_resolver.addNewValue(fresh_variable_name, *value_for_this_loop);
         }
 
-        while (true) {
+        while (true)
+        {
             assert(value_for_this_loop != list_of_values.end() && "Iterator for list_of_values is invalid");
             assert(current_statement != statement_list.end() && "Iterator for statement_list is invalid");
 
             // Run
             auto rule_state = (*current_statement)->runBurst(name_resolver); // Dereference unique_ptr
-            if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
+            if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE)
+            {
                 return DataValue({DataValue::RuleStatus::NOTDONE});
             }
 
             // Move to the next statement
             current_statement++;
-            if (current_statement != statement_list.end()) {
+            if (current_statement != statement_list.end())
+            {
                 continue;
             }
 
             // Move to the next full iteration
             current_statement = statement_list.begin();
             value_for_this_loop++;
-            if (value_for_this_loop != list_of_values.end()) {
+            if (value_for_this_loop != list_of_values.end())
+            {
                 name_resolver.setValue(fresh_variable_name, *value_for_this_loop);
                 continue;
             }

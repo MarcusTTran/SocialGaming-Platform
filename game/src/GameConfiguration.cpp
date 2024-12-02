@@ -73,7 +73,7 @@ std::pair<int, int> GameConfiguration::getPlayerRange() const { return playerRan
 
 bool GameConfiguration::hasAudience() const { return audience; }
 
-std::vector<GameConfiguration::Setup> GameConfiguration::getSetup() const { return setup; }
+std::vector<GameConfiguration::Setup>& GameConfiguration::getSetup() { return setup; }
 
 GameConfiguration::Setup *GameConfiguration::findSetupByName(const std::string &key) {
     auto setupFinder = std::find_if(setup.begin(), setup.end(), [&key](const Setup &s) { return s.name == key; });
