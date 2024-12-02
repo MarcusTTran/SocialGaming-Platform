@@ -5,6 +5,7 @@
 #include "NameResolver.h"
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -25,7 +26,8 @@
 
 using Scope = Map;
 
-class Rule {
+class Rule
+{
 public:
     virtual ~Rule() = default;
 
@@ -58,6 +60,26 @@ private:
     virtual DataValue _runBurst(NameResolver &name_resolver) = 0;
 };
 
+// class NumberRule : public Rule {
+// public:
+//     NumberRule(int number) : number(number) {}
+
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {}
+//     DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(number); }
+//     const int number;
+// };
+
+// class BooleanRule : public Rule {
+// public:
+//     BooleanRule(bool boolean) : boolean(boolean) {}
+
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {}
+//     DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(boolean); }
+//     const bool boolean;
+// };
+
 class NumberRule : public Rule {
 public:
     NumberRule(int number) : number(number) {}
@@ -78,12 +100,14 @@ private:
     const bool boolean;
 };
 
-class StringRule : public Rule {
+class StringRule : public Rule
+{
 public:
     StringRule(std::string_view string_literal) : string(string_literal) {}
 
 private:
-    void _handle_dependencies(NameResolver &name_resolver) override {
+    void _handle_dependencies(NameResolver &name_resolver) override
+    {
         // TODO: handle strings with {} braces
     }
 
@@ -92,17 +116,104 @@ private:
     std::string string;
 };
 
+class SimpleTimerRule : public Rule {
+public:
+    SimpleTimerRule(long seconds) : seconds(seconds) {}
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        end_time = std::chrono::steady_clock::now() + std::chrono::seconds(seconds);
+    }
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        if (std::chrono::steady_clock::now() < end_time) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+        return DataValue({DataValue::RuleStatus::DONE});
+    }
+    long seconds;
+    std::chrono::steady_clock::time_point end_time;
+};
+
+class SimpleInputRule : public Rule {
+public:
+    SimpleInputRule(std::shared_ptr<IServer> server) : messager(server) {}
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        // get the first player and send a message
+        std::cout << "getting first player" << std::endl;
+        player = name_resolver.getValue("players").value().asOrderedMap().begin()->second.asOrderedMap();
+        std::cout << name_resolver.getValue("players").value().asOrderedMap().size() << std::endl;
+        std::cout << "got first player" << std::endl;
+
+        std::cout << "getting connection" << std::endl;
+        std::string connection_id = std::to_string(player["connection"].asConnection().id);
+        std::cout << "got connection" << std::endl;
+        std::cout << "connection id: " << connection_id << std::endl;
+        std::string pending_connections_key = "pending_connections";
+
+        std::vector<DataValue> pending_connections;
+        pending_connections.push_back(DataValue({connection_id}));
+        name_resolver.addNewValue(pending_connections_key, DataValue(pending_connections));
+
+        messager->sendMessageToPlayerMap("Write something!", player);
+        std::cout << "sent message" << std::endl;
+    }
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // check for message
+
+        auto pending_connections = name_resolver.getValue("pending_connections");
+        auto incoming_messages = name_resolver.getValue("incoming_messages");
+
+        if (!pending_connections.has_value()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+
+        if (!incoming_messages.has_value()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+
+        auto pending_connections_value = pending_connections.value().asList();
+        auto incoming_messages_value = incoming_messages.value().asOrderedMap();
+
+        if (pending_connections_value.empty()) {
+            return DataValue({DataValue::RuleStatus::DONE});
+        }
+
+        if (incoming_messages_value.empty()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+
+        for (const DataValue &connection_id : pending_connections_value) {
+            auto message = incoming_messages_value.find(connection_id.asString());
+            if (message != incoming_messages_value.end()) {
+                messager->sendMessageToPlayerMap("Thank you for your input, You said: " + message->second.asString(),
+                                                 player);
+                return DataValue({DataValue::RuleStatus::DONE});
+            }
+        }
+
+        return DataValue({DataValue::RuleStatus::NOTDONE});
+    }
+    std::shared_ptr<IServer> messager;
+    DataValue::OrderedMapType player;
+};
+
 class AllPlayersRule : public Rule {
 public:
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {}
 
-    DataValue _runBurst(NameResolver &name_resolver) override {
+    DataValue _runBurst(NameResolver &name_resolver) override
+    {
         auto playersMap = name_resolver.getValue("players");
 
-        if (playersMap.has_value()) {
+        if (playersMap.has_value())
+        {
             return playersMap.value();
-        } else {
+        }
+        else
+        {
             throw std::runtime_error("Players map was not found in global map");
         }
     }
@@ -158,37 +269,44 @@ private:
         current_statement = statement_list.begin();
     }
 
-    DataValue _runBurst(NameResolver &name_resolver) override {
+    DataValue _runBurst(NameResolver &name_resolver) override
+    {
         // Check for early return
-        if (list_of_values.empty() || statement_list.empty()) {
+        if (list_of_values.empty() || statement_list.empty())
+        {
             return DataValue({DataValue::RuleStatus::DONE});
         }
 
         // Set up fresh variable
-        if (list_of_values.size() > 0) {
+        if (list_of_values.size() > 0)
+        {
             name_resolver.addNewValue(fresh_variable_name, *value_for_this_loop);
         }
 
-        while (true) {
+        while (true)
+        {
             assert(value_for_this_loop != list_of_values.end() && "Iterator for list_of_values is invalid");
             assert(current_statement != statement_list.end() && "Iterator for statement_list is invalid");
 
             // Run
             auto rule_state = (*current_statement)->runBurst(name_resolver); // Dereference unique_ptr
-            if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
+            if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE)
+            {
                 return DataValue({DataValue::RuleStatus::NOTDONE});
             }
 
             // Move to the next statement
             current_statement++;
-            if (current_statement != statement_list.end()) {
+            if (current_statement != statement_list.end())
+            {
                 continue;
             }
 
             // Move to the next full iteration
             current_statement = statement_list.begin();
             value_for_this_loop++;
-            if (value_for_this_loop != list_of_values.end()) {
+            if (value_for_this_loop != list_of_values.end())
+            {
                 name_resolver.setValue(fresh_variable_name, *value_for_this_loop);
                 continue;
             }

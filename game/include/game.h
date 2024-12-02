@@ -26,28 +26,25 @@
 class Game {
 public:
     // For compilation purposes (remove later)
-    struct Message {
-        std::string message;
-        Player player;
-    };
 
     Game(ParsedGameData &parserObject, const std::string &gameName);
-    Game(const std::string &gameName);
+    Game(const std::string &gameName, std::shared_ptr<IServer> server);
     ~Game() = default;
 
     std::string getGameName() const;
     std::string getGameCode() const;
 
-    // TODO: Implement these methods
     void startGame(const DataValue &players);
     void updateGame();
-    void insertIncomingMessages(const std::deque<Message> &incomingMessages);
+    void insertIncomingMessages(const std::deque<networking::Message> &incomingMessages);
     void addObjectToGlobalMap(const std::string &key, const DataValue &value, NameResolver &globalMap);
+    bool isGameDone() const { return isDone; }
 
 private:
     std::shared_ptr<NameResolver> globalMap;
     std::string gameName;
     std::string gameCode;
+    bool isDone = false;
 
     // API objects
     GameConfiguration configuration;
@@ -55,4 +52,5 @@ private:
     GameVariables variables;
     std::vector<std::unique_ptr<Rule>> rules;
 
+    std::vector<std::unique_ptr<Rule>>::iterator currentRule;
 };
