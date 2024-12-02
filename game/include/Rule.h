@@ -283,41 +283,64 @@ private:
     }
 */
 class MatchRule : public Rule{
-  MatchRule(Rule boolean_maker, std::vector<Rule> content, bool booleanCheck)
-  : boolean_maker{boolean_maker}, statement_list{content}, booleanCheck{booleanCheck} {}
+  MatchRule(std::unique_ptr<Rule> condition_maker, std::vector<std::unique_ptr<Rule>> check_condition_makers, 
+  std::vector<std::unique_ptr<Rule>> scoped_rules)
+  : condition_maker{std::move(condition_maker)}, check_condition_makers{std::move(check_condition_makers)}, 
+  scoped_rules{std::move(scoped_rules)} {}
 
   private:
     void _handle_dependencies(NameResolver &name_resolver) override {
         //TRUE or FALSE its this part match !players.elements.weapon.contains(weapon.name)
-        auto boolean_generic = boolean_maker.runBurst(name_resolver);
-        boolean = boolean_generic.asBoolean();
+        condition = condition_maker->runBurst(name_resolver);
 
-        //statement list (may contain multiple rules such as in the example)
+        //this would be this part: true =>
+        current_check_condition_maker = check_condition_makers.begin();
+        check = (*current_check_condition_maker)->runBurst(name_resolver);
+
+        //scoped_rules list (may contain multiple rules such as in the example)
         //extend winners with players.elements.collect(player, player.weapon = weapon.beats);
-        current_statement = statement_list.begin();
+        current_scoped_rule = scoped_rules.begin();
     }
 
-  DataValue _runBurst(NameResolver &name_resolver) override {
-    DataValue return_value = DataValue::RuleStatus::NOTDONE;
-    //check if (!players.elements.weapon.contains(weapon.name)) == (true =>)
-    if(boolean != boolean_maker){
-        return return_value;
-    }
-    //check all of the rules
-    while (current_statement != statement_list.end()) {
-        // run the current sub-rule, and check whether it finished
-        auto rule_state = (*current_statement).runBurst(name_resolver);
-        if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
-            return return_value; // incomplete
+    bool checkIfMatch(const DataValue& condition, const DataValue& check){
+        if(condition.getType() == check.getType()){
+            if(condition.getType() == "STRING"){
+                return condition.asString() == check.asString();
+            }
+            else if (condition.getType() == "BOOLEAN"){
+                return condition.asBoolean() == check.asBoolean();
+            }
+            else if (condition.getType() == "NUMBER"){
+                return condition.asNumber() == check.asNumber();
+            }
+            else{
+                std::cout<<"Unhandled type in MatchRule (Not string, boolean or number)."<<std::endl;
+            }
         }
-        current_statement++;
+        return false;
     }
-    return_value = DataValue::RuleStatus::DONE;
-    return return_value; // complete
-  }
-  bool boolean;
-  bool booleanCheck
-  std::vector<Rule> statement_list;
-  std::vector<Rule>::iterator current_statement;
-  Rule &boolean_maker;
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        while(current_check_condition_maker != check_condition_makers.end()){
+            //check if they are same type and can be evaluated
+            if(checkIfMatch(condition, check)){
+                //they are same type and are equal then we can run the rules since we found a match
+                (*current_scoped_rule)->runBurst(name_resolver);
+                return DataValue(true);
+            }
+            //iterate through to the next group of statements to check
+            current_check_condition_maker++;
+            check = (*current_check_condition_maker)->runBurst(name_resolver);
+            current_scoped_rule++;
+        }
+        return DataValue(false);
+    }
+
+    DataValue condition;
+    DataValue check;
+    std::unique_ptr<Rule> condition_maker;
+    std::vector<std::unique_ptr<Rule>>::iterator current_check_condition_maker;
+    std::vector<std::unique_ptr<Rule>>::iterator current_scoped_rule;
+    std::vector<std::unique_ptr<Rule>> check_condition_makers;
+    std::vector<std::unique_ptr<Rule>> scoped_rules;
 };
