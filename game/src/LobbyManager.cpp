@@ -12,6 +12,8 @@ void LobbyManager::createLobby(std::unique_ptr<Game> game, const networking::Con
         return;
     }
 
+    std::cout << "Creating lobby..." << std::endl;
+
     std::string lobbyCode = generateLobbyCode();
     lobbies.emplace(lobbyCode,
                     std::make_unique<Lobby>(std::move(game), server,
@@ -19,6 +21,16 @@ void LobbyManager::createLobby(std::unique_ptr<Game> game, const networking::Con
 
     // Track that this connection is the creator of the lobby
     lobbyCreators[lobbyCreator.id] = lobbyCode;
+
+    // Debug statement to verify the lobby creation
+    std::cout << "Lobby created with code: " << lobbyCode << std::endl;
+
+    // Print out all lobby codes.
+    std::cout << "Lobby codes: ";
+    for (const auto &lobby : lobbies) {
+        std::cout << lobby.first << " ";
+    }
+    std::cout << std::endl;
 }
 
 std::string LobbyManager ::generateLobbyCode() {
@@ -190,6 +202,7 @@ std::string LobbyManager::generateWelcomeMessage() {
 }
 
 bool LobbyManager::isLobbyCodeValid(const std::string &lobbyCode) const {
+
     return lobbies.find(lobbyCode) != lobbies.end();
 }
 

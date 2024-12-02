@@ -45,6 +45,8 @@ private:
     void handleLeaveEvent(const networking::Connection &connection, const std::string &message);
     void handleUnknownEvent(const networking::Connection &connection, const std::string &message);
 
+    std::string generateLobbyCreatedMessage(const std::string &lobbyCode) const;
+
     void sendCurrentListOfPlayers();
 
     DataValue getPlayersMap();

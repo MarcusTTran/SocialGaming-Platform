@@ -4,7 +4,7 @@ Lobby::Lobby(std::unique_ptr<Game> game, std::shared_ptr<IServer> server,
              std::shared_ptr<networking::Connection> lobbyCreator, std::string lobbyCode)
     : game(std::move(game)), server(server), lobbyCreator(lobbyCreator), lobbyCode(lobbyCode),
       state(LobbyState::Waiting) {
-    server->sendToConnection("Lobby created with code: " + lobbyCode, *lobbyCreator);
+    server->sendToConnection(generateLobbyCreatedMessage(lobbyCode), *lobbyCreator);
 
     // Register event handlers
     eventHandlers["start"] = [this](const networking::Connection &connection, const std::string &message) {
@@ -152,3 +152,21 @@ void Lobby::handleUnknownEvent(const networking::Connection &connection, const s
 }
 
 networking::Connection &Lobby::getLobbyCreator() const { return *lobbyCreator; }
+
+std::string Lobby::generateLobbyCreatedMessage(const std::string &lobbyCode) const {
+    std::ostringstream oss;
+    oss << "******************************************\n";
+    oss << "*                                        *\n";
+    oss << "*             Lobby Created!             *\n";
+    oss << "*                                        *\n";
+    oss << "******************************************\n";
+    oss << "*                                        *\n";
+    oss << "*        Your lobby code is:             *\n";
+    oss << "*        " << lobbyCode << "                          *\n";
+    oss << "*                                        *\n";
+    oss << "*    Share this code with others to      *\n";
+    oss << "*    invite them to your lobby.          *\n";
+    oss << "*                                        *\n";
+    oss << "******************************************\n";
+    return oss.str();
+}

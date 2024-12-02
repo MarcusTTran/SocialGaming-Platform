@@ -1,7 +1,10 @@
 #pragma once
 
 #include "GameConfiguration.h"
+#include "GameNameDisplayer.h"
 #include "GameParser.h"
+#include "LobbyManager.h"
+#include "Messenger.h"
 #include "game.h"
 
 struct GameCreators {
@@ -36,5 +39,21 @@ struct ParsedEditInput {
     bool editSuccessValue = true;
 };
 
-ConfigEditResult editingGameConfig(GameConfiguration &, GameCreators *, std::string);
-ParsedEditInput parsingEditInput(const std::string &, GameConfiguration::Setup &, GameConfiguration &);
+class GameSetupManager {
+public:
+    GameSetupManager(std::shared_ptr<Messenger> messenger, LobbyManager *lobbyManager)
+        : messenger(messenger), lobbyManager(lobbyManager) {}
+
+    bool isGameCreator(const networking::Connection &connection) const;
+    void handleSetupMessage(const networking::Connection &connection, const std::string &message);
+    void addGameCreator(const networking::Connection &connection);
+    void removeGameCreator(const networking::Connection &connection);
+
+private:
+    std::vector<GameCreators> listOfGameCreators;
+    std::shared_ptr<Messenger> messenger;
+    LobbyManager *lobbyManager;
+
+    ConfigEditResult editingGameConfig(GameConfiguration &, GameCreators *, std::string);
+    ParsedEditInput parsingEditInput(const std::string &, GameConfiguration::Setup &, GameConfiguration &);
+};
