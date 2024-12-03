@@ -487,6 +487,10 @@ void ParsedGameData::handleWhileSection(const ts::Node &node, const std::string 
     // }
 }
 
+void handleNameResolverRule(const ts::Node &node, const string &source, Rule &outerRule) {
+    // TODO: 
+}
+
 std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, const std::string &source) {
     for (const auto &child : ts::Children{node}) {
         std::string_view ruleType = child.getType();

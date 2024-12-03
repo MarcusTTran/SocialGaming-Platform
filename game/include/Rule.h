@@ -228,19 +228,19 @@ private:
     DataValue _runBurst(NameResolver &name_resolver) override {
         // Check certain invariants for this functions
         bool listIsIncorrectType = listToDiscard.getType() != "LIST";
-        bool numGreaterThanSize = integerExpression > listToDiscard.asList().size(); 
+        // bool numGreaterThanSize = integerExpression > listToDiscard.asList().size(); 
        
         // Ensure that list is correct type and not empty
-        if (listIsIncorrectType || listToDiscard.asList().empty() || numGreaterThanSize) {
+        if (listIsIncorrectType || listToDiscard.asList().empty()) {
             return DataValue(DataValue::RuleStatus::ERROR);
         } 
     
         // auto& list = listToDiscard.asList();
         auto& list = const_cast<std::vector<DataValue>&>(listToDiscard.asList());
-        for (size_t i = 0; i < integerExpression; ++i) {
+        for (size_t i = 0; i <  std::min(static_cast<size_t>(integerExpression), list.size()) ; ++i) {
             list.pop_back();
         }
-        
+
         return DataValue(DataValue::RuleStatus::DONE);
     }
 
@@ -361,3 +361,29 @@ private:
     bool isNested = false;
     DataValue result;
 };
+
+class ContainsRule : public Rule {
+public:
+    ContainsRule(std::unique_ptr<Rule> list_maker, std::vector<std::string>& search_keys)
+        : list_maker{std::move(list_maker)}, search_keys(search_keys) {}
+    
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        list = list_maker->runBurst(name_resolver);
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        if (list.getType() != "LIST") {
+            return DataValue("ERROR");
+        } 
+
+        auto& list_elements = list.asList();
+        it auto std::find(list_elements.begin(), list_elements.end(), 
+        
+    }
+
+    std::unique_ptr<Rule> list_maker; // ElementsRule (returns a vector<DataValue>)
+    std::vector<std::string>& search_keys;
+    DataValue list;
+};
+
