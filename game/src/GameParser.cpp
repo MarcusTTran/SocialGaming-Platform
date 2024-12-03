@@ -409,7 +409,7 @@ void ParsedGameData::handleForRule(const ts::Node &node, const std::string &sour
 }
 
 
-void ParsedGameData::handleMessageSection(const ts::Node &node, const std::string &source) {
+std::unique_ptr<Rule> ParsedGameData::handleMessageSection(const ts::Node &node, const std::string &source) {
     auto playersKeyword = node.getChildByFieldName("players").getSourceRange(source); // Keyword indicating players
     auto content = node.getChildByFieldName("content").getSourceRange(source);        // Message content
 
@@ -419,7 +419,7 @@ void ParsedGameData::handleMessageSection(const ts::Node &node, const std::strin
     auto stringRule = std::make_unique<StringRule>(content);
 
     auto messageRule = std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(stringRule));
-    rules.emplace_back(std::move(messageRule));
+    return messageRule;
 }
 
 // TODO: will have to modify logic for future rule object
