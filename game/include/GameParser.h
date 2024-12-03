@@ -82,7 +82,7 @@ private:
     void parsePerAudienceSection(const ts::Node &, const string &);
     void DFS(const ts::Node &node, const string &source, std::vector<std::string> &str);
     void handleForRule(const ts::Node &node, const string &source);
-    void handleMessageSection(const ts::Node &node, const string &source);
+    std::unique_ptr<Rule> handleMessageSection(const ts::Node &node, const string &source);
     void traverseHelper(const ts::Node &node, const string &source, Rule &rule);
     void handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule);
     void handleWhileSection(const ts::Node &node, const string &source, Rule &outerRule);
