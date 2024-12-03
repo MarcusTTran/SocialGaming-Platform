@@ -75,6 +75,12 @@ void LobbyManager::addPlayerToLobby(const std::string &lobbyCode, const networki
         pendingDisplayNames[connection.id] = lobbyCode;
         server->sendToConnection("Lobby found. Please enter a display name:", connection);
 
+        // Remove the connection from the waiting list
+        auto found = std::find(waitingForLobbyCode.begin(), waitingForLobbyCode.end(), connection);
+        if (found != waitingForLobbyCode.end()) {
+            waitingForLobbyCode.erase(found);
+        }
+
     } else {
         server->sendToConnection("Lobby not found. Please check the code and try again.", connection);
     }

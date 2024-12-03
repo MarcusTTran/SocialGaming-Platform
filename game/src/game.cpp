@@ -68,16 +68,14 @@ void Game::addObjectToGlobalMap(const std::string &key, const DataValue &value, 
 
 void Game::startGame(const DataValue &players) {
     std::string key = "players";
-    auto playersMap = players.asOrderedMap();
 
     globalMap->addNewValue(key, players);
 
-    auto playersMapValue = globalMap->getValue(key).value().asOrderedMap();
+    auto playersList = globalMap->getValue(key).value().asList();
 
-    for (const auto &[playerName, playerData] : playersMapValue) {
-        auto player = playerData.asOrderedMap();
-        auto name = player["name"].asString();
-        std::cout << "Player name: " << name << std::endl;
+    for (const auto &player : playersList) {
+        auto playerMap = player.asOrderedMap();
+        std::cout << "Player: " << playerMap["name"].asString() << playerMap["__id__"].asNumber() << std::endl;
     }
 
     std::cout << "Game started." << std::endl;
