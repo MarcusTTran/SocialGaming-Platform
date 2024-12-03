@@ -1,6 +1,6 @@
 // Minimal game that tests a for loop
 configuration {
-  name: "minimal"
+  name: "minimalFOR"
   player range: (1, 20)
   audience: false
   setup: {}

@@ -4,7 +4,7 @@ Lobby::Lobby(std::unique_ptr<Game> game, std::shared_ptr<IServer> server,
              std::shared_ptr<networking::Connection> lobbyCreator, std::string lobbyCode)
     : game(std::move(game)), server(server), lobbyCreator(lobbyCreator), lobbyCode(lobbyCode),
       state(LobbyState::Waiting) {
-    server->sendToConnection("Lobby created with code: " + lobbyCode, *lobbyCreator);
+    server->sendToConnection(generateLobbyCreatedMessage(lobbyCode), *lobbyCreator);
 
     // Register event handlers
     eventHandlers["start"] = [this](const networking::Connection &connection, const std::string &message) {
@@ -73,7 +73,7 @@ void Lobby::sendCurrentListOfPlayers() {
     server->sendToConnection(message, *lobbyCreator);
 }
 
-void Lobby::addMessage(const Message &message) { incomingMessages.push_back(message); }
+void Lobby::addMessage(const networking::Message &message) { incomingMessages.push_back(message); }
 
 void Lobby::processIncomingMessage(const networking::Connection &connection, const std::string &message) {
 
@@ -88,15 +88,26 @@ void Lobby::processIncomingMessage(const networking::Connection &connection, con
         } else {
             auto player = std::find_if(players.begin(), players.end(),
                                        [&](const Player &p) { return p.getConnection().id == connection.id; });
-            Message newMessage = {(*player), message};
-            addMessage(newMessage);
+            if (player != players.end()) {
+                addMessage(networking::Message{connection, message});
+            }
         }
     }
 }
 
 vector<Player> Lobby::getPlayers() const { return players; }
 
-void Lobby::update() {}
+void Lobby::update() {
+
+    if (state == LobbyState::InProgress) {
+        game->insertIncomingMessages(incomingMessages);
+        game->updateGame();
+        incomingMessages.clear();
+        if (game->isGameDone()) {
+            state = LobbyState::Finished;
+        }
+    }
+}
 
 DataValue Lobby::getPlayersMap() {
     DataValue::OrderedMapType playersMap;
@@ -111,8 +122,9 @@ void Lobby::handleStartEvent(const networking::Connection &connection, const std
     if (connection.id == lobbyCreator->id) {
         sendToAll("Game starting!");
         auto playersMap = getPlayersMap();
-        game->startGame(playersMap);
         state = LobbyState::InProgress;
+        game->startGame(playersMap);
+
     } else {
         std::string errorMessage = "Only the lobby creator can start the game.";
         server->sendToConnection(errorMessage, connection);
@@ -137,4 +149,24 @@ void Lobby::handleLeaveEvent(const networking::Connection &connection, const std
 void Lobby::handleUnknownEvent(const networking::Connection &connection, const std::string &message) {
     std::string errorMessage = "Unknown command: " + message;
     server->sendToConnection(errorMessage, connection);
+}
+
+networking::Connection &Lobby::getLobbyCreator() const { return *lobbyCreator; }
+
+std::string Lobby::generateLobbyCreatedMessage(const std::string &lobbyCode) const {
+    std::ostringstream oss;
+    oss << "******************************************\n";
+    oss << "*                                        *\n";
+    oss << "*             Lobby Created!             *\n";
+    oss << "*                                        *\n";
+    oss << "******************************************\n";
+    oss << "*                                        *\n";
+    oss << "*        Your lobby code is:             *\n";
+    oss << "*        " << lobbyCode << "                          *\n";
+    oss << "*                                        *\n";
+    oss << "*    Share this code with others to      *\n";
+    oss << "*    invite them to your lobby.          *\n";
+    oss << "*                                        *\n";
+    oss << "******************************************\n";
+    return oss.str();
 }

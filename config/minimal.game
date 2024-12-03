@@ -1,6 +1,6 @@
 // Minimal game that immediately returns success
 configuration {
-  name: "minimal"
+  name: "minimalACTUAL"
   player range: (1, 1)
   audience: false
   setup: {}
