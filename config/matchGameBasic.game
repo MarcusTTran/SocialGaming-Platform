@@ -11,6 +11,8 @@ per-player {}
 per-audience {}
 rules {
     match true {
+      true => {
         message all "Tie game!";
+      }
     }
 }
