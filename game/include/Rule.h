@@ -415,19 +415,16 @@ class MatchRule : public Rule{
                 //scoped_rules list (may contain multiple rules such as in the example)
                 //extend winners with players.elements.collect(player, player.weapon = weapon.beats);
                 //they are same type and are equal then we can run the rules since we found a match
-                auto isCompleted = (*scoped_rules[it]).runBurst(name_resolver);
-                if (isCompleted.asRuleStatus() == DataValue::RuleStatus::NOTDONE){
+                DataValue returnValue = (*scoped_rules[it]).runBurst(name_resolver);
+                if (!returnValue.isCompleted()){
                     //return not done and then have this be recalled later since the iterator will stay the same we can instantly return back to where we were
                     return DataValue(DataValue::RuleStatus::NOTDONE);
-                }
-                else{
-                    return DataValue(true);
                 }
             }
             //iterate through to the next group of statements to check
             it++;
         }
-        return DataValue(false);
+        return DataValue(DataValue::RuleStatus::DONE);
     }
 
     int it;
