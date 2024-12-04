@@ -11,7 +11,7 @@
 */
 
 namespace GameConstantsType {
-inline const std::vector<std::string> toSkip = {"[", "]", ",", "{", "}", ":", "\"", "(", ")", ".", ";"};
+inline const std::vector<std::string> toSkip = {"[", "]", ",", ":", "\"", "(", ")", ".", ";"};
 inline const std::vector<std::string> builtin = {"upfrom", "size", "contains", "collect"};
 } // namespace GameConstantsType
 

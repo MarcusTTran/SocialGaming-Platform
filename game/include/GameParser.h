@@ -89,12 +89,16 @@ private:
     void traverseHelper(const ts::Node &node, const string &source, Rule &rule);
     void handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule);
     void handleWhileSection(const ts::Node &node, const string &source, Rule &outerRule);
+    void handelInputChoice(const ts::Node &node, const std::string &source);
     void handleNameResolverRule(const ts::Node &node, const string &source, Rule &outerRule);
     std::unique_ptr<Rule> handleBuiltin(const ts::Node &node, const std::string &source, std::unique_ptr<Rule> rule);
     std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
     string ruleTypeToString(RuleT::Type type);
     RuleT::Type getRuleType(const string &type);
 
+    std::string extractAndReplacePlaceholders(const std::string& contentStr,
+        std::vector<std::string>& variables);
+    void splitString(const std::string& str, char delimiter, std::vector<std::string>& parts);
     // print tree strucutre to console for debugging
     void printTree(const ts::Node &node, const string &source, int indent = 0);
     void printSingleDataValue(const DataValue &value, int indent);
