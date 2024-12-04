@@ -26,8 +26,7 @@
 
 using Scope = Map;
 
-class Rule
-{
+class Rule {
 public:
     virtual ~Rule() = default;
 
@@ -100,14 +99,12 @@ private:
     const bool boolean;
 };
 
-class StringRule : public Rule
-{
+class StringRule : public Rule {
 public:
     StringRule(std::string_view string_literal) : string(string_literal) {}
 
 private:
-    void _handle_dependencies(NameResolver &name_resolver) override
-    {
+    void _handle_dependencies(NameResolver &name_resolver) override {
         // TODO: handle strings with {} braces
     }
 
@@ -204,16 +201,12 @@ public:
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {}
 
-    DataValue _runBurst(NameResolver &name_resolver) override
-    {
+    DataValue _runBurst(NameResolver &name_resolver) override {
         auto playersMap = name_resolver.getValue("players");
 
-        if (playersMap.has_value())
-        {
+        if (playersMap.has_value()) {
             return playersMap.value();
-        }
-        else
-        {
+        } else {
             throw std::runtime_error("Players map was not found in global map");
         }
     }
@@ -228,16 +221,22 @@ public:
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
-        recipients = recipient_list_maker->runBurst(name_resolver).asOrderedMap();
+        auto recipients = recipient_list_maker->runBurst(name_resolver);
+
+        if (recipients.getType() == "LIST") {
+            this->recipients = recipients.asList();
+        } else {
+            this->recipients = {recipients};
+        }
 
         message = string_maker->runBurst(name_resolver).asString();
         std::cout << "Message: from message rule: " << message << std::endl;
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        for (const auto &[key, value] : recipients) {
-            std::cout << "Sending message to: " << key << std::endl;
-            messager->sendMessageToPlayerMap(message, value.asOrderedMap());
+        for (const auto &player : recipients) {
+            auto player_map = player.asOrderedMap();
+            messager->sendMessageToPlayerMap(message, player_map);
         }
 
         return DataValue(DataValue::RuleStatus::DONE);
@@ -246,7 +245,7 @@ private:
     std::shared_ptr<IServer> messager;
     std::unique_ptr<Rule> recipient_list_maker;
     std::unique_ptr<Rule> string_maker;
-    DataValue::OrderedMapType recipients;
+    std::vector<DataValue> recipients;
     std::string message;
 };
 
@@ -297,7 +296,12 @@ public:
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
+        std::cout << "running for rule for the first time" << std::endl;
+        std::cout << "fresh_variable_name: " << fresh_variable_name << std::endl;
+        std::cout << "Numver iof rules in the for loop: " << statement_list.size() << std::endl;
+
         auto list_of_values_generic = list_maker->runBurst(name_resolver);
+        std::cout << "list_of_values_generic: " << list_of_values_generic.getType() << std::endl;
         list_of_values = list_of_values_generic.asList();
 
         // Initialize the iterators
@@ -305,44 +309,37 @@ private:
         current_statement = statement_list.begin();
     }
 
-    DataValue _runBurst(NameResolver &name_resolver) override
-    {
+    DataValue _runBurst(NameResolver &name_resolver) override {
         // Check for early return
-        if (list_of_values.empty() || statement_list.empty())
-        {
+        if (list_of_values.empty() || statement_list.empty()) {
             return DataValue({DataValue::RuleStatus::DONE});
         }
 
         // Set up fresh variable
-        if (list_of_values.size() > 0)
-        {
+        if (list_of_values.size() > 0) {
             name_resolver.addNewValue(fresh_variable_name, *value_for_this_loop);
         }
 
-        while (true)
-        {
+        while (true) {
             assert(value_for_this_loop != list_of_values.end() && "Iterator for list_of_values is invalid");
             assert(current_statement != statement_list.end() && "Iterator for statement_list is invalid");
 
             // Run
             auto rule_state = (*current_statement)->runBurst(name_resolver); // Dereference unique_ptr
-            if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE)
-            {
+            if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
                 return DataValue({DataValue::RuleStatus::NOTDONE});
             }
 
             // Move to the next statement
             current_statement++;
-            if (current_statement != statement_list.end())
-            {
+            if (current_statement != statement_list.end()) {
                 continue;
             }
 
             // Move to the next full iteration
             current_statement = statement_list.begin();
             value_for_this_loop++;
-            if (value_for_this_loop != list_of_values.end())
-            {
+            if (value_for_this_loop != list_of_values.end()) {
                 name_resolver.setValue(fresh_variable_name, *value_for_this_loop);
                 continue;
             }
@@ -368,9 +365,9 @@ private:
 //                Otherwise, return 1.
 // class discardRule : public Rule {
 // public:
-//     discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
+//     discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker)
 //         : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
-    
+
 // private:
 //     void _handle_dependencies(NameResolver &name_resolver) override {
 //         integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
@@ -380,11 +377,11 @@ private:
 //     DataValue _runBurst(NameResolver &name_resolver) override {
 //         // Check certain invariants for this functions
 //         bool listIsIncorrectType = listToDiscard.getType() != DataValue::Type::LIST;
-       
+
 //         bool listIsEmpty = true;
 //         if (!listIsIncorrectType) {
 //             listIsEmpty = listToDiscard.asList().empty();
-//         } else { // List was incorrect type 
+//         } else { // List was incorrect type
 //             return DataValue({-1});
 //         }
 
@@ -392,12 +389,11 @@ private:
 //             return DataValue({1});
 //         }
 
-
 //     }
 
 //     std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
 //     std::unique_ptr<Rule> list_maker;   // NameResolverRule
-//     int integerExpression; 
+//     int integerExpression;
 //     DataValue listToDiscard;
 // };
 
@@ -476,13 +472,15 @@ private:
 
 class NameResolverRule : public Rule {
 public:
-    NameResolverRule(std::vector<std::string>& key) : search_keys(key) {}
+    NameResolverRule(std::vector<std::string> &key) : search_keys(key) {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
         if (search_keys.empty()) {
             std::cerr << "NameResolverRule called without arguments!" << std::endl;
         }
+        std::cout << "search_keys size: " << search_keys.size() << std::endl;
+
         isNested = search_keys.size() > 1;
     }
 
@@ -491,15 +489,14 @@ private:
         if (valueInTopScope == std::nullopt) {
             return DataValue("ERROR");
         }
-        
+
         if (isNested && valueInTopScope->getType() == "ORDERED_MAP") {
-            auto valueInMap = name_resolver.getNestedValue(search_keys);    
+            auto valueInMap = name_resolver.getNestedValue(search_keys);
             if (valueInMap == std::nullopt) {
                 return DataValue("ERROR");
             }
             result = *valueInMap;
-        } 
-        else {
+        } else {
             result = *valueInTopScope;
         }
 
@@ -508,7 +505,7 @@ private:
 
     // This vector has the individual components of the desired value in order,
     // separated by its periods (ie. configuration.setup -> ["configuration", "setup"]) )
-    std::vector<std::string>& search_keys;
+    std::vector<std::string> search_keys;
     bool isNested = false;
     DataValue result;
 };

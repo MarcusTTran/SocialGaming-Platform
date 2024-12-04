@@ -11,6 +11,6 @@ per-player {}
 per-audience {}
 rules {
     for player in players {
-        message [player] "Hi\n";
+      message player "Hi\n";
     }
 }
