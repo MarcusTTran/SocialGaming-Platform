@@ -543,7 +543,6 @@ void ParsedGameData::handleWhileSection(const ts::Node &node, const std::string 
     // }
 }
 
-<<<<<<< Updated upstream
 void ParsedGameData::handelInputChoice(const ts::Node &node, const std::string &source){
     std::cout << "THIS IS INPUT CHOICE" << std::endl; 
     std::string_view player = node.getChildByFieldName("player").getSourceRange(source);
@@ -573,10 +572,6 @@ void ParsedGameData::handelInputChoice(const ts::Node &node, const std::string &
     // TODO: the following logic needs to fit in rule.h implemetation design
 }
 
-void handleNameResolverRule(const ts::Node &node, const string &source, Rule &outerRule) {
-    // TODO: 
-}
-=======
 // std::unique_ptr<Rule> rule     {std::move(handleNameResolver())};
 
 // std::unique_ptr<Rule> handleNameResolverRule(const string &source, Rule &outerRule) {
@@ -595,7 +590,6 @@ void handleNameResolverRule(const ts::Node &node, const string &source, Rule &ou
 //     std::unique_ptr<Rule> nameResolverRule = std::make_unique<NameResolverRule>(search_keys);
 //     return nameResolverRule;
 // }
->>>>>>> Stashed changes
 
 std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, const std::string &source) {
     for (const auto &child : ts::Children{node}) {
