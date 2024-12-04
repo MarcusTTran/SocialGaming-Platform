@@ -469,11 +469,13 @@ std::unique_ptr<Rule> ParsedGameData::handleMessageSection(const ts::Node &node,
     std::vector<std::string> variables;
     // Process content and replace placeholders with {}
     std::string updatedContent = extractAndReplacePlaceholders(contentStr, variables);
-
+    std::unique_ptr<Rule> nameResolver = std::make_unique<NameResolverRule>(variables);
     auto allPlayersRule = std::make_unique<AllPlayersRule>();
+    std::vector<std::unique_ptr<Rule>> nameResolvers;
+    nameResolvers.emplace_back(std::move(nameResolver));
     // TODO: make StringRule to accept one more variables vector
     //       in this case, it will be std::make_unique<StringRule>(updatedContent, variables);
-    auto stringRule = std::make_unique<StringRule>(updatedContent);
+    auto stringRule = std::make_unique<StringRule>(updatedContent, std::move(nameResolvers));
     auto messageRule = std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(stringRule));
     return messageRule;
 }
