@@ -65,7 +65,7 @@ private:
     pair<int, int> playerRange;
     bool audience;
     Configuration configuration;
-    std::shared_ptr<Messenger> server; // For constructing messaging rules
+    std::shared_ptr<IServer> server; // For constructing messaging rules
 
     // using variant types to do a map-like data structure while preserving data order
     DataValue::OrderedMapType variables;

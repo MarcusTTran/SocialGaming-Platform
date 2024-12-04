@@ -8,9 +8,41 @@
 #include "GameNameDisplayer.h"
 #include "Messenger.h"
 
+class MockMessenger : public IServer {
+public:
+    MockMessenger() = default;
+
+    void broadcast(const std::string &message, const std::vector<networking::Connection> &connections) override {
+
+    }
+    void sendToConnection(const std::string &message, const networking::Connection &connection) override {
+
+    }
+    void sendMessages(const std::deque<networking::Message> &messages) override {
+
+    }
+    void sendMessageToPlayerMap(const std::string &message, const DataValue::OrderedMapType &playerMap) override {
+
+    }
+
+};
+
+
 int main()
-{
-    // try
+{   
+    // TODO: fix this it is not useable right now
+    std::shared_ptr<MockMessenger> mockMessenger = std::make_shared <MockMessenger>();
+    ParsedGameData parser = ParsedGameData("../373-24-fahsa/config/config.game", mockMessenger);
+    // Call methods on the parser as needed
+    std::string gameName = parser.getGameName();
+    std::cout << "Game name: " << gameName << std::endl;
+    return 0;
+}
+
+
+
+
+// try
     // {
     //     // Test ConfigurationOptions
     //     // std::unordered_map<std::string, std::string> enumChoices = {
@@ -41,10 +73,7 @@ int main()
     //     std::cerr << "Error: " << e.what() << '\n';
     // }
 
-    std::cout << gameNameDisplayer();
-        for(auto i: getConfigMap()){
-            std::cout << "Key: " << i.first << " value: " << i.second << '\n';
-        }
-
-    return 0;
-}
+    // std::cout << gameNameDisplayer();
+    //     for(auto i: getConfigMap()){
+    //         std::cout << "Key: " << i.first << " value: " << i.second << '\n';
+    //     }

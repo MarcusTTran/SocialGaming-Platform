@@ -11,7 +11,7 @@ extern "C" {
 TSLanguage *tree_sitter_socialgaming();
 }
 
-ParsedGameData::ParsedGameData(const string &config, std::shared_ptr<IServer> server) : server(std::static_pointer_cast<Messenger>(server)){
+ParsedGameData::ParsedGameData(const string &config, std::shared_ptr<IServer> server) : server(server){
     string fileContent = readFileContent(config);
     if (!fileContent.empty()) {
         parseConfig(fileContent);
@@ -64,6 +64,7 @@ DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::stri
         return DataValue(curr);
     } else if (type == "number") {
         int curr = std::stoi(currContent);
+        std::cout << "handleExpression function" << std::endl; // TODO: remove
         return DataValue(curr);
     } else if (type == "number_range") {
         size_t start = currContent.find('(');
@@ -71,6 +72,7 @@ DataValue ParsedGameData::handleExpression(const ts::Node &node, const std::stri
         size_t end = currContent.find(')');
         if (start != std::string::npos && comma != std::string::npos && end != std::string::npos) {
             try {
+                std::cout << "handleExpression function lower" << std::endl; // TODO: remove
                 int minRange = std::stoi(currContent.substr(start + 1, comma - start - 1));
                 int maxRange = std::stoi(currContent.substr(comma + 1, end - comma - 1));
                 return DataValue(std::make_pair(minRange, maxRange));
@@ -232,6 +234,7 @@ void ParsedGameData::parseConfigurationSection(const ts::Node &node, const strin
         std::smatch match;
 
         if (std::regex_search(rangeString, match, rangeRegex) && match.size() == 3) {
+            std::cout << "parseConfiguration function" << std::endl; // TODO: remove
             int min = std::stoi(match[1].str());
             int max = std::stoi(match[2].str());
             configuration.range = {min, max};
@@ -357,6 +360,7 @@ std::unique_ptr<Rule> ParsedGameData::handleBuiltin(const ts::Node &node, const 
     auto content = node.getSourceRange(source);
 
     if (content.find("upfrom") != std::string::npos) {
+        std::cout << "handle builtin function" << std::endl; // TODO: remove
         int value = std::stoi(std::string(node.getNextSibling().getSourceRange(source)));
         return std::make_unique<UpfromRule>(*rule, value);
     } else if (content.find("contains") != std::string::npos) {
