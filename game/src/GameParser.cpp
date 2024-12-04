@@ -481,17 +481,28 @@ std::unique_ptr<Rule> ParsedGameData::handleMessageSection(const ts::Node &node,
 }
 
 // TODO: will have to modify logic for future rule object
-void ParsedGameData::traverseHelper(const ts::Node &node, const string &source, Rule &rule) {
-    // if(node.getType() == "match_entry"){
-    //     ts::Node guard = node.getChildByFieldName("guard");
-    //     DFS(guard, source, rule);
-    //     ts::Node body = node.getChildByFieldName("body");
-    //     parseRuleSection(body, source, rule);
-    // }
+void ParsedGameData::traverseHelper(const ts::Node &node, const string &source, 
+    std::vector<std::unique_ptr<Rule>> &checkCondition, 
+    std::vector<std::unique_ptr<Rule>> &scopedRule) {
+    if(node.getType() == "match_entry"){
+        ts::Node guard = node.getChildByFieldName("guard");
+        vector<std::string> condition;
+        DFS(guard, source, condition);
+        if(condition.size() == 1 && (condition.back() == "true" || condition.back() == "false")){
+            bool boolean = condition.back() == "true" ? true : false;
+            std::unique_ptr<Rule> conditionPtr = std::make_unique<BooleanRule>(boolean);
+            checkCondition.emplace_back(std::move(conditionPtr));
+        } else{
+            // TODO: adding more condition rules
+        }
+        ts::Node body = node.getChildByFieldName("body");
+        std::unique_ptr<Rule> bodyPtr = parseRuleSection(body, source);
+        scopedRule.emplace_back(std::move(bodyPtr));
+    }
 
-    // for (const auto &child : ts::Children{node}) {
-    //     traverseHelper(child, source, rule);
-    // }
+    for (const auto &child : ts::Children{node}) {
+        traverseHelper(child, source, checkCondition, scopedRule);
+    }
 }
 
 // TODO: will have to modify logic for future rule object
@@ -517,14 +528,16 @@ void ParsedGameData::handleMatchRule(const ts::Node &node, const string &source,
     else{
         conditions = std::move(temp);
     }
+    std::vector<std::unique_ptr<Rule>> checkCondition;
+    std::vector<std::unique_ptr<Rule>> scopedRule;
     for (size_t i = 3; i < node.getNumChildren() - 1; ++i) {
         auto curr = node.getChild(i);
-        // Rule subRule;
-        // // TODO: need to figure out how to call it
-        // // auto subRule = std::make_unique<MatchRule>();
-        // traverseHelper(curr, source, subRule);
-        // outerRule.subRules.emplace_back(std::move(subRule));
+        traverseHelper(curr, source, checkCondition, scopedRule);
     }
+    // TODO: uncomment once the latest version rule.h has been merged into main branch
+    // std::unique_ptr<Rule> matchRule = std::make_unique<MatchRule>(std::move(conditions), 
+    //     std::move(checkCondition), std::move(scopedRule));
+    // rules.emplace_back(std::move(matchRule));
 }
 
 // TODO: need to check node type or how to use in txt file.
