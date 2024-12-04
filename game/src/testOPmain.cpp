@@ -39,9 +39,6 @@ int main()
     return 0;
 }
 
-
-
-
 // try
     // {
     //     // Test ConfigurationOptions

@@ -543,6 +543,7 @@ void ParsedGameData::handleWhileSection(const ts::Node &node, const std::string 
     // }
 }
 
+<<<<<<< Updated upstream
 void ParsedGameData::handelInputChoice(const ts::Node &node, const std::string &source){
     std::cout << "THIS IS INPUT CHOICE" << std::endl; 
     std::string_view player = node.getChildByFieldName("player").getSourceRange(source);
@@ -575,6 +576,26 @@ void ParsedGameData::handelInputChoice(const ts::Node &node, const std::string &
 void handleNameResolverRule(const ts::Node &node, const string &source, Rule &outerRule) {
     // TODO: 
 }
+=======
+// std::unique_ptr<Rule> rule     {std::move(handleNameResolver())};
+
+// std::unique_ptr<Rule> handleNameResolverRule(const string &source, Rule &outerRule) {
+//     // std::vector<std::string> search_keys;
+//     // size_t dotPosition = source.find('.');
+//     // size_t start_pos = 0;
+
+//     // while (dotPosition != std::string::npos) {
+//     //     search_keys.push_back(source.substr(start_pos, dotPosition - start_pos));
+//     //     start_pos = dotPosition + 1;
+//     //     dotPosition = source.find('.', start_pos);
+//     // }
+//     // // Add last innermost key
+//     // search_keys.push_back(source.substr(start_pos));
+
+//     std::unique_ptr<Rule> nameResolverRule = std::make_unique<NameResolverRule>(search_keys);
+//     return nameResolverRule;
+// }
+>>>>>>> Stashed changes
 
 std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, const std::string &source) {
     for (const auto &child : ts::Children{node}) {

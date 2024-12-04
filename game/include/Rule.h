@@ -10,6 +10,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 
 // Example variables state
 // vector([
@@ -100,20 +101,53 @@ private:
     const bool boolean;
 };
 
+// Note: strings are parsed to look like "{}, choose your weapon!", where the bracket used to have
+//       "player.name" inside it. NameResolver will replace these brackets.
 class StringRule : public Rule
 {
 public:
-    StringRule(std::string_view string_literal) : string(string_literal) {}
+    StringRule(std::string_view string_literal, std::optional< std::vector<std::unique_ptr<Rule>> > nameResolverRules = std::nullopt) 
+        : string(string_literal) {
+            if (nameResolverRules.has_value()) {
+                fresh_variables_maker = std::move(nameResolverRules.value());
+                has_fresh_variables = true;
+            } else {
+                has_fresh_variables = false;
+            }
+        }
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override
     {
-        // TODO: handle strings with {} braces
+        // Create NameResolverRules for each fresh variable and add them to found_names in order
+        for (const auto& nameMaker : fresh_variables_maker) {
+            DataValue found_name = nameMaker->runBurst(name_resolver);
+            found_names.push_back(found_name.asString());
+        }
     }
 
-    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(string); }
+    DataValue _runBurst(NameResolver &name_resolver) override { 
+        if (!has_fresh_variables) {
+            return DataValue(string);
+        }
 
+        for (const std::string& name : found_names) {
+            size_t openBracketPos = name.find('{');
+            size_t closeBracketPos = name.find('}');
+            if (openBracketPos == std::string::npos || closeBracketPos == std::string::npos) {
+                return DataValue(DataValue::RuleStatus::ERROR);
+            }
+            string.replace(openBracketPos, closeBracketPos - openBracketPos + 1, name);
+        }
+        
+        return DataValue(string); 
+    }
+
+
+    std::vector<std::unique_ptr<Rule>> fresh_variables_maker; // Holding fresh variables in brackets
+    std::vector<std::string> found_names; // Names that will replace the brackets
     std::string string;
+    bool has_fresh_variables = false;
 };
 
 class SimpleTimerRule : public Rule {
@@ -440,6 +474,10 @@ private:
 
 //     std::vector<std::pair<std::unique_ptr<Rule>, StatementState>> statements;
 // };
+
+// std::unique_ptr<Rule> temp = handleNameResolver();
+
+//     "configurations.rounds"
 
 class NameResolverRule : public Rule {
 public:
