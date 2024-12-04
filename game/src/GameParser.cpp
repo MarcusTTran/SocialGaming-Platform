@@ -154,7 +154,9 @@ DataValue::OrderedMapType ParsedGameData::handleSetup(const ts::Node &node, cons
         ts::Node promptNode = node.getChildByFieldName("prompt");
         if (!promptNode.isNull()) {
             std::string promptContent = std::string(promptNode.getSourceRange(source));
-            promptContent = promptContent.substr(1, promptContent.length() - 2);
+            // promptContent = promptContent.substr(1, promptContent.length() - 2);
+            promptContent = promptContent.substr(2, promptContent.length() - 3);
+
             content.emplace("prompt", DataValue(promptContent));
         }
 
@@ -366,6 +368,7 @@ std::unique_ptr<Rule> ParsedGameData::handleBuiltin(const ts::Node &node, const 
     } else {
         std::cout << "THIS IS SIZE" << std::endl;
         // TODO: Create and return SizeRule
+        return std::make_unique<ListSizeRule>(std::move(rule));
     }
 
     return nullptr; 
@@ -412,11 +415,16 @@ void ParsedGameData::handleForRule(const ts::Node &node, const std::string &sour
 std::unique_ptr<Rule> ParsedGameData::handleMessageSection(const ts::Node &node, const std::string &source) {
     auto playersKeyword = node.getChildByFieldName("players").getSourceRange(source); // Keyword indicating players
     auto content = node.getChildByFieldName("content").getSourceRange(source);        // Message content
+    std::string contentStr = std::string(content);
+    if (!contentStr.empty() && contentStr.front() == '"' && contentStr.back() == '"') {
+        contentStr.erase(contentStr.begin());  
+        contentStr.erase(contentStr.end() - 1); 
+    }
 
     // currently we assume all will be there all the time
     // TODO: we need to create more rule types to deal with multiple keywords
     auto allPlayersRule = std::make_unique<AllPlayersRule>();
-    auto stringRule = std::make_unique<StringRule>(content);
+    auto stringRule = std::make_unique<StringRule>(contentStr);
 
     auto messageRule = std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(stringRule));
     return messageRule;
@@ -511,7 +519,24 @@ std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, con
             // TODO: figure out how to call constructor correctly
             // handleWhileSection(child, source, outerRule);
             // outerRule.subRules.emplace_back(whileRule);
-        } else {
+        } else if (ruleType == "input_choice") {
+            std::cout << "THIS IS INPUT CHOICE" << std::endl; // delete later
+            std::string_view prompt = child.getChildByFieldName("prompt").getSourceRange(source);
+            std::string_view choices = child.getChildByFieldName("choices").getSourceRange(source);
+            std::string_view target = child.getChildByFieldName("target").getSourceRange(source);
+            std::string_view timeout = child.getChildByFieldName("timeout").getSourceRange(source);
+            
+            std::string promptStr = std::string(prompt);
+            if (!promptStr.empty() && promptStr.front() == '"' && promptStr.back() == '"') {
+                promptStr = promptStr.substr(1, promptStr.length() - 2);
+            }
+
+            std::cout << "Prompt: " << promptStr << std::endl;
+            std::cout << "Choices: " << choices << std::endl;
+            std::cout << "Target: " << target << std::endl;
+            std::cout << "Timeout: " << timeout << std::endl;
+        }
+        else {
             // Recursively handle other types of rules
             parseRuleSection(child, source);
         }

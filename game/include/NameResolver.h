@@ -66,10 +66,10 @@ public:
         return result;
     }
 
-    std::optional<DataValue> findInList(const std::vector<DataValue>& list, const std::vector<std::string>& search_keys) {
+    // std::optional<DataValue> findInList(const std::vector<DataValue>& list, const std::vector<std::string>& search_keys) {
         
-        // TODO: impl this for contains rule
-    }
+    //     // TODO: impl this for contains rule
+    // }
 
 private:
     // INVARIANT: key-value pair cannot be contained in any nested structure that is a list. 

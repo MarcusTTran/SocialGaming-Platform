@@ -5,7 +5,7 @@
 #include "Messenger.h"
 #include "Rule.h"
 #include "RuleTypes.h"
-// #include "Expression.h"
+#include "Expression.h"
 #include "tree_sitter/api.h"
 #include <algorithm>
 #include <cpp-tree-sitter.h>

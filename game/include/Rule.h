@@ -480,28 +480,28 @@ private:
     DataValue result;
 };
 
-class ContainsRule : public Rule {
-public:
-    ContainsRule(std::unique_ptr<Rule> list_maker, std::vector<std::string>& search_keys)
-        : list_maker{std::move(list_maker)}, search_keys(search_keys) {}
+// class ContainsRule : public Rule {
+// public:
+//     ContainsRule(std::unique_ptr<Rule> list_maker, std::vector<std::string>& search_keys)
+//         : list_maker{std::move(list_maker)}, search_keys(search_keys) {}
     
-private:
-    void _handle_dependencies(NameResolver &name_resolver) override {
-        list = list_maker->runBurst(name_resolver);
-    }
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {
+//         list = list_maker->runBurst(name_resolver);
+//     }
 
-    DataValue _runBurst(NameResolver &name_resolver) override {
-        if (list.getType() != "LIST") {
-            return DataValue("ERROR");
-        } 
+//     DataValue _runBurst(NameResolver &name_resolver) override {
+//         if (list.getType() != "LIST") {
+//             return DataValue("ERROR");
+//         } 
 
-        auto& list_elements = list.asList();
-        it auto std::find(list_elements.begin(), list_elements.end(), 
+//         auto& list_elements = list.asList();
+//         it auto std::find(list_elements.begin(), list_elements.end(), 
         
-    }
+//     }
 
-    std::unique_ptr<Rule> list_maker; // ElementsRule (returns a vector<DataValue>)
-    std::vector<std::string>& search_keys;
-    DataValue list;
-};
+//     std::unique_ptr<Rule> list_maker; // ElementsRule (returns a vector<DataValue>)
+//     std::vector<std::string>& search_keys;
+//     DataValue list;
+// };
 

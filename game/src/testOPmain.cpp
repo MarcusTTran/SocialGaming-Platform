@@ -6,6 +6,8 @@
 #include "GameParser.h"
 #include "game.h"
 #include "GameNameDisplayer.h"
+#include "Messenger.h"
+
 int main()
 {
     // try
