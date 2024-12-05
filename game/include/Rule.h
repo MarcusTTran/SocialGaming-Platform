@@ -507,6 +507,10 @@ private:
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
+        if (search_keys.empty()) {
+            return DataValue( {DataValue::RuleStatus::DONE} );
+        }
+
         auto valueInTopScope = name_resolver.getValue(search_keys[0]);
         if (valueInTopScope == std::nullopt) {
             return DataValue("ERROR");
