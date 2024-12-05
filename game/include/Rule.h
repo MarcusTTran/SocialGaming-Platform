@@ -5,10 +5,12 @@
 #include "NameResolver.h"
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 
 // Example variables state
 // vector([
@@ -58,6 +60,26 @@ private:
     virtual DataValue _runBurst(NameResolver &name_resolver) = 0;
 };
 
+// class NumberRule : public Rule {
+// public:
+//     NumberRule(int number) : number(number) {}
+
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {}
+//     DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(number); }
+//     const int number;
+// };
+
+// class BooleanRule : public Rule {
+// public:
+//     BooleanRule(bool boolean) : boolean(boolean) {}
+
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {}
+//     DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(boolean); }
+//     const bool boolean;
+// };
+
 class NumberRule : public Rule {
 public:
     NumberRule(int number) : number(number) {}
@@ -78,18 +100,149 @@ private:
     const bool boolean;
 };
 
-class StringRule : public Rule {
+// Note: strings are parsed to look like "{}, choose your weapon!", where the bracket used to have
+//       "player.name" inside it. NameResolver will replace these brackets.
+class StringRule : public Rule
+{
 public:
-    StringRule(std::string_view string_literal) : string(string_literal) {}
+    StringRule(std::string_view string_literal, std::optional< std::vector<std::unique_ptr<Rule>> > nameResolverRules = std::nullopt) 
+        : string(string_literal) {
+            if (nameResolverRules.has_value()) {
+                if (nameResolverRules.value().size() > 0) {
+                    fresh_variables_maker = std::move(nameResolverRules.value());
+                    has_fresh_variables = true;
+                } else {
+                    has_fresh_variables = false;
+                }
+            }
+            else {
+                has_fresh_variables = false;
+            }
+        }
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override
+    {
+        // Create NameResolverRules for each fresh variable and add them to found_names in order
+        for (const auto& nameMaker : fresh_variables_maker) {
+            DataValue found_name = nameMaker->runBurst(name_resolver);
+            
+            if (found_name.getType() == "STRING") {
+                found_names.push_back(found_name.asString());
+            } else if (found_name.getType() == "NUMBER") {
+                found_names.push_back(std::to_string(found_name.asNumber()));
+            } else {
+                // Not number or string so it is an error
+                std::cerr << "Error: found name inside StringRule was not a string or int!" << std::endl;
+            }
+        }
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override { 
+        if (!has_fresh_variables) {
+            return DataValue(string);
+        }
+
+        for (const std::string& name : found_names) {
+            size_t openBracketPos = name.find('{');
+            size_t closeBracketPos = name.find('}');
+            if (openBracketPos == std::string::npos || closeBracketPos == std::string::npos) {
+                return DataValue(DataValue::RuleStatus::ERROR);
+            }
+            string.replace(openBracketPos, closeBracketPos - openBracketPos + 1, name);
+        }
+        
+        return DataValue(string); 
+    }
+
+
+    std::vector<std::unique_ptr<Rule>> fresh_variables_maker; // Holding fresh variables in brackets
+    std::vector<std::string> found_names; // Names that will replace the brackets
+    std::string string;
+    bool has_fresh_variables = false;
+};
+
+class SimpleTimerRule : public Rule {
+public:
+    SimpleTimerRule(long seconds) : seconds(seconds) {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
-        // TODO: handle strings with {} braces
+        end_time = std::chrono::steady_clock::now() + std::chrono::seconds(seconds);
     }
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        if (std::chrono::steady_clock::now() < end_time) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+        return DataValue({DataValue::RuleStatus::DONE});
+    }
+    long seconds;
+    std::chrono::steady_clock::time_point end_time;
+};
 
-    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(string); }
+class SimpleInputRule : public Rule {
+public:
+    SimpleInputRule(std::shared_ptr<IServer> server) : messager(server) {}
 
-    std::string string;
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        // get the first player and send a message
+        std::cout << "getting first player" << std::endl;
+        player = name_resolver.getValue("players").value().asOrderedMap().begin()->second.asOrderedMap();
+        std::cout << name_resolver.getValue("players").value().asOrderedMap().size() << std::endl;
+        std::cout << "got first player" << std::endl;
+
+        std::cout << "getting connection" << std::endl;
+        std::string connection_id = std::to_string(player["connection"].asConnection().id);
+        std::cout << "got connection" << std::endl;
+        std::cout << "connection id: " << connection_id << std::endl;
+        std::string pending_connections_key = "pending_connections";
+
+        std::vector<DataValue> pending_connections;
+        pending_connections.push_back(DataValue({connection_id}));
+        name_resolver.addNewValue(pending_connections_key, DataValue(pending_connections));
+
+        messager->sendMessageToPlayerMap("Write something!", player);
+        std::cout << "sent message" << std::endl;
+    }
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // check for message
+
+        auto pending_connections = name_resolver.getValue("pending_connections");
+        auto incoming_messages = name_resolver.getValue("incoming_messages");
+
+        if (!pending_connections.has_value()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+
+        if (!incoming_messages.has_value()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+
+        auto pending_connections_value = pending_connections.value().asList();
+        auto incoming_messages_value = incoming_messages.value().asOrderedMap();
+
+        if (pending_connections_value.empty()) {
+            return DataValue({DataValue::RuleStatus::DONE});
+        }
+
+        if (incoming_messages_value.empty()) {
+            return DataValue({DataValue::RuleStatus::NOTDONE});
+        }
+
+        for (const DataValue &connection_id : pending_connections_value) {
+            auto message = incoming_messages_value.find(connection_id.asString());
+            if (message != incoming_messages_value.end()) {
+                messager->sendMessageToPlayerMap("Thank you for your input, You said: " + message->second.asString(),
+                                                 player);
+                return DataValue({DataValue::RuleStatus::DONE});
+            }
+        }
+
+        return DataValue({DataValue::RuleStatus::NOTDONE});
+    }
+    std::shared_ptr<IServer> messager;
+    DataValue::OrderedMapType player;
 };
 
 class AllPlayersRule : public Rule {
@@ -117,16 +270,22 @@ public:
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
-        recipients = recipient_list_maker->runBurst(name_resolver).asOrderedMap();
+        auto recipients = recipient_list_maker->runBurst(name_resolver);
+
+        if (recipients.getType() == "LIST") {
+            this->recipients = recipients.asList();
+        } else {
+            this->recipients = {recipients};
+        }
 
         message = string_maker->runBurst(name_resolver).asString();
         std::cout << "Message: from message rule: " << message << std::endl;
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        for (const auto &[key, value] : recipients) {
-            std::cout << "Sending message to: " << key << std::endl;
-            messager->sendMessageToPlayerMap(message, value.asOrderedMap());
+        for (const auto &player : recipients) {
+            auto player_map = player.asOrderedMap();
+            messager->sendMessageToPlayerMap(message, player_map);
         }
 
         return DataValue(DataValue::RuleStatus::DONE);
@@ -135,12 +294,48 @@ private:
     std::shared_ptr<IServer> messager;
     std::unique_ptr<Rule> recipient_list_maker;
     std::unique_ptr<Rule> string_maker;
-    DataValue::OrderedMapType recipients;
+    std::vector<DataValue> recipients;
     std::string message;
 };
 
-// for round in configuration.rounds.upfrom(1)
-// for round in configuration.rounds
+class ScopeRule : public Rule {
+public:
+    ScopeRule(std::vector<std::unique_ptr<Rule>> contents)
+        : statement_list{std::move(contents)} {}
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        current_statement = statement_list.begin();
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override
+    {
+        // Check for early return
+        if (statement_list.empty())
+        {
+            return DataValue({DataValue::RuleStatus::DONE});
+        }
+
+        // Run remaining statements
+        while (current_statement != statement_list.end())
+        {
+            auto rule_state = (*current_statement)->runBurst(name_resolver);
+            if (!rule_state.isCompleted())
+            {
+                return DataValue({DataValue::RuleStatus::NOTDONE});
+            }
+
+            // Move to the next statement
+            current_statement++;
+        }
+        // All statements complete
+        return DataValue({DataValue::RuleStatus::DONE});
+    }
+
+    std::vector<std::unique_ptr<Rule>> statement_list;
+    std::vector<std::unique_ptr<Rule>>::iterator current_statement;
+};
+
 class ForRule : public Rule {
 public:
     ForRule(std::string fresh_variable_name, std::unique_ptr<Rule> list_maker,
@@ -150,7 +345,12 @@ public:
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
+        std::cout << "running for rule for the first time" << std::endl;
+        std::cout << "fresh_variable_name: " << fresh_variable_name << std::endl;
+        std::cout << "Numver iof rules in the for loop: " << statement_list.size() << std::endl;
+
         auto list_of_values_generic = list_maker->runBurst(name_resolver);
+        std::cout << "list_of_values_generic: " << list_of_values_generic.getType() << std::endl;
         list_of_values = list_of_values_generic.asList();
 
         // Initialize the iterators
@@ -210,42 +410,46 @@ private:
 
 // - Takes in an integer that represents how many elements we remove from the list
 // - Start removal from the last element in the list
-// POSTCONDITION: If integer expression <= 0 or list is of incorrect type or empty, return -1.
+// PRECONDITION: list_maker MUST return a list, other data structures like maps are not allowed.
+//               integer expression must be <= list size and > 0.
+// POSTCONDITION: If integer expression <= 0 or > list size, or list is of incorrect type or empty, return -1.
 //                Otherwise, return 1.
-// class discardRule : public Rule {
-// public:
-//     discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
-//         : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
+class DiscardRule : public Rule {
+public:
+    DiscardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
+        : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
     
-// private:
-//     void _handle_dependencies(NameResolver &name_resolver) override {
-//         integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
-//         listToDiscard = list_maker->runBurst(name_resolver);
-//     }
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
+        listToDiscard = list_maker->runBurst(name_resolver).asList();
+    }
 
-//     DataValue _runBurst(NameResolver &name_resolver) override {
-//         // Check certain invariants for this functions
-//         bool listIsIncorrectType = listToDiscard.getType() != DataValue::Type::LIST;
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // Check certain invariants for this functions
+        bool listIsIncorrectType = listToDiscard.getType() != "LIST";
+        bool numGreaterThanSize = integerExpression > listToDiscard.asList().size(); 
        
-//         bool listIsEmpty = true;
-//         if (!listIsIncorrectType) {
-//             listIsEmpty = listToDiscard.asList().empty();
-//         } else { // List was incorrect type 
-//             return DataValue({-1});
-//         }
+        // Ensure that list is correct type and not empty
+        if (listIsIncorrectType || listToDiscard.asList().empty() || numGreaterThanSize) {
+            return DataValue(DataValue::RuleStatus::ERROR);
+        } 
+    
+        // auto& list = listToDiscard.asList();
+        auto& list = const_cast<std::vector<DataValue>&>(listToDiscard.asList());
+        for (size_t i = 0; i < integerExpression; ++i) {
+            list.pop_back();
+        }
+        
+        return DataValue(DataValue::RuleStatus::DONE);
+    }
 
-//         if (integerExpression <= 0 ) {
-//             return DataValue({1});
-//         }
+    std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
+    std::unique_ptr<Rule> list_maker;   // NameResolverRule
+    int integerExpression; 
+    DataValue listToDiscard;
+};
 
-
-//     }
-
-//     std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
-//     std::unique_ptr<Rule> list_maker;   // NameResolverRule
-//     int integerExpression; 
-//     DataValue listToDiscard;
-// };
 
 class UpfromRule : public Rule {
 public:
@@ -320,32 +524,41 @@ private:
 //     std::vector<std::pair<std::unique_ptr<Rule>, StatementState>> statements;
 // };
 
+// std::unique_ptr<Rule> temp = handleNameResolver();
+
+//     "configurations.rounds"
+
 class NameResolverRule : public Rule {
 public:
-    NameResolverRule(std::vector<std::string>& key) : search_keys(key) {}
+    NameResolverRule(std::vector<std::string> &key) : search_keys(key) {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
         if (search_keys.empty()) {
             std::cerr << "NameResolverRule called without arguments!" << std::endl;
         }
+        std::cout << "search_keys size: " << search_keys.size() << std::endl;
+
         isNested = search_keys.size() > 1;
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
+        if (search_keys.empty()) {
+            return DataValue( {DataValue::RuleStatus::DONE} );
+        }
+
         auto valueInTopScope = name_resolver.getValue(search_keys[0]);
         if (valueInTopScope == std::nullopt) {
             return DataValue("ERROR");
         }
-        
+
         if (isNested && valueInTopScope->getType() == "ORDERED_MAP") {
-            auto valueInMap = name_resolver.getNestedValue(search_keys);    
+            auto valueInMap = name_resolver.getNestedValue(search_keys);
             if (valueInMap == std::nullopt) {
                 return DataValue("ERROR");
             }
             result = *valueInMap;
-        } 
-        else {
+        } else {
             result = *valueInTopScope;
         }
 
@@ -354,7 +567,7 @@ private:
 
     // This vector has the individual components of the desired value in order,
     // separated by its periods (ie. configuration.setup -> ["configuration", "setup"]) )
-    std::vector<std::string>& search_keys;
+    std::vector<std::string> search_keys;
     bool isNested = false;
     DataValue result;
 };

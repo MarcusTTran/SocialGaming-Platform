@@ -9,6 +9,8 @@
 
 #include "optionsDisplay.h"
 
+#include "GameConfigEdit.h"
+#include "GameNameDisplayer.h"
 #include "GameParser.h"
 #include "LobbyManager.h"
 #include "Messenger.h"
@@ -31,20 +33,16 @@ std::vector<Connection> clients;
 // TODO: Tempory solution to allow the onConnect and onDisconnect to access the
 // server object. refactor at a later date.
 Server *server_ptr = nullptr;
-std::shared_ptr<Messenger> messenger;
 std::unique_ptr<LobbyManager> lobbyManager;
+std::shared_ptr<Messenger> messenger;
+std::unique_ptr<GameSetupManager> gameSetupManager;
 
 void onConnect(Connection c) {
     std::cout << "New connection found: " << c.id << "\n";
     clients.push_back(c);
 
     // Send options to the connected client
-    std::string welcomeMessage =
-        "Welcome! Type 'create' to start a new game or "
-        "'join' followed by the code of the game you would like to join to join an existing game.";
-    std::deque<Message> outgoing;
-    outgoing.push_back({c, welcomeMessage});
-    server_ptr->send(outgoing); // Sending the message to the newly connected client
+    messenger->sendToConnection(lobbyManager->generateWelcomeMessage(), c);
 }
 
 void onDisconnect(Connection c) {
@@ -58,40 +56,49 @@ struct MessageResult {
     bool shouldShutdown;
 };
 
+std::vector<GameCreators> listOfGameCreators;
+
 MessageResult processMessages(Server &server, const std::deque<Message> &incoming) {
     std::ostringstream result;
     bool quit = false;
-    for (const auto &message : incoming) {
-        const auto &text = message.text;
+    for (auto &message : incoming) {
+        auto &text = message.text;
         const auto &connection = message.connection;
 
-        if (lobbyManager->isAwaitingDisplayName(connection)) { // Check if connection is awaiting display name
-            std::string displayName = text;
-            lobbyManager->addPlayerToLobbyWithDisplayName(connection, displayName);
-        } else if (text == "create") {
+        try {
+            if (gameSetupManager->isGameCreator(connection)) {
+                gameSetupManager->handleSetupMessage(connection, text);
+            } else if (lobbyManager->isInLobby(connection) || lobbyManager->isLobbyCreator(connection)) {
+                lobbyManager->routeMessage(connection, text);
+            } else if (lobbyManager->isAwaitingDisplayName(connection)) {
+                std::string displayName = text;
+                lobbyManager->addPlayerToLobbyWithDisplayName(connection, displayName);
+            } else if (stoi(text) == 1 && !lobbyManager->isWaitingForLobbyCode(connection)) {
 
-            // TODO: This is a temporary solution to create a game. This will be replaced with a user
-            // selected game with a game configuration file.
+                messenger->sendToConnection(
+                    "Please select the a game you would like to create by entering its number \n", connection);
+                messenger->sendToConnection(gameNameDisplayer(), connection);
 
-            const std::string gameConfigFile = "../config/minimal.game";
-            ParsedGameData gameData(gameConfigFile, messenger);
-            std::cout << "Game name: " << gameData.getGameName() << "\n";
-            // std::cout << "Num rules: " << gameData.getRules().size() << "\n";
-            std::unique_ptr<Game> game = std::make_unique<Game>(gameData, gameData.getGameName());
-            lobbyManager->createLobby(std::move(game), connection);
-        } else if (text.find("join") == 0) {
-            if (text.length() <= 5) {
-                std::string errorMessage = "Lobby code is missing. Please provide a valid lobby code.";
-                std::deque<Message> outgoing;
-                outgoing.push_back({connection, errorMessage});
-                server.send(outgoing);
-            } else {
-                std::string lobbyCode = text.substr(5);
-                lobbyManager->addPlayerToLobby(lobbyCode, connection);
+                gameSetupManager->addGameCreator(connection);
+            } else if (stoi(text) == 2) {
+                messenger->sendToConnection("Enter the lobby code: ", connection);
+                lobbyManager->addConnectionWaitingForLobbyCode(connection);
+            } else if (lobbyManager->isWaitingForLobbyCode(connection)) {
+
+                // Remove whitespace from the lobby code and check if it is valid
+                std::string strippedText = text;
+                strippedText.erase(std::remove_if(strippedText.begin(), strippedText.end(), ::isspace),
+                                   strippedText.end());
+                if (lobbyManager->isLobbyCodeValid(strippedText)) {
+                    lobbyManager->addPlayerToLobby(strippedText, connection);
+                } else {
+                    messenger->sendToConnection("Invalid lobby code. Please try again.", connection);
+                }
             }
-        } else {
-            std::cout << "Routing message to lobby manager\n";
-            lobbyManager->routeMessage(connection, text);
+        } catch (const std::invalid_argument &e) {
+            messenger->sendToConnection("Invalid input. Please enter a valid number.", connection);
+        } catch (const std::out_of_range &e) {
+            messenger->sendToConnection("Input number is out of range. Please enter a valid number.", connection);
         }
     }
 
@@ -128,6 +135,7 @@ int main(int argc, char *argv[]) {
     server_ptr = &server;
     messenger = std::make_shared<Messenger>(server);
     lobbyManager = std::make_unique<LobbyManager>(messenger);
+    gameSetupManager = std::make_unique<GameSetupManager>(messenger, lobbyManager.get());
 
     while (true) {
         bool errorWhileUpdating = false;
@@ -148,11 +156,7 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        // TODO: need to loop through each lobby and update the game state
-
-        for (const auto &[lobbyCode, lobby] : lobbyManager->getLobbies()) {
-            lobby->update();
-        }
+        lobbyManager->updateLobbies();
 
         sleep(1);
     }

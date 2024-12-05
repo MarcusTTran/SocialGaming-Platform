@@ -1,6 +1,6 @@
 // Minimal game that tests a for loop
 configuration {
-  name: "minimal"
+  name: "minimalFOR"
   player range: (1, 20)
   audience: false
   setup: {}
@@ -11,6 +11,6 @@ per-player {}
 per-audience {}
 rules {
     for player in players {
-        message [player] "Hi\n";
+      message player "Hi\n";
     }
 }

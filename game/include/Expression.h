@@ -27,18 +27,20 @@
 
 class ListSizeRule : public Rule {
 public:
-    ListSizeRule(std::unique_ptr<Rule> operand_maker_rule)
-        : operand_maker{std::move(operand_maker_rule)}  {}
+    ListSizeRule(std::unique_ptr<Rule> list_maker)
+        : list_maker{std::move(list_maker)}  {}
     
 private: 
     void _handle_dependencies(NameResolver &name_resolver){
-        operand = operand_maker->runBurst(name_resolver);
+        list = list_maker->runBurst(name_resolver);
     }    
-    DataValue _runBurst(NameResolver &name_resolver){}
+    DataValue _runBurst(NameResolver &name_resolver){
+        size_t size = list.asList().size();
+        return DataValue(static_cast<int>(size));
+    }
     
-    std::unique_ptr<Rule> operand_maker; 
-    DataValue operand; // will be a list
-    DataValue result;
+    std::unique_ptr<Rule> list_maker; 
+    DataValue list; 
 };
 
 
@@ -49,17 +51,17 @@ private:
 // takes 1) a list of maps map before the keyword ".elements." and 2) a string key after           
 //      -> returns a flat list containing the values within those maps 
 // INVARIANT: left operand is a Rule that MUST evaluate to a list of maps
-class ElementsRule : public Rule {
-public:
-    ElementsRule(std::unique_ptr<Rule> list_of_maps_rule, std::string key)
-        : list_of_maps{std::move(list_of_maps_rule)}, search_key(key) {}
+// class ElementsRule : public Rule {
+// public:
+//     ElementsRule(std::unique_ptr<Rule> list_of_maps_rule, std::string key)
+//         : list_of_maps{std::move(list_of_maps_rule)}, search_key(key) {}
 
-private:
-    void _handle_dependencies(NameResolver &name_resolver) {}
-    DataValue _runBurst(NameResolver &name_resolver) {}
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) {}
+//     DataValue _runBurst(NameResolver &name_resolver) {}
 
-    std::unique_ptr<Rule> list_of_maps; // NameResolver rule?
-    std::string search_key;
-    DataValue result; // DataValue::Type::LIST
-};
+//     std::unique_ptr<Rule> list_of_maps; // NameResolver rule?
+//     std::string search_key;
+//     DataValue result; // DataValue::Type::LIST
+// };
 

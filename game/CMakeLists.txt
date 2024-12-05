@@ -44,9 +44,9 @@ set_target_properties(game_parser PROPERTIES
 
 # Specify the source files for the main executable
 set(MAIN_SOURCES
-    ${GAME_SRC_DIR}/main.cpp
+    # ${GAME_SRC_DIR}/main.cpp
     ${GAME_SRC_DIR}/GameParser.cpp
-    #${GAME_SRC_DIR}/testOPmain.cpp
+    ${GAME_SRC_DIR}/testOPmain.cpp
 )
 
 # Main executable
