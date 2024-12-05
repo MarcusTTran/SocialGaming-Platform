@@ -110,10 +110,10 @@ void Lobby::update() {
 }
 
 DataValue Lobby::getPlayersMap() {
-    DataValue::OrderedMapType playersMap;
+    std::vector<DataValue> playersMap;
 
     for (auto &player : players) {
-        playersMap.emplace(player.getDisplayName(), player.getMap(true));
+        playersMap.push_back(DataValue(player.getMap(true)));
     }
     return DataValue(playersMap);
 }

@@ -19,9 +19,6 @@
 #include <string>
 #include <variant>
 #include <vector>
-#include "Messenger.h"
-#include <memory>
-
 
 /*
     This is game parser class, which is responsible for parsing data from txt input file
@@ -33,8 +30,7 @@ using std::pair;
 using std::string;
 using std::vector;
 
-class ParsedGameData
-{
+class ParsedGameData {
 public:
     ParsedGameData(const string &configFileContent, std::shared_ptr<IServer> server);
 
@@ -84,7 +80,7 @@ private:
     void parsePerPlayerSection(const ts::Node &, const string &);
     void parsePerAudienceSection(const ts::Node &, const string &);
     void DFS(const ts::Node &node, const string &source, std::vector<std::string> &str);
-    void handleForRule(const ts::Node &node, const string &source);
+    std::unique_ptr<Rule> handleForRule(const ts::Node &node, const string &source);
     std::unique_ptr<Rule> handleMessageSection(const ts::Node &node, const string &source);
     void traverseHelper(const ts::Node &node, const string &source, 
     std::vector<std::unique_ptr<Rule>> &checkCondition, 
