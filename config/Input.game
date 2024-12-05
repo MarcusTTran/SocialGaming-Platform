@@ -49,14 +49,14 @@ rules {
    
 
     
-    for player in players {
-      input choice to player {
-        prompt: "{player.name}, choose your weapon!"
+  
+      input choice to all {
+        prompt: "choose your weapon!"
         choices: weapons.elements.name
-        target: player.weapon
+        target: weapon
         timeout: 10
       }
-    }
+    
     
  
 

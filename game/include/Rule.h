@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 // Example variables state
@@ -183,11 +184,11 @@ private:
 
 class SimpleInputRule : public Rule {
 public:
-    SimpleInputRule(std::shared_ptr<IServer> server) : messager(server) {}
+    SimpleInputRule(std::shared_ptr<IServer> server, const std::string_view &target_key, const std::string_view &prompt)
+        : messager(server), target_key(target_key), prompt(prompt) {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
-        // get the first player and send a message
         auto players = name_resolver.getValue("players").value().asList();
 
         if (players.empty()) {
@@ -208,7 +209,7 @@ private:
 
         for (const DataValue &connection_id : pending_connections_value) {
             networking::Connection connection{std::stoul(connection_id.asString())};
-            messager->sendToConnection("Please enter a message", connection);
+            messager->sendToConnection(formatChoicesMessage(), connection);
         }
 
         std::cout << "sent message" << std::endl;
@@ -257,18 +258,55 @@ private:
         }
 
         // Check if any of the pending connections have a message
+        std::vector<DataValue> connections_to_remove;
+        std::vector<networking::Connection> connections_to_prompt_again;
 
         for (const DataValue &connection_id : pending_connections_value) {
             networking::Connection connection{std::stoul(connection_id.asString())};
 
             auto message = incoming_messages_value.find(connection_id.asString());
             if (message != incoming_messages_value.end()) {
-                // Remove the connection from the pending connections
-                messager->sendToConnection("Thank you for your message" + message->second.asString(), connection);
-                pending_connections_value.erase(
-                    std::remove(pending_connections_value.begin(), pending_connections_value.end(), connection_id),
-                    pending_connections_value.end());
+                // Find the player map corresponding to the connection
+                auto players = name_resolver.getValue("players").value().asList();
+                for (auto &player : players) {
+                    auto &player_map = const_cast<DataValue::OrderedMapType &>(player.asOrderedMap());
+                    if (player_map["connection"].asConnection().id == connection.id) {
+
+                        // verify the message;
+                        if (!verifyMessage(message->second.asString())) {
+                            connections_to_prompt_again.push_back(connection);
+                            break;
+                        }
+
+                        // Set the value in the player map for the specified key
+                        player_map[target_key] = message->second;
+
+                        // print out updated player map
+                        std::cout << "Updated player map" << std::endl;
+                        for (const auto &[key, value] : player_map) {
+                            std::cout << key << " " << value << std::endl;
+                        }
+
+                        // Remove the connection from the pending connections
+                        messager->sendToConnection("You chose " + message->second.asString(), connection);
+                        connections_to_remove.push_back(connection_id);
+                        break;
+                    }
+                }
             }
+        }
+
+        // Remove the collected connections from the pending connections list
+        for (const DataValue &connection_id : connections_to_remove) {
+            pending_connections_value.erase(
+                std::remove(pending_connections_value.begin(), pending_connections_value.end(), connection_id),
+                pending_connections_value.end());
+        }
+
+        // Send prompt messages to connections with invalid choices
+        for (const networking::Connection &connection : connections_to_prompt_again) {
+            messager->sendToConnection("Invalid choice, please try again", connection);
+            messager->sendToConnection(formatChoicesMessage(), connection);
         }
 
         // Update the pending connections in the global map
@@ -280,8 +318,25 @@ private:
 
         return DataValue({DataValue::RuleStatus::NOTDONE});
     }
+
+    bool verifyMessage(const std::string &message) {
+        std::string to_lower_message = message;
+        std::transform(to_lower_message.begin(), to_lower_message.end(), to_lower_message.begin(), ::tolower);
+
+        return std::find(choices.begin(), choices.end(), message) != choices.end();
+    }
+
+    std::string formatChoicesMessage() {
+        std::string message = prompt + "\n";
+        for (const auto &choice : choices) {
+            message += choice + "\n";
+        }
+        return message;
+    }
     std::shared_ptr<IServer> messager;
-    DataValue::OrderedMapType player;
+    std::string target_key;
+    std::string prompt;
+    std::vector<std::string> choices = {"rock", "paper", "scissors"};
 };
 
 class AllPlayersRule : public Rule {

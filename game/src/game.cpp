@@ -44,15 +44,15 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
 Game::Game(const std::string &gameName, std::shared_ptr<IServer> server)
     : gameName(gameName), globalMap(std::make_shared<NameResolver>()) {
 
-    // Add a simple input rule to the game
-    std::unique_ptr<Rule> rule = std::make_unique<SimpleInputRule>(server);
-    std::unique_ptr<AllPlayersRule> allPlayersRule = std::make_unique<AllPlayersRule>();
-    std::unique_ptr<StringRule> simpleStringRule = std::make_unique<StringRule>("Hello, World!");
-    std::unique_ptr<Rule> rule2 =
-        std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(simpleStringRule));
-    rules.push_back(std::move(rule));
-    rules.push_back(std::move(rule2));
-    currentRule = rules.begin();
+    // // Add a simple input rule to the game
+    // std::unique_ptr<Rule> rule = std::make_unique<SimpleInputRule>(server);
+    // std::unique_ptr<AllPlayersRule> allPlayersRule = std::make_unique<AllPlayersRule>();
+    // std::unique_ptr<StringRule> simpleStringRule = std::make_unique<StringRule>("Hello, World!");
+    // std::unique_ptr<Rule> rule2 =
+    //     std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(simpleStringRule));
+    // rules.push_back(std::move(rule));
+    // rules.push_back(std::move(rule2));
+    // currentRule = rules.begin();
 }
 
 std::string Game::getGameName() const { return gameName; }
@@ -101,11 +101,7 @@ void Game::startGame(const DataValue &players) {
 void Game::insertIncomingMessages(const std::deque<networking::Message> &incomingMessages) {
 
     static int callCount = 0;
-    DataValue::OrderedMapType incomingMessagesMap;
-
-    if (incomingMessages.empty()) {
-        return;
-    }
+    DataValue::OrderedMapType incomingMessagesMap = {};
 
     if (callCount == 0) {
         std::string key = "incoming_messages";

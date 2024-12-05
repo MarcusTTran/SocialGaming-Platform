@@ -29,6 +29,7 @@ void Lobby::addPlayer(Player &player) {
     sendWelcomeMessage(player);
 
     player.addPerVariableMap(game->getPerPlayerMap(), true);
+    std::cout << "Per player map size : " << game->getPerPlayerMap().size() << std::endl;
 
     // print out per player map
     auto playerMap = player.getMap(true);

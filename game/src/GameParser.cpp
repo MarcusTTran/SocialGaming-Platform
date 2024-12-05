@@ -619,11 +619,14 @@ std::unique_ptr<Rule> ParsedGameData::handelInputChoice(const ts::Node &node, co
     std::vector<std::unique_ptr<Rule>> nameResolvers;
     nameResolvers.emplace_back(std::move(nameResolver));
 
+    std::vector<std::string> recipientList{"player"};
+    auto playerRule = std::make_unique<NameResolverRule>(recipientList);
+
     // TODO: as messageRule, need stringRule to accept one more vec or nameResolver
     // auto stringRule = std::make_unique<StringRule>(promptStr, std::move(nameResolvers));
     // auto messageRule = std::make_unique<MessageRule>(server, std::make_unique<AllPlayersRule>(),
     // std::move(stringRule)); return messageRule;
-    auto simpleInputRule = std::make_unique<SimpleInputRule>(server);
+    auto simpleInputRule = std::make_unique<SimpleInputRule>(server, target, promptStr);
     return simpleInputRule;
     // TODO: the following logic needs to fit in rule.h implemetation design
 }
