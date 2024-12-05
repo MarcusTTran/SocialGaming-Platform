@@ -96,6 +96,25 @@ public:
 
     const ValueType &getValue() const { return value; }
 
+    //Check if two datavalues are the same
+    bool checkIfMatch(const DataValue& val){
+        if(this->getType() == val.getType()){
+            if(this->getType() == "STRING"){
+                return this->asString() == val.asString();
+            }
+            else if (this->getType() == "BOOLEAN"){
+                return this->asBoolean() == val.asBoolean();
+            }
+            else if (this->getType() == "NUMBER"){
+                return this->asNumber() == val.asNumber();
+            }
+            else{
+                std::cout<<"Unhandled type (not string, boolean or number)."<<std::endl;
+            }
+        }
+        return false;
+    }
+
     // Get the type of value as a string
     std::string getType() const {
         if (std::holds_alternative<std::string>(value))
@@ -106,9 +125,9 @@ public:
             return "BOOLEAN";
         if (std::holds_alternative<std::vector<DataValue>>(value))
             return "LIST";
-        if (std::holds_alternative<EnumDescriptionType>(value)) // Updated condition
+        if (std::holds_alternative<EnumDescriptionType>(value)) // Updated this
             return "ENUM_DESCRIPTION";
-        if (std::holds_alternative<OrderedMapType>(value)) // Updated condition
+        if (std::holds_alternative<OrderedMapType>(value)) // Updated this
             return "ORDERED_MAP";
         if (std::holds_alternative<std::pair<int, int>>(value))
             return "RANGE";
