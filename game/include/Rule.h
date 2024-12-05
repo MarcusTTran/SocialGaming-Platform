@@ -10,6 +10,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 
 // Example variables state
 // vector([
@@ -99,18 +100,66 @@ private:
     const bool boolean;
 };
 
-class StringRule : public Rule {
+// Note: strings are parsed to look like "{}, choose your weapon!", where the bracket used to have
+//       "player.name" inside it. NameResolver will replace these brackets.
+class StringRule : public Rule
+{
 public:
-    StringRule(std::string_view string_literal) : string(string_literal) {}
+    StringRule(std::string_view string_literal, std::optional< std::vector<std::unique_ptr<Rule>> > nameResolverRules = std::nullopt) 
+        : string(string_literal) {
+            if (nameResolverRules.has_value()) {
+                if (nameResolverRules.value().size() > 0) {
+                    fresh_variables_maker = std::move(nameResolverRules.value());
+                    has_fresh_variables = true;
+                } else {
+                    has_fresh_variables = false;
+                }
+            }
+            else {
+                has_fresh_variables = false;
+            }
+        }
 
 private:
-    void _handle_dependencies(NameResolver &name_resolver) override {
-        // TODO: handle strings with {} braces
+    void _handle_dependencies(NameResolver &name_resolver) override
+    {
+        // Create NameResolverRules for each fresh variable and add them to found_names in order
+        for (const auto& nameMaker : fresh_variables_maker) {
+            DataValue found_name = nameMaker->runBurst(name_resolver);
+            
+            if (found_name.getType() == "STRING") {
+                found_names.push_back(found_name.asString());
+            } else if (found_name.getType() == "NUMBER") {
+                found_names.push_back(std::to_string(found_name.asNumber()));
+            } else {
+                // Not number or string so it is an error
+                std::cerr << "Error: found name inside StringRule was not a string or int!" << std::endl;
+            }
+        }
     }
 
-    DataValue _runBurst(NameResolver &name_resolver) override { return DataValue(string); }
+    DataValue _runBurst(NameResolver &name_resolver) override { 
+        if (!has_fresh_variables) {
+            return DataValue(string);
+        }
 
+        for (const std::string& name : found_names) {
+            size_t openBracketPos = name.find('{');
+            size_t closeBracketPos = name.find('}');
+            if (openBracketPos == std::string::npos || closeBracketPos == std::string::npos) {
+                return DataValue(DataValue::RuleStatus::ERROR);
+            }
+            string.replace(openBracketPos, closeBracketPos - openBracketPos + 1, name);
+        }
+        
+        return DataValue(string); 
+    }
+
+
+    std::vector<std::unique_ptr<Rule>> fresh_variables_maker; // Holding fresh variables in brackets
+    std::vector<std::string> found_names; // Names that will replace the brackets
     std::string string;
+    bool has_fresh_variables = false;
 };
 
 class SimpleTimerRule : public Rule {
@@ -361,41 +410,46 @@ private:
 
 // - Takes in an integer that represents how many elements we remove from the list
 // - Start removal from the last element in the list
-// POSTCONDITION: If integer expression <= 0 or list is of incorrect type or empty, return -1.
+// PRECONDITION: list_maker MUST return a list, other data structures like maps are not allowed.
+//               integer expression must be <= list size and > 0.
+// POSTCONDITION: If integer expression <= 0 or > list size, or list is of incorrect type or empty, return -1.
 //                Otherwise, return 1.
-// class discardRule : public Rule {
-// public:
-//     discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker)
-//         : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
+class DiscardRule : public Rule {
+public:
+    DiscardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
+        : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
+    
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
+        listToDiscard = list_maker->runBurst(name_resolver).asList();
+    }
 
-// private:
-//     void _handle_dependencies(NameResolver &name_resolver) override {
-//         integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
-//         listToDiscard = list_maker->runBurst(name_resolver);
-//     }
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // Check certain invariants for this functions
+        bool listIsIncorrectType = listToDiscard.getType() != "LIST";
+        bool numGreaterThanSize = integerExpression > listToDiscard.asList().size(); 
+       
+        // Ensure that list is correct type and not empty
+        if (listIsIncorrectType || listToDiscard.asList().empty() || numGreaterThanSize) {
+            return DataValue(DataValue::RuleStatus::ERROR);
+        } 
+    
+        // auto& list = listToDiscard.asList();
+        auto& list = const_cast<std::vector<DataValue>&>(listToDiscard.asList());
+        for (size_t i = 0; i < integerExpression; ++i) {
+            list.pop_back();
+        }
+        
+        return DataValue(DataValue::RuleStatus::DONE);
+    }
 
-//     DataValue _runBurst(NameResolver &name_resolver) override {
-//         // Check certain invariants for this functions
-//         bool listIsIncorrectType = listToDiscard.getType() != DataValue::Type::LIST;
+    std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
+    std::unique_ptr<Rule> list_maker;   // NameResolverRule
+    int integerExpression; 
+    DataValue listToDiscard;
+};
 
-//         bool listIsEmpty = true;
-//         if (!listIsIncorrectType) {
-//             listIsEmpty = listToDiscard.asList().empty();
-//         } else { // List was incorrect type
-//             return DataValue({-1});
-//         }
-
-//         if (integerExpression <= 0 ) {
-//             return DataValue({1});
-//         }
-
-//     }
-
-//     std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
-//     std::unique_ptr<Rule> list_maker;   // NameResolverRule
-//     int integerExpression;
-//     DataValue listToDiscard;
-// };
 
 class UpfromRule : public Rule {
 public:
@@ -470,6 +524,10 @@ private:
 //     std::vector<std::pair<std::unique_ptr<Rule>, StatementState>> statements;
 // };
 
+// std::unique_ptr<Rule> temp = handleNameResolver();
+
+//     "configurations.rounds"
+
 class NameResolverRule : public Rule {
 public:
     NameResolverRule(std::vector<std::string> &key) : search_keys(key) {}
@@ -485,6 +543,10 @@ private:
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
+        if (search_keys.empty()) {
+            return DataValue( {DataValue::RuleStatus::DONE} );
+        }
+
         auto valueInTopScope = name_resolver.getValue(search_keys[0]);
         if (valueInTopScope == std::nullopt) {
             return DataValue("ERROR");
@@ -509,79 +571,29 @@ private:
     bool isNested = false;
     DataValue result;
 };
-/*
-    match !players.elements.weapon.contains(weapon.name) {
-        true => {
-            extend winners with players.elements.collect(player, player.weapon = weapon.beats);
-        }
-    }
-*/
-class MatchRule : public Rule{
-  MatchRule(std::unique_ptr<Rule> condition_maker, std::vector<std::unique_ptr<Rule>> check_condition, 
-  std::vector<std::unique_ptr<Rule>> scoped_rules)
-  : condition_maker{std::move(condition_maker)}, check_condition{std::move(check_condition)}, 
-  scoped_rules{std::move(scoped_rules)} {assert(check_condition.size() == scoped_rules.size() 
-  && "check conditions and amount of rules are not equal! (MatchRule)");} //each set of rules must have a condition
 
-  private:
-    void _handle_dependencies(NameResolver &name_resolver) override {
-        //TRUE or FALSE its this part match !players.elements.weapon.contains(weapon.name)
-        condition = condition_maker->runBurst(name_resolver);
-        //since check_condition and scope_rules are same size and we need to access the same index for both vector,
-        // we can use an integer instead for the iterator
-        it = 0;
-    }
+// class ContainsRule : public Rule {
+// public:
+//     ContainsRule(std::unique_ptr<Rule> list_maker, std::vector<std::string>& search_keys)
+//         : list_maker{std::move(list_maker)}, search_keys(search_keys) {}
+    
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) override {
+//         list = list_maker->runBurst(name_resolver);
+//     }
 
-    bool checkIfMatch(const DataValue& condition, const DataValue& check){
-        if(condition.getType() == check.getType()){
-            if(condition.getType() == "STRING"){
-                return condition.asString() == check.asString();
-            }
-            else if (condition.getType() == "BOOLEAN"){
-                return condition.asBoolean() == check.asBoolean();
-            }
-            else if (condition.getType() == "NUMBER"){
-                return condition.asNumber() == check.asNumber();
-            }
-            else{
-                std::cout<<"Unhandled type in MatchRule (Not string, boolean or number)."<<std::endl;
-            }
-        }
-        return false;
-    }
+//     DataValue _runBurst(NameResolver &name_resolver) override {
+//         if (list.getType() != "LIST") {
+//             return DataValue("ERROR");
+//         } 
 
-    DataValue _runBurst(NameResolver &name_resolver) override {
-        /* 
-            go through all of the different statements and check if they match the condition we evaluated earlier
-            true => {
-                extend winners with players.elements.collect(player, player.weapon = weapon.beats);\
-            }
-        */ 
-        while(it < check_condition.size()){
-            //this would be this part: true =>, but can also be a more sophisticated rule in the future (currently just boolean, string or number)
-            // and will need error checking to see if the rule is done or not
-            check = (*check_condition[it]).runBurst(name_resolver);
-            //check if they are same type and can be evaluated
-            if(checkIfMatch(condition, check)){
-                //scoped_rules list (may contain multiple rules such as in the example)
-                //extend winners with players.elements.collect(player, player.weapon = weapon.beats);
-                //they are same type and are equal then we can run the rules since we found a match
-                DataValue returnValue = (*scoped_rules[it]).runBurst(name_resolver);
-                if (!returnValue.isCompleted()){
-                    //return not done and then have this be recalled later since the iterator will stay the same we can instantly return back to where we were
-                    return DataValue(DataValue::RuleStatus::NOTDONE);
-                }
-            }
-            //iterate through to the next group of statements to check
-            it++;
-        }
-        return DataValue(DataValue::RuleStatus::DONE);
-    }
+//         auto& list_elements = list.asList();
+//         it auto std::find(list_elements.begin(), list_elements.end(), 
+        
+//     }
 
-    int it;
-    DataValue condition;
-    DataValue check;
-    std::unique_ptr<Rule> condition_maker;
-    std::vector<std::unique_ptr<Rule>> check_condition;
-    std::vector<std::unique_ptr<Rule>> scoped_rules;
-};
+//     std::unique_ptr<Rule> list_maker; // ElementsRule (returns a vector<DataValue>)
+//     std::vector<std::string>& search_keys;
+//     DataValue list;
+// };
+

@@ -11,6 +11,7 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     std::cout << "Rules size: " << rules.size() << std::endl;
 
     // Populate the global map with other API variables held in Game object
+    globalMap->addInnerScope();
     addObjectToGlobalMap("constants", DataValue(constants.getConstants()), *globalMap);
     addObjectToGlobalMap("variables", DataValue(variables.getVariables()), *globalMap);
     // addObjectToGlobalMap("rules", DataValue(rules), *globalMap);

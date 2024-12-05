@@ -63,7 +63,13 @@ public:
         std::vector<std::string> nestedKeys(search_keys);
         nestedKeys.erase(search_keys.begin());
         const auto& result = findInMap(valueInTopScope->asOrderedMap(), search_keys);
+        return result;
     }
+
+    // std::optional<DataValue> findInList(const std::vector<DataValue>& list, const std::vector<std::string>& search_keys) {
+        
+    //     // TODO: impl this for contains rule
+    // }
 
 private:
     // INVARIANT: key-value pair cannot be contained in any nested structure that is a list. 
@@ -90,6 +96,7 @@ private:
 
         // Should not reach this point!
         std::cerr << "Reach end of non-void function in findInMap()." << std::endl;
+        return std::nullopt;
     }
 
 
