@@ -108,9 +108,14 @@ public:
     StringRule(std::string_view string_literal, std::optional< std::vector<std::unique_ptr<Rule>> > nameResolverRules = std::nullopt) 
         : string(string_literal) {
             if (nameResolverRules.has_value()) {
-                fresh_variables_maker = std::move(nameResolverRules.value());
-                has_fresh_variables = true;
-            } else {
+                if (nameResolverRules.value().size() > 0) {
+                    fresh_variables_maker = std::move(nameResolverRules.value());
+                    has_fresh_variables = true;
+                } else {
+                    has_fresh_variables = false;
+                }
+            }
+            else {
                 has_fresh_variables = false;
             }
         }
@@ -121,7 +126,15 @@ private:
         // Create NameResolverRules for each fresh variable and add them to found_names in order
         for (const auto& nameMaker : fresh_variables_maker) {
             DataValue found_name = nameMaker->runBurst(name_resolver);
-            found_names.push_back(found_name.asString());
+            
+            if (found_name.getType() == "STRING") {
+                found_names.push_back(found_name.asString());
+            } else if (found_name.getType() == "NUMBER") {
+                found_names.push_back(std::to_string(found_name.asNumber()));
+            } else {
+                // Not number or string so it is an error
+                std::cerr << "Error: found name inside StringRule was not a string or int!" << std::endl;
+            }
         }
     }
 
