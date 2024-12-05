@@ -365,40 +365,41 @@ private:
 //               integer expression must be <= list size and > 0.
 // POSTCONDITION: If integer expression <= 0 or > list size, or list is of incorrect type or empty, return -1.
 //                Otherwise, return 1.
-// class discardRule : public Rule {
-// public:
-//     discardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
-//         : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
+class DiscardRule : public Rule {
+public:
+    DiscardRule(std::unique_ptr<Rule> integer_expr_maker, std::unique_ptr<Rule> list_maker) 
+        : integer_expr_maker{std::move(integer_expr_maker)}, list_maker{std::move(list_maker)} {}
     
-// private:
-//     void _handle_dependencies(NameResolver &name_resolver) override {
-//         integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
-//         listToDiscard = list_maker->runBurst(name_resolver);
-//     }
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        integerExpression = integer_expr_maker->runBurst(name_resolver).asNumber();
+        listToDiscard = list_maker->runBurst(name_resolver).asList();
+    }
 
-//     DataValue _runBurst(NameResolver &name_resolver) override {
-//         // Check certain invariants for this functions
-//         bool listIsIncorrectType = listToDiscard.getType() != DataValue::Type::LIST;
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // Check certain invariants for this functions
+        bool listIsIncorrectType = listToDiscard.getType() != "LIST";
+        bool numGreaterThanSize = integerExpression > listToDiscard.asList().size(); 
        
-//         bool listIsEmpty = true;
-//         if (!listIsIncorrectType) {
-//             listIsEmpty = listToDiscard.asList().empty();
-//         } else { // List was incorrect type 
-//             return DataValue({-1});
-//         }
+        // Ensure that list is correct type and not empty
+        if (listIsIncorrectType || listToDiscard.asList().empty() || numGreaterThanSize) {
+            return DataValue(DataValue::RuleStatus::ERROR);
+        } 
+    
+        // auto& list = listToDiscard.asList();
+        auto& list = const_cast<std::vector<DataValue>&>(listToDiscard.asList());
+        for (size_t i = 0; i < integerExpression; ++i) {
+            list.pop_back();
+        }
+        
+        return DataValue(DataValue::RuleStatus::DONE);
+    }
 
-//         if (integerExpression <= 0 ) {
-//             return DataValue({1});
-//         }
-
-
-//     }
-
-//     std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
-//     std::unique_ptr<Rule> list_maker;   // NameResolverRule
-//     int integerExpression; 
-//     DataValue listToDiscard;
-// };
+    std::unique_ptr<Rule> integer_expr_maker; // Some sort of (integer) expression Rule
+    std::unique_ptr<Rule> list_maker;   // NameResolverRule
+    int integerExpression; 
+    DataValue listToDiscard;
+};
 
 
 class UpfromRule : public Rule {
