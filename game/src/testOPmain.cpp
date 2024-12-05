@@ -6,8 +6,8 @@
 #include "GameParser.h"
 #include "game.h"
 #include "GameNameDisplayer.h"
-int main()
-{
+// int main()
+// {
     // try
     // {
     //     // Test ConfigurationOptions
@@ -39,10 +39,10 @@ int main()
     //     std::cerr << "Error: " << e.what() << '\n';
     // }
 
-    std::cout << gameNameDisplayer();
-        for(auto i: getConfigMap()){
-            std::cout << "Key: " << i.first << " value: " << i.second << '\n';
-        }
+//     std::cout << gameNameDisplayer();
+//         for(auto i: getConfigMap()){
+//             std::cout << "Key: " << i.first << " value: " << i.second << '\n';
+//         }
 
-    return 0;
-}
+//     return 0;
+// }

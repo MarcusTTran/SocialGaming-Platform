@@ -509,3 +509,79 @@ private:
     bool isNested = false;
     DataValue result;
 };
+/*
+    match !players.elements.weapon.contains(weapon.name) {
+        true => {
+            extend winners with players.elements.collect(player, player.weapon = weapon.beats);
+        }
+    }
+*/
+class MatchRule : public Rule{
+  MatchRule(std::unique_ptr<Rule> condition_maker, std::vector<std::unique_ptr<Rule>> check_condition, 
+  std::vector<std::unique_ptr<Rule>> scoped_rules)
+  : condition_maker{std::move(condition_maker)}, check_condition{std::move(check_condition)}, 
+  scoped_rules{std::move(scoped_rules)} {assert(check_condition.size() == scoped_rules.size() 
+  && "check conditions and amount of rules are not equal! (MatchRule)");} //each set of rules must have a condition
+
+  private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        //TRUE or FALSE its this part match !players.elements.weapon.contains(weapon.name)
+        condition = condition_maker->runBurst(name_resolver);
+        //since check_condition and scope_rules are same size and we need to access the same index for both vector,
+        // we can use an integer instead for the iterator
+        it = 0;
+    }
+
+    bool checkIfMatch(const DataValue& condition, const DataValue& check){
+        if(condition.getType() == check.getType()){
+            if(condition.getType() == "STRING"){
+                return condition.asString() == check.asString();
+            }
+            else if (condition.getType() == "BOOLEAN"){
+                return condition.asBoolean() == check.asBoolean();
+            }
+            else if (condition.getType() == "NUMBER"){
+                return condition.asNumber() == check.asNumber();
+            }
+            else{
+                std::cout<<"Unhandled type in MatchRule (Not string, boolean or number)."<<std::endl;
+            }
+        }
+        return false;
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        /* 
+            go through all of the different statements and check if they match the condition we evaluated earlier
+            true => {
+                extend winners with players.elements.collect(player, player.weapon = weapon.beats);\
+            }
+        */ 
+        while(it < check_condition.size()){
+            //this would be this part: true =>, but can also be a more sophisticated rule in the future (currently just boolean, string or number)
+            // and will need error checking to see if the rule is done or not
+            check = (*check_condition[it]).runBurst(name_resolver);
+            //check if they are same type and can be evaluated
+            if(checkIfMatch(condition, check)){
+                //scoped_rules list (may contain multiple rules such as in the example)
+                //extend winners with players.elements.collect(player, player.weapon = weapon.beats);
+                //they are same type and are equal then we can run the rules since we found a match
+                DataValue returnValue = (*scoped_rules[it]).runBurst(name_resolver);
+                if (!returnValue.isCompleted()){
+                    //return not done and then have this be recalled later since the iterator will stay the same we can instantly return back to where we were
+                    return DataValue(DataValue::RuleStatus::NOTDONE);
+                }
+            }
+            //iterate through to the next group of statements to check
+            it++;
+        }
+        return DataValue(DataValue::RuleStatus::DONE);
+    }
+
+    int it;
+    DataValue condition;
+    DataValue check;
+    std::unique_ptr<Rule> condition_maker;
+    std::vector<std::unique_ptr<Rule>> check_condition;
+    std::vector<std::unique_ptr<Rule>> scoped_rules;
+};
