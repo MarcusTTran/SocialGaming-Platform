@@ -52,8 +52,8 @@ rules {
     parallel for player in players {
       input choice to player {
         prompt: "{player.name}, choose your weapon!"
-        choices: weapons.name
-        target: player.elements.weapon
+        choices: weapons.elements.name
+        target: player.weapon
         timeout: 10
       }
     }
