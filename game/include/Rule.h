@@ -571,29 +571,87 @@ private:
     bool isNested = false;
     DataValue result;
 };
+/*
+    match !players.elements.weapon.contains(weapon.name) {
+        true => {
+            extend winners with players.elements.collect(player, player.weapon = weapon.beats);
+        }
+    }
+*/
+class MatchRule : public Rule{
+  public:
+  MatchRule(std::unique_ptr<Rule> condition_maker, std::vector<std::unique_ptr<Rule>> check_condition, 
+  std::vector<std::unique_ptr<Rule>> scoped_rules)
+  : condition_maker{std::move(condition_maker)}, check_condition{std::move(check_condition)}, 
+  scoped_rules{std::move(scoped_rules)} {assert(check_condition.size() == scoped_rules.size() 
+  && "check conditions and amount of rules are not equal! (MatchRule)");} //each set of rules must have a condition
 
-// class ContainsRule : public Rule {
-// public:
-//     ContainsRule(std::unique_ptr<Rule> list_maker, std::vector<std::string>& search_keys)
-//         : list_maker{std::move(list_maker)}, search_keys(search_keys) {}
-    
-// private:
-//     void _handle_dependencies(NameResolver &name_resolver) override {
-//         list = list_maker->runBurst(name_resolver);
-//     }
+  private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        //its this part match !players.elements.weapon.contains(weapon.name)
+        condition = condition_maker->runBurst(name_resolver);
+        //since check_condition and scope_rules are same size and we need to access the same index for both vector,
+        // we can use an integer instead for the iterator
+        it = 0;
+    }
 
-//     DataValue _runBurst(NameResolver &name_resolver) override {
-//         if (list.getType() != "LIST") {
-//             return DataValue("ERROR");
-//         } 
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        /* 
+            go through all of the different statements and check if they match the condition we evaluated earlier
+            true => {
+                extend winners with players.elements.collect(player, player.weapon = weapon.beats);\
+            }
+        */ 
+        while(it < check_condition.size()){
+            //this would be this part: true =>, but can also be a more sophisticated rule in the future (currently just boolean, string or number)
+            // and will need error checking to see if the rule is done or not
+            check = (*check_condition[it]).runBurst(name_resolver);
+            //check if they are same type and can be evaluated
+            if(condition.checkIfMatch(check)){
+                //scoped_rules list (may contain multiple rules such as in the example)
+                //extend winners with players.elements.collect(player, player.weapon = weapon.beats);
+                //they are same type and are equal then we can run the rules since we found a match
+                DataValue returnValue = (*scoped_rules[it]).runBurst(name_resolver);
+                if (!returnValue.isCompleted()){
+                    //return not done and then have this be recalled later since the iterator will stay the same we can instantly return back to where we were
+                    return DataValue(DataValue::RuleStatus::NOTDONE);
+                }
+            }
+            //iterate through to the next group of statements to check
+            it++;
+        }
+        return DataValue(DataValue::RuleStatus::DONE);
+    }
 
-//         auto& list_elements = list.asList();
-//         it auto std::find(list_elements.begin(), list_elements.end(), 
-        
-//     }
+    int it;
+    DataValue condition;
+    DataValue check;
+    std::unique_ptr<Rule> condition_maker;
+    std::vector<std::unique_ptr<Rule>> check_condition;
+    std::vector<std::unique_ptr<Rule>> scoped_rules;
+};
 
-//     std::unique_ptr<Rule> list_maker; // ElementsRule (returns a vector<DataValue>)
-//     std::vector<std::string>& search_keys;
-//     DataValue list;
-// };
+//!players.elements.weapon.contains(weapon.name)
+class ContainsRule : public Rule{
+    public:
+    ContainsRule(std::vector<DataValue> item_list, DataValue item)
+    : item_list{std::move(item_list)}, item{std::move(item)} {} 
 
+  private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        current_item = item_list.begin();
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        while(current_item != item_list.end()){
+            if((*current_item).checkIfMatch(item)){
+                return DataValue(true);
+            }
+            current_item++;
+        }
+        return DataValue(false);
+    }
+    DataValue item;
+    std::vector<DataValue> item_list;
+    std::vector<DataValue>::iterator current_item;
+};
