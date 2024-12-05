@@ -5,7 +5,7 @@
 // Calls the constructors for the API objects and initializes the game name
 Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     : gameName(gameName), configuration(parserObject), constants(parserObject), variables(parserObject),
-      globalMap(std::make_shared<NameResolver>()) {
+      globalMap(std::make_shared<NameResolver>()), perPlayerMap(parserObject.getPerPlayer()) {
 
     rules = parserObject.moveRules();
     std::cout << "Rules size: " << rules.size() << std::endl;
@@ -100,26 +100,42 @@ void Game::startGame(const DataValue &players) {
 // Inserts incoming messages into the the NameResolver
 void Game::insertIncomingMessages(const std::deque<networking::Message> &incomingMessages) {
 
+    static int callCount = 0;
+    DataValue::OrderedMapType incomingMessagesMap;
+
     if (incomingMessages.empty()) {
         return;
     }
 
-    std::string key = "incoming_messages";
-    DataValue::OrderedMapType incomingMessagesMap;
+    if (callCount == 0) {
+        std::string key = "incoming_messages";
 
-    for (const auto &message : incomingMessages) {
-        std::string messageKey = std::to_string(message.connection.id);
-        incomingMessagesMap.emplace(messageKey, DataValue(message.text));
+        for (const auto &message : incomingMessages) {
+            std::string messageKey = std::to_string(message.connection.id);
+            incomingMessagesMap.emplace(messageKey, DataValue(message.text));
+        }
+
+        DataValue incomingMessagesValue(incomingMessagesMap);
+        globalMap->addToGlobalScope(key, incomingMessagesValue);
+        std::cout << "Incoming messages inserted into top level global map." << std::endl;
+    } else {
+        std::string key = "incoming_messages";
+
+        for (const auto &message : incomingMessages) {
+            std::string messageKey = std::to_string(message.connection.id);
+            incomingMessagesMap.emplace(messageKey, DataValue(message.text));
+        }
+
+        DataValue incomingMessagesValue(incomingMessagesMap);
+        globalMap->setValue(key, incomingMessagesValue);
+        std::cout << "Incoming messages updated in global map" << std::endl;
     }
-
-    DataValue incomingMessagesValue(incomingMessagesMap);
-    globalMap->addNewValue(key, incomingMessagesValue);
-
-    std::cout << "Incoming messages inserted into global map." << std::endl;
 
     for (const auto &[key, value] : incomingMessagesMap) {
         std::cout << "Key: " << key << " Value: " << value.asString() << std::endl;
     }
+
+    callCount++;
 }
 
 void Game::updateGame() {

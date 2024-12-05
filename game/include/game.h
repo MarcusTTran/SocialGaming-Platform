@@ -39,6 +39,7 @@ public:
     void insertIncomingMessages(const std::deque<networking::Message> &incomingMessages);
     void addObjectToGlobalMap(const std::string &key, const DataValue &value, NameResolver &globalMap);
     bool isGameDone() const { return isDone; }
+    DataValue::OrderedMapType getPerPlayerMap() const { return perPlayerMap; }
 
 private:
     std::shared_ptr<NameResolver> globalMap;
@@ -51,6 +52,7 @@ private:
     GameConstants constants;
     GameVariables variables;
     std::vector<std::unique_ptr<Rule>> rules;
+    DataValue::OrderedMapType perPlayerMap;
 
     std::vector<std::unique_ptr<Rule>>::iterator currentRule;
 };
