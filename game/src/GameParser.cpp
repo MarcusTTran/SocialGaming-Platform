@@ -481,23 +481,36 @@ std::unique_ptr<Rule> ParsedGameData::handleMessageSection(const ts::Node &node,
     auto playersKeyword = node.getChildByFieldName("players").getSourceRange(source); // Keyword indicating players
     auto content = node.getChildByFieldName("content").getSourceRange(source);        // Message content
     std::string contentStr = std::string(content);
-
+    // Fix formatting of quoted strings
     if (!contentStr.empty() && contentStr.front() == '"' && contentStr.back() == '"') {
         contentStr.erase(contentStr.begin());  
         contentStr.erase(contentStr.end() - 1); 
     }
 
-    std::vector<std::string> variables;
+    // 
+    std::unique_ptr<Rule> recipientRule = nullptr;
+    std::cout << "Players keyword: " << playersKeyword << std::endl;
+    if (playersKeyword == "all") {
+        recipientRule = std::make_unique<AllPlayersRule>();
+
+    } else if (playersKeyword == "player") {
+        std::cout << "THE RECIPIENT IS PLAYER" << std::endl;
+        std::vector<std::string> recipientList{"player"};
+
+        recipientRule = std::make_unique<NameResolverRule>(recipientList);
+    }
+
     // Process content and replace placeholders with {}
+    std::vector<std::string> variables;
     std::string updatedContent = extractAndReplacePlaceholders(contentStr, variables);
     std::unique_ptr<Rule> nameResolver = std::make_unique<NameResolverRule>(variables);
-    auto allPlayersRule = std::make_unique<AllPlayersRule>();
+    // auto allPlayersRule = std::make_unique<AllPlayersRule>();
     std::vector<std::unique_ptr<Rule>> nameResolvers;
     nameResolvers.emplace_back(std::move(nameResolver));
     // TODO: make StringRule to accept one more variables vector
     //       in this case, it will be std::make_unique<StringRule>(updatedContent, variables);
     auto stringRule = std::make_unique<StringRule>(updatedContent, std::move(nameResolvers));
-    auto messageRule = std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(stringRule));
+    auto messageRule = std::make_unique<MessageRule>(server, std::move(recipientRule), std::move(stringRule));
     return messageRule;
 }
 
