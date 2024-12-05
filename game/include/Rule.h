@@ -298,8 +298,44 @@ private:
     std::string message;
 };
 
-// for round in configuration.rounds.upfrom(1)
-// for round in configuration.rounds
+class ScopeRule : public Rule {
+public:
+    ScopeRule(std::vector<std::unique_ptr<Rule>> contents)
+        : statement_list{std::move(contents)} {}
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        current_statement = statement_list.begin();
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override
+    {
+        // Check for early return
+        if (statement_list.empty())
+        {
+            return DataValue({DataValue::RuleStatus::DONE});
+        }
+
+        // Run remaining statements
+        while (current_statement != statement_list.end())
+        {
+            auto rule_state = (*current_statement)->runBurst(name_resolver);
+            if (!rule_state.isCompleted())
+            {
+                return DataValue({DataValue::RuleStatus::NOTDONE});
+            }
+
+            // Move to the next statement
+            current_statement++;
+        }
+        // All statements complete
+        return DataValue({DataValue::RuleStatus::DONE});
+    }
+
+    std::vector<std::unique_ptr<Rule>> statement_list;
+    std::vector<std::unique_ptr<Rule>>::iterator current_statement;
+};
+
 class ForRule : public Rule {
 public:
     ForRule(std::string fresh_variable_name, std::unique_ptr<Rule> list_maker,
