@@ -1,7 +1,7 @@
 // These are examples of core properties of a game that might be
 // configured when setting up an instance or lobby for a game.
 configuration {
-  name: "Rock, Paper, Scissors"
+  name: "InputGame"
   player range: (2, 4)
   audience: false
   setup: {
