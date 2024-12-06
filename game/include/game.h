@@ -27,7 +27,7 @@ class Game {
 public:
     // For compilation purposes (remove later)
 
-    Game(ParsedGameData &parserObject, const std::string &gameName);
+    Game(std::shared_ptr<ParsedGameData>  parserObject, const std::string &gameName,GameConfiguration& );
     Game(const std::string &gameName, std::shared_ptr<IServer> server);
     ~Game() = default;
 

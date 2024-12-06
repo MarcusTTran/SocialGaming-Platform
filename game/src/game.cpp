@@ -3,11 +3,11 @@
 #include <string_view>
 
 // Calls the constructors for the API objects and initializes the game name
-Game::Game(ParsedGameData &parserObject, const std::string &gameName)
-    : gameName(gameName), configuration(parserObject), constants(parserObject), variables(parserObject),
-      globalMap(std::make_shared<NameResolver>()), perPlayerMap(parserObject.getPerPlayer()) {
+Game::Game(std::shared_ptr<ParsedGameData>  parserObject, const std::string &gameName, GameConfiguration &gameConfig)
+    : gameName(gameName), configuration(gameConfig), constants(*parserObject), variables(*parserObject),
+      globalMap(std::make_shared<NameResolver>()), perPlayerMap(parserObject->getPerPlayer()) {
 
-    rules = parserObject.moveRules();
+    rules = parserObject->moveRules();
     std::cout << "Rules size: " << rules.size() << std::endl;
 
     // Populate the global map with other API variables held in Game object
@@ -29,14 +29,20 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     configurationMap.emplace("player range", DataValue(configuration.getPlayerRange()));
     configurationMap.emplace("audience", DataValue(configuration.hasAudience()));
 
-    // Hardcoded rounds for now
-    configurationMap.emplace("rounds", DataValue(5));
+    // NOTE: getSetup() for some reason always contains 1 empty setup at the end. Keep that in mind when accessing things.
+    auto &setups = configuration.getSetup();//configuration doesn't work, not sure why. So i'm passing in the edited game config object aswell so it works.
+
+    for (auto i: setups){
+        std::cout<<"Config Setup Names : " << i.name << '\n';
+    }
+    
+    configurationMap.emplace("rounds", DataValue(setups.at(0).round));
 
     // Convert setup rules to a vector of DataValue
     std::vector<DataValue> setupData;
     std::cout << "Setup size: " << configuration.getSetup().size() << std::endl;
     std::cout << "Setup: " << std::endl;
-    for (const auto &setup : parserObject.getSetup()) {
+    for (const auto &setup : parserObject->getSetup()) {
         DataValue::OrderedMapType setupRuleMap;
         for (const auto &[key, value] : setup) {
             std::cout << "key" << key << " value" << value << std::endl;
