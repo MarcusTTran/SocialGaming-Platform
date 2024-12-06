@@ -155,6 +155,7 @@ private:
             string.replace(openBracketPos, closeBracketPos - openBracketPos + 1, name);
         }
 
+        std::cout << "String after replacement: " << string << std::endl;
         return DataValue(string);
     }
 
@@ -189,6 +190,7 @@ public:
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
+        std::cout << "Running handle dependencies FOR input rule" << std::endl;
         auto players = name_resolver.getValue("players").value().asList();
 
         if (players.empty()) {
@@ -204,6 +206,7 @@ private:
 
         // Add the pending connections to the global map
         name_resolver.addToGlobalScope("pending_connections", DataValue(pending_connections));
+        name_resolver.setValue("pending_connections", DataValue(pending_connections));
 
         auto pending_connections_value = name_resolver.getValue("pending_connections").value().asList();
 
@@ -374,6 +377,7 @@ private:
             this->recipients = {recipients};
         }
         auto string = string_maker->runBurst(name_resolver);
+        std::cout << "String type: " << string.getType() << std::endl;
 
         if (string.getType() == "STRING") {
             message = string.asString();
@@ -442,7 +446,7 @@ private:
 
             // Run
             auto rule_state = (*current_statement)->runBurst(name_resolver); // Dereference unique_ptr
-            if (rule_state.asRuleStatus() == DataValue::RuleStatus::NOTDONE) {
+            if (!rule_state.isCompleted()) {
                 return DataValue({DataValue::RuleStatus::NOTDONE});
             }
 
@@ -456,6 +460,9 @@ private:
             current_statement = statement_list.begin();
             value_for_this_loop++;
             if (value_for_this_loop != list_of_values.end()) {
+                std::cout << "Setting fresh variable" << fresh_variable_name << "To value " << *value_for_this_loop
+                          << std::endl;
+
                 name_resolver.setValue(fresh_variable_name, *value_for_this_loop);
                 continue;
             }
@@ -519,11 +526,16 @@ private:
 
 class UpfromRule : public Rule {
 public:
-    UpfromRule(Rule &number_maker, int starting_value) : number_maker(number_maker), starting_value(starting_value) {}
+    UpfromRule(std::unique_ptr<Rule> number_maker, int starting_value)
+        : number_maker(std::move(number_maker)), starting_value(starting_value) {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) override {
-        auto ending_value_generic = number_maker.runBurst(name_resolver);
+        auto ending_value_generic = number_maker->runBurst(name_resolver);
+
+        std::cout << "ending_value_generic type: " << ending_value_generic.getType() << std::endl;
+        std::cout << "ending_value_generic: " << ending_value_generic << std::endl;
+
         ending_value = ending_value_generic.asNumber();
     }
 
@@ -542,7 +554,7 @@ private:
         return DataValue(list_of_ints);
     }
 
-    Rule &number_maker;
+    std::unique_ptr<Rule> number_maker;
     int ending_value;
 
     int starting_value;

@@ -44,9 +44,10 @@ per-audience {}
 // game has been started.
 rules {
  
-   
+  for round in configuration.rounds.upfrom(1) {
 
-   
+
+    message all "Round {round}. Choose your weapon!";
 
     
   
@@ -56,6 +57,14 @@ rules {
         target: weapon
         timeout: 10
       }
+
+
+
+
+  }
+   
+    
+ 
     
     
  

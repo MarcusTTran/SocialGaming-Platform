@@ -13,6 +13,13 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     // Populate the global map with other API variables held in Game object
     globalMap->addInnerScope();
     addObjectToGlobalMap("constants", DataValue(constants.getConstants()), *globalMap);
+
+    auto constants = globalMap->getValue("constants").value().asOrderedMap();
+
+    for (const auto &[key, value] : constants) {
+        std::cout << "Key: " << key << " Value: " << value << std::endl;
+    }
+
     addObjectToGlobalMap("variables", DataValue(variables.getVariables()), *globalMap);
     // addObjectToGlobalMap("rules", DataValue(rules), *globalMap);
 
@@ -22,11 +29,17 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     configurationMap.emplace("player range", DataValue(configuration.getPlayerRange()));
     configurationMap.emplace("audience", DataValue(configuration.hasAudience()));
 
+    // Hardcoded rounds for now
+    configurationMap.emplace("rounds", DataValue(5));
+
     // Convert setup rules to a vector of DataValue
     std::vector<DataValue> setupData;
+    std::cout << "Setup size: " << configuration.getSetup().size() << std::endl;
+    std::cout << "Setup: " << std::endl;
     for (const auto &setup : parserObject.getSetup()) {
         DataValue::OrderedMapType setupRuleMap;
         for (const auto &[key, value] : setup) {
+            std::cout << "key" << key << " value" << value << std::endl;
             setupRuleMap.emplace(key, value);
         }
         setupData.push_back(DataValue(setupRuleMap));
@@ -34,6 +47,13 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     configurationMap.emplace("setup", DataValue(setupData));
 
     addObjectToGlobalMap("configuration", DataValue(configurationMap), *globalMap);
+
+    auto setup = globalMap->getValue("configuration").value().asOrderedMap();
+
+    std::cout << "Configuration map" << std::endl;
+    for (const auto &[key, value] : setup) {
+        std::cout << "Key: " << key << " Value: " << value << std::endl;
+    }
 
     currentRule = rules.begin();
 }
@@ -100,38 +120,22 @@ void Game::startGame(const DataValue &players) {
 // Inserts incoming messages into the the NameResolver
 void Game::insertIncomingMessages(const std::deque<networking::Message> &incomingMessages) {
 
-    static int callCount = 0;
-    DataValue::OrderedMapType incomingMessagesMap = {};
+    DataValue::OrderedMapType incomingMessagesMap;
 
-    if (callCount == 0) {
-        std::string key = "incoming_messages";
+    std::string key = "incoming_messages";
 
-        for (const auto &message : incomingMessages) {
-            std::string messageKey = std::to_string(message.connection.id);
-            incomingMessagesMap.emplace(messageKey, DataValue(message.text));
-        }
-
-        DataValue incomingMessagesValue(incomingMessagesMap);
-        globalMap->addToGlobalScope(key, incomingMessagesValue);
-        std::cout << "Incoming messages inserted into top level global map." << std::endl;
-    } else {
-        std::string key = "incoming_messages";
-
-        for (const auto &message : incomingMessages) {
-            std::string messageKey = std::to_string(message.connection.id);
-            incomingMessagesMap.emplace(messageKey, DataValue(message.text));
-        }
-
-        DataValue incomingMessagesValue(incomingMessagesMap);
-        globalMap->setValue(key, incomingMessagesValue);
-        std::cout << "Incoming messages updated in global map" << std::endl;
+    for (const auto &message : incomingMessages) {
+        std::string messageKey = std::to_string(message.connection.id);
+        incomingMessagesMap.emplace(messageKey, DataValue(message.text));
     }
+
+    DataValue incomingMessagesValue(incomingMessagesMap);
+    globalMap->setValue(key, incomingMessagesValue);
+    std::cout << "Incoming messages updated in global map" << std::endl;
 
     for (const auto &[key, value] : incomingMessagesMap) {
         std::cout << "Key: " << key << " Value: " << value.asString() << std::endl;
     }
-
-    callCount++;
 }
 
 void Game::updateGame() {

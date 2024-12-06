@@ -49,8 +49,14 @@ public:
                 return true;
             }
         }
+        // If the key is not found in any scope, add it to the innermost scope
+        if (!full_scope.empty()) {
+            full_scope.back()[key] = value;
+            return true;
+        }
         return false;
     }
+
     // Returns a nullopt if value is not found.
     std::optional<DataValue> getValue(const std::string &key) {
         for (auto it = full_scope.rbegin(); it != full_scope.rend(); ++it) {
