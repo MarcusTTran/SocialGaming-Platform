@@ -107,7 +107,7 @@ class StringRule : public Rule {
 public:
     StringRule(std::string_view string_literal,
                std::optional<std::vector<std::unique_ptr<Rule>>> nameResolverRules = std::nullopt)
-        : string(string_literal) {
+        : original_string(string_literal) {
         if (nameResolverRules.has_value()) {
             if (nameResolverRules.value().size() > 0) {
                 fresh_variables_maker = std::move(nameResolverRules.value());
@@ -138,30 +138,33 @@ private:
             }
         }
         std::cout << "Found names: " << found_names.size() << std::endl;
-        std::cout << "String: " << string << std::endl;
+        std::cout << "String: " << original_string << std::endl;
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
         if (!has_fresh_variables) {
-            return DataValue(string);
+            return DataValue(original_string);
         }
 
+        std::string updated_string = original_string;
+
         for (const std::string &name : found_names) {
-            size_t openBracketPos = string.find('{');
-            size_t closeBracketPos = string.find('}');
+            size_t openBracketPos = updated_string.find('{');
+            size_t closeBracketPos = updated_string.find('}');
             if (openBracketPos == std::string::npos || closeBracketPos == std::string::npos) {
                 return DataValue(DataValue::RuleStatus::ERROR);
             }
-            string.replace(openBracketPos, closeBracketPos - openBracketPos + 1, name);
+            updated_string.replace(openBracketPos, closeBracketPos - openBracketPos + 1, name);
         }
+        found_names.clear();
 
-        std::cout << "String after replacement: " << string << std::endl;
-        return DataValue(string);
+        std::cout << "String after replacement: " << updated_string << std::endl;
+        return DataValue(updated_string);
     }
 
     std::vector<std::unique_ptr<Rule>> fresh_variables_maker; // Holding fresh variables in brackets
     std::vector<std::string> found_names;                     // Names that will replace the brackets
-    std::string string;
+    std::string original_string;
     bool has_fresh_variables = false;
 };
 
@@ -314,6 +317,9 @@ private:
 
         // Update the pending connections in the global map
         name_resolver.setValue("pending_connections", DataValue(pending_connections_value));
+
+        // Clear the incoming messages after processing
+        name_resolver.setValue("incoming_messages", DataValue(DataValue::OrderedMapType{}));
 
         if (pending_connections_value.empty()) {
             return DataValue({DataValue::RuleStatus::DONE});
