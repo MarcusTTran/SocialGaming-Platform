@@ -73,14 +73,14 @@ MessageResult processMessages(Server &server, const std::deque<Message> &incomin
             } else if (lobbyManager->isAwaitingDisplayName(connection)) {
                 std::string displayName = text;
                 lobbyManager->addPlayerToLobbyWithDisplayName(connection, displayName);
-            } else if (stoi(text) == 1 && !lobbyManager->isWaitingForLobbyCode(connection)) {
+            } else if (std::stoi(text) == 1 && !lobbyManager->isWaitingForLobbyCode(connection)) {
 
                 messenger->sendToConnection(
                     "Please select the a game you would like to create by entering its number \n", connection);
                 messenger->sendToConnection(gameNameDisplayer(), connection);
 
                 gameSetupManager->addGameCreator(connection);
-            } else if (stoi(text) == 2) {
+            } else if (std::stoi(text) == 2 && !lobbyManager->isWaitingForLobbyCode(connection)) {
                 messenger->sendToConnection("Enter the lobby code: ", connection);
                 lobbyManager->addConnectionWaitingForLobbyCode(connection);
             } else if (lobbyManager->isWaitingForLobbyCode(connection)) {

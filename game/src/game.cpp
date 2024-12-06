@@ -5,7 +5,7 @@
 // Calls the constructors for the API objects and initializes the game name
 Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     : gameName(gameName), configuration(parserObject), constants(parserObject), variables(parserObject),
-      globalMap(std::make_shared<NameResolver>()) {
+      globalMap(std::make_shared<NameResolver>()), perPlayerMap(parserObject.getPerPlayer()) {
 
     rules = parserObject.moveRules();
     std::cout << "Rules size: " << rules.size() << std::endl;
@@ -13,6 +13,13 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     // Populate the global map with other API variables held in Game object
     globalMap->addInnerScope();
     addObjectToGlobalMap("constants", DataValue(constants.getConstants()), *globalMap);
+
+    auto constants = globalMap->getValue("constants").value().asOrderedMap();
+
+    for (const auto &[key, value] : constants) {
+        std::cout << "Key: " << key << " Value: " << value << std::endl;
+    }
+
     addObjectToGlobalMap("variables", DataValue(variables.getVariables()), *globalMap);
     // addObjectToGlobalMap("rules", DataValue(rules), *globalMap);
 
@@ -22,11 +29,17 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     configurationMap.emplace("player range", DataValue(configuration.getPlayerRange()));
     configurationMap.emplace("audience", DataValue(configuration.hasAudience()));
 
+    // Hardcoded rounds for now
+    configurationMap.emplace("rounds", DataValue(5));
+
     // Convert setup rules to a vector of DataValue
     std::vector<DataValue> setupData;
+    std::cout << "Setup size: " << configuration.getSetup().size() << std::endl;
+    std::cout << "Setup: " << std::endl;
     for (const auto &setup : parserObject.getSetup()) {
         DataValue::OrderedMapType setupRuleMap;
         for (const auto &[key, value] : setup) {
+            std::cout << "key" << key << " value" << value << std::endl;
             setupRuleMap.emplace(key, value);
         }
         setupData.push_back(DataValue(setupRuleMap));
@@ -34,6 +47,13 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
     configurationMap.emplace("setup", DataValue(setupData));
 
     addObjectToGlobalMap("configuration", DataValue(configurationMap), *globalMap);
+
+    auto setup = globalMap->getValue("configuration").value().asOrderedMap();
+
+    std::cout << "Configuration map" << std::endl;
+    for (const auto &[key, value] : setup) {
+        std::cout << "Key: " << key << " Value: " << value << std::endl;
+    }
 
     currentRule = rules.begin();
 }
@@ -44,15 +64,15 @@ Game::Game(ParsedGameData &parserObject, const std::string &gameName)
 Game::Game(const std::string &gameName, std::shared_ptr<IServer> server)
     : gameName(gameName), globalMap(std::make_shared<NameResolver>()) {
 
-    // Add a simple input rule to the game
-    std::unique_ptr<Rule> rule = std::make_unique<SimpleInputRule>(server);
-    std::unique_ptr<AllPlayersRule> allPlayersRule = std::make_unique<AllPlayersRule>();
-    std::unique_ptr<StringRule> simpleStringRule = std::make_unique<StringRule>("Hello, World!");
-    std::unique_ptr<Rule> rule2 =
-        std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(simpleStringRule));
-    rules.push_back(std::move(rule));
-    rules.push_back(std::move(rule2));
-    currentRule = rules.begin();
+    // // Add a simple input rule to the game
+    // std::unique_ptr<Rule> rule = std::make_unique<SimpleInputRule>(server);
+    // std::unique_ptr<AllPlayersRule> allPlayersRule = std::make_unique<AllPlayersRule>();
+    // std::unique_ptr<StringRule> simpleStringRule = std::make_unique<StringRule>("Hello, World!");
+    // std::unique_ptr<Rule> rule2 =
+    //     std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(simpleStringRule));
+    // rules.push_back(std::move(rule));
+    // rules.push_back(std::move(rule2));
+    // currentRule = rules.begin();
 }
 
 std::string Game::getGameName() const { return gameName; }
@@ -100,12 +120,9 @@ void Game::startGame(const DataValue &players) {
 // Inserts incoming messages into the the NameResolver
 void Game::insertIncomingMessages(const std::deque<networking::Message> &incomingMessages) {
 
-    if (incomingMessages.empty()) {
-        return;
-    }
+    DataValue::OrderedMapType incomingMessagesMap;
 
     std::string key = "incoming_messages";
-    DataValue::OrderedMapType incomingMessagesMap;
 
     for (const auto &message : incomingMessages) {
         std::string messageKey = std::to_string(message.connection.id);
@@ -113,9 +130,8 @@ void Game::insertIncomingMessages(const std::deque<networking::Message> &incomin
     }
 
     DataValue incomingMessagesValue(incomingMessagesMap);
-    globalMap->addNewValue(key, incomingMessagesValue);
-
-    std::cout << "Incoming messages inserted into global map." << std::endl;
+    globalMap->setValue(key, incomingMessagesValue);
+    std::cout << "Incoming messages updated in global map" << std::endl;
 
     for (const auto &[key, value] : incomingMessagesMap) {
         std::cout << "Key: " << key << " Value: " << value.asString() << std::endl;

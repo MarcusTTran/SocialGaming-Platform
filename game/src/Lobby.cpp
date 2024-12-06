@@ -20,13 +20,22 @@ Lobby::Lobby(std::unique_ptr<Game> game, std::shared_ptr<IServer> server,
 
 Lobby::LobbyState Lobby::getState() { return state; }
 
-void Lobby::addPlayer(const Player &player) {
+void Lobby::addPlayer(Player &player) {
 
     if (state != LobbyState::Waiting) {
         server->sendToConnection("The game has already started. Please try again later.", player.getConnection());
         return;
     }
     sendWelcomeMessage(player);
+
+    player.addPerVariableMap(game->getPerPlayerMap(), true);
+    std::cout << "Per player map size : " << game->getPerPlayerMap().size() << std::endl;
+
+    // print out per player map
+    auto playerMap = player.getMap(true);
+    for (const auto &pair : playerMap) {
+        std::cout << pair.first << " : " << pair.second << std::endl;
+    }
 
     players.push_back(player);
     sendCurrentListOfPlayers();

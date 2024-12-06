@@ -25,14 +25,17 @@ void GameSetupManager::handleSetupMessage(const networking::Connection &connecti
         int number;
         try {
             number = std::stoi(message);
+            std::cout << "Number: " << number << std::endl;
             if (getConfigMap().find(number) == getConfigMap().end()) {
                 messenger->sendToConnection(
                     "Error, invalid entry, please enter an integer that exists within list of games.", connection);
                 return;
             } else {
                 gameConfigPath = getConfigMap().at(number);
+                std::cout << "Game Config Path: " << gameConfigPath << std::endl;
             }
         } catch (const std::exception &e) {
+            std::cerr << "Error parsing message: " << e.what() << std::endl;
             messenger->sendToConnection("Error, invalid entry, please enter an integer: " + std::string(e.what()),
                                         connection);
             return;
@@ -136,6 +139,7 @@ ConfigEditResult GameSetupManager::editingGameConfig(GameConfiguration &config, 
                   "'prompt messageyouwanthere') : \n";
         currentGameCreator->editingSetup = true;
         result << " \n";
+        messenger->sendToConnection(result.str(), networking::Connection{currentGameCreator->connectionID});
         ConfigEditResult msg;
         msg.message = result.str();
         msg.status = EditState::Success;
