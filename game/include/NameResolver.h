@@ -43,13 +43,19 @@ public:
     // Returns a nullopt if value is not found.
     std::optional<DataValue> getValue(const std::string &key) {
         for (auto it = full_scope.rbegin(); it != full_scope.rend(); ++it) {
-            auto &map = *it;
+            const auto &map = *it;
             auto mapIt = map.find(key);
 
             if (mapIt != map.end()) {
                 return mapIt->second;
             }
-        }
+            else {
+                auto result = searchOneLayerDeeper(map, key);
+                if (result.has_value()) {
+                    return result;
+                }
+            }
+        } 
         return std::nullopt;
     }
 
@@ -98,6 +104,19 @@ private:
         std::cerr << "Reach end of non-void function in findInMap()." << std::endl;
         return std::nullopt;
     }
+
+    std::optional<DataValue> searchOneLayerDeeper(const Map& map, const std::string& key) {
+        for (const auto& [innerKey, innerValue] : map) {
+            if ( auto innerMap = std::get_if<DataValue::OrderedMapType>(&innerValue.getValue()) ) {
+                auto innerMapIt = innerMap->find(key);
+                if (innerMapIt != innerMap->end()) {
+                    return innerMapIt->second;
+                }
+            }
+        }
+        return std::nullopt;
+    }
+
 
 
     std::vector<Map> full_scope; 
