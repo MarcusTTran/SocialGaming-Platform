@@ -89,7 +89,8 @@ private:
     void handleWhileSection(const ts::Node &node, const string &source, Rule &outerRule);
     std::unique_ptr<Rule> handelInputChoice(const ts::Node &node, const std::string &source);
     // void handleNameResolverRule(const ts::Node &node, const string &source, Rule &outerRule);
-    std::unique_ptr<Rule> handleBuiltin(const ts::Node &node, const std::string &source, std::unique_ptr<Rule> rule);
+    std::unique_ptr<Rule> handleBuiltin(const ts::Node &node, const std::string &source, std::unique_ptr<Rule> rule
+        , std::vector<DataValue> list);
     std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
     string ruleTypeToString(RuleT::Type type);
     RuleT::Type getRuleType(const string &type);
