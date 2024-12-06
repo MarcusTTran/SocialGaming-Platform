@@ -56,30 +56,35 @@ private:
 // INVARIANT: left operand is a Rule that MUST evaluate to a list of maps
 class ElementsRule : public Rule {
 public:
-    ElementsRule(std::vector<std::unique_ptr<Rule>> maps_maker_rule, const std::string &key)
-        : maps_maker{std::move(maps_maker_rule)}, search_key(key) {}
+    ElementsRule(std::unique_ptr<Rule> map_maker_rule, const std::string &key)
+        : map_maker{std::move(map_maker_rule)}, search_key(key) {}
 
 private:
     void _handle_dependencies(NameResolver &name_resolver) {
-        current_map_maker = maps_maker.begin();
+        map = map_maker->runBurst(name_resolver).asOrderedMap();
     }
     DataValue _runBurst(NameResolver &name_resolver) {
-        while(current_map_maker != maps_maker.end()){
-            map = (*current_map_maker)->runBurst(name_resolver).asOrderedMap();
-            auto mapIt = map.find(this->search_key);
-            if (mapIt!= map.end()) {
-                //this only makes sense for this to be a list since multiple values can be contained with the same key
-                assert(mapIt->second.getType() == "LIST" && "Expected map value to be a list");
-                flattenedList.insert(flattenedList.end(), mapIt->second.asList().begin(), mapIt->second.asList().end());
-            }
-            current_map_maker++;
+        auto mapIt = map.find(this->search_key);
+        if (mapIt!= map.end()) { //this only makes sense for this to be a list since multiple values can be contained with the same key
+            assert(mapIt->second.getType() == "LIST" && "Expected map value to be a list");
+            flattenedList.insert(flattenedList.end(), mapIt->second.asList().begin(), mapIt->second.asList().end());
+            return DataValue(flattenedList);
         }
-        return DataValue(flattenedList);
+        else if (mapIt->second.getType() == "ORDERED_MAP"){ // does not contain the key in this layer, check one layer deeper
+            auto secondLayer = mapIt->second.asOrderedMap().find(this->search_key);
+            if (secondLayer != mapIt->second.asOrderedMap().end()) {
+                assert(secondLayer->second.getType() == "LIST" && "Expected map value to be a list");
+                flattenedList.insert(flattenedList.end(), secondLayer->second.asList().begin(), secondLayer->second.asList().end());
+                return DataValue(flattenedList);
+            }
+        }
+        else{
+            std::cout<<"ElementsRule was unable to find the list corresponding to: " << search_key <<std::endl;
+        }
     }
     DataValue::OrderedMapType map;
-    std::vector<std::unique_ptr<Rule>>::iterator current_map_maker;
     std::vector<DataValue> flattenedList;
-    std::vector<std::unique_ptr<Rule>> maps_maker; // NameResolver rule
+    std::unique_ptr<Rule> map_maker; // NameResolver rule
     const std::string &search_key;
 };
 
