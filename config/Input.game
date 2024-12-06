@@ -31,7 +31,7 @@ variables {
 // initializing `wins` below to 0 creates a counter for each player and
 // initializes it to 0.
 per-player {
-  weapon: "Rock"
+  weapon: "Rock",
   wins: 0
 }
 
