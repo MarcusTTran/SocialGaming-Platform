@@ -56,15 +56,30 @@ private:
 // INVARIANT: left operand is a Rule that MUST evaluate to a list of maps
 class ElementsRule : public Rule {
 public:
-    ElementsRule(std::unique_ptr<Rule> maps_maker_rule, std::string key)
+    ElementsRule(std::vector<std::unique_ptr<Rule>> maps_maker_rule, const std::string &key)
         : maps_maker{std::move(maps_maker_rule)}, search_key(key) {}
 
 private:
-    void _handle_dependencies(NameResolver &name_resolver) {}
-    DataValue _runBurst(NameResolver &name_resolver) {}
-
-    std::unique_ptr<Rule> maps_maker; // NameResolver rule
-    std::string search_key;
-    DataValue result; // DataValue::Type::LIST
+    void _handle_dependencies(NameResolver &name_resolver) {
+        current_map_maker = maps_maker.begin();
+    }
+    DataValue _runBurst(NameResolver &name_resolver) {
+        while(current_map_maker != maps_maker.end()){
+            map = (*current_map_maker)->runBurst(name_resolver).asOrderedMap();
+            auto mapIt = map.find(this->search_key);
+            if (mapIt!= map.end()) {
+                //this only makes sense for this to be a list since multiple values can be contained with the same key
+                assert(mapIt->second.getType() == "LIST" && "Expected map value to be a list");
+                flattenedList.insert(flattenedList.end(), mapIt->second.asList().begin(), mapIt->second.asList().end());
+            }
+            current_map_maker++;
+        }
+        return DataValue(flattenedList);
+    }
+    DataValue::OrderedMapType map;
+    std::vector<std::unique_ptr<Rule>>::iterator current_map_maker;
+    std::vector<DataValue> flattenedList;
+    std::vector<std::unique_ptr<Rule>> maps_maker; // NameResolver rule
+    const std::string &search_key;
 };
 
