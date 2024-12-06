@@ -371,8 +371,13 @@ std::unique_ptr<Rule> ParsedGameData::handleBuiltin(const ts::Node &node, const 
 
     if (content.find("upfrom") != std::string::npos) {
         std::cout << "handle builtin function" << std::endl; // TODO: remove
-        // int value = std::stoi(std::string(node.getNextSibling().getSourceRange(source)));
-        // return std::make_unique<UpfromRule>(*rule, value);
+        std::string strVal = std::string(node.getNextSibling().getSourceRange(source));
+        if (!strVal.empty() && strVal.front() == '(' && strVal.back() == ')') {
+            strVal.erase(strVal.begin());
+            strVal.erase(strVal.end() - 1);
+        }
+        int value = std::stoi(strVal);
+        return std::make_unique<UpfromRule>(*rule, value);
     } else if (content.find("contains") != std::string::npos) {
         std::cout << "THIS IS CONTAINS" << std::endl;
         // TODO: Create and return ContainsRule
