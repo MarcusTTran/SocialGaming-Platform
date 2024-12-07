@@ -53,7 +53,7 @@ void GameSetupManager::handleSetupMessage(const networking::Connection &connecti
             return;
         }
 
-        std::shared_ptr<ParsedGameData> parser = std::make_shared<ParsedGameData>(gameConfigPath, messenger);
+        std::shared_ptr<ParsedGameData> parser = std::make_shared<ParsedGameData>(gameConfigPath, messenger, connection);
         currentGameCreator->chosenGameToEdit = true;
         currentGameCreator->adminGame = GameConfiguration(parser);
         currentGameCreator->parserObject = parser;

@@ -33,7 +33,8 @@ using std::vector;
 
 class ParsedGameData {
 public:
-    ParsedGameData(const string &configFileContent, std::shared_ptr<IServer> server);
+    ParsedGameData(const string &configFileContent, std::shared_ptr<IServer> server,
+        networking::Connection connection);
 
     string getGameName() const;
     pair<int, int> getPlayerRange() const;
@@ -63,6 +64,7 @@ private:
     bool audience;
     Configuration configuration;
     std::shared_ptr<IServer> server; // For constructing messaging rules
+    networking::Connection gameConnection;
 
     // using variant types to do a map-like data structure while preserving data order
     DataValue::OrderedMapType variables;
