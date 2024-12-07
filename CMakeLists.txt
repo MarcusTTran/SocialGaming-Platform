@@ -65,3 +65,5 @@ target_link_libraries(game_parser
     networking
 )
 
+# Set rpath to include the Boost library path
+set(CMAKE_BUILD_RPATH "/usr/local/boost_1_82_0/lib")

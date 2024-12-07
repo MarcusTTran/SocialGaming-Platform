@@ -3,6 +3,8 @@
 #include "Rule.h"
 #include <string>
 #include <cassert>
+#include <type_traits>
+#include <algorithm>
 
 // TODO: add this to cmakeLists when ready
 
@@ -65,3 +67,97 @@ private:
 //     DataValue result; // DataValue::Type::LIST
 // };
 
+
+
+
+
+
+
+/*
+COLLECT RULE
+
+for weapon in weapons {
+    match !players.elements.weapon.contains(weapon.name) {
+        true => {
+            extend winners with players.collect(player, player.weapon = weapon.beats);
+        }
+    }
+}
+
+- 0th variable: list of DataValues from left-hand side -> NameResolverRule
+- first variable: fresh variable from left-hand side of collect() -> string
+- second variable: lambda that evaluates to true or false -> TODO: = equals rule and NameResolverRule on both sides
+
+*/
+
+
+
+
+/*
+EQUALS RULE
+
+- INVARIANT: arguments are not collections, but singular values (like int, bool, string)
+*/ 
+class EqualsRule : public Rule {
+public:
+    EqualsRule(std::unique_ptr<Rule> left_maker, std::unique_ptr<Rule> right_maker)
+        : left_maker{std::move(left_maker)}, right_maker{std::move(right_maker)} {}
+
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        left = left_maker->runBurst(name_resolver);
+        right = right_maker->runBurst(name_resolver);   
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        return DataValue(left.checkIfMatch(right));
+    }
+
+    std::unique_ptr<Rule> left_maker;
+    std::unique_ptr<Rule> right_maker;
+    DataValue left;
+    DataValue right;
+};
+
+
+/*
+EXTEND RULE
+
+- with is a keyword!
+- syntax:    extend <var1> with <var2>
+- 1st variable: list that you are adding to -> NameResolverRule
+- 2nd variable: list that you are appending -> in this case, collect() rule
+
+- INVARIANT: Lists must be of the same type. Cannot extend a list of type "x" with a list of type "y"
+*/
+class ExtendRule : public Rule {
+public:
+    ExtendRule(std::unique_ptr<Rule> original_list_maker, std::unique_ptr<Rule> additional_list_maker)
+        : original_list_maker{std::move(original_list_maker)}, additional_list_maker{std::move(additional_list_maker)} {}
+
+private:    
+    
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        listToExtend = original_list_maker->runBurst(name_resolver);
+        listToAdd = additional_list_maker->runBurst(name_resolver);   
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        // Check if the lists are of same type
+        if( !(listToExtend.getType() == "LIST") || !(listToAdd.getType() == "LIST") ){
+            std::cerr << "ERROR ExtendRule: Both arguments must be lists!" << std::endl;
+            return DataValue( {DataValue::RuleStatus::ERROR} );
+        }
+        // Reserve space for extended list
+        auto& listToExtendAsVec = listToExtend.asList();
+        auto& listToAddAsVec = listToAdd.asList();
+        listToExtendAsVec.reserve(listToExtendAsVec.size() + listToAddAsVec.size());
+
+        std::copy(listToAddAsVec.begin(), listToAddAsVec.end(), listToExtendAsVec.back());
+    }
+    
+    std::unique_ptr<Rule> original_list_maker;
+    std::unique_ptr<Rule> additional_list_maker;
+    DataValue listToExtend;
+    DataValue listToAdd;
+};
