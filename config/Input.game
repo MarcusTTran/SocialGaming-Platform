@@ -59,19 +59,20 @@ rules {
       }
 
 
+ 
 
 
   }
    
     
  
-    
+      // Report the final scores!
+    scores ["wins"]; 
     
  
 
    
 
 
-  // Report the final scores!
-  scores ["wins"];
+
 }
