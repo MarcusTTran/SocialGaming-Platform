@@ -720,43 +720,41 @@ std::unique_ptr<Rule> ParsedGameData::handleExtend(const ts::Node &node, const s
     ts::Node valueNode = node.getChildByFieldName("value");
     ts::Node builtinNode = valueNode.getChildByFieldName("builtin");
 
-    // Parse target and value content
-    std::vector<std::string> targetContent; // winners
-    std::vector<std::string> valueContent;  // players.elements
+    std::vector<std::string> targetContent;
+    std::vector<std::string> valueContent;
     DFS(targetNode, source, targetContent);
     DFS(valueNode, source, valueContent);
 
-    // Split elements if "elements" keyword is present
-    std::vector<std::string> splitElement; // players
-    std::unique_ptr<Rule> valuePtr; 
+    // Check for "elements" keyword and split elements if present
+    bool hasElements = std::find(valueContent.begin(), valueContent.end(), "elements") != valueContent.end();
+    std::vector<std::string> splitElement;
 
-    if (find(begin(valueContent), end(valueContent), "elements") != end(valueContent)) {
-        for (const auto &value : valueContent) {
-            splitElement.emplace_back(value); // Populate splitElement
-        }
+    if (hasElements) {
+        std::copy_if(valueContent.begin(), valueContent.end(), std::back_inserter(splitElement),
+                     [](const std::string &value) { return value != "elements"; });
+    }
 
-        // Create ElementsRule or NameResolverRule based on builtinNode
-        valuePtr = !builtinNode.isNull()
-            ? std::unique_ptr<Rule>(std::make_unique<ElementsRule>(
+    std::unique_ptr<Rule> valuePtr;
+    if (hasElements) {
+        if (!builtinNode.isNull()) {
+            valuePtr = std::make_unique<ElementsRule>(
                 std::make_unique<NameResolverRule>(splitElement),
-                std::string(builtinNode.getSourceRange(source))))
-            : std::unique_ptr<Rule>(std::make_unique<NameResolverRule>(valueContent));
+                std::string(builtinNode.getSourceRange(source)));
+        } else {
+            valuePtr = std::make_unique<NameResolverRule>(valueContent);
+        }
     } else {
         valuePtr = std::make_unique<NameResolverRule>(valueContent);
     }
 
-    std::unique_ptr<Rule> condition;
-    if (!builtinNode.isNull()) {
-        condition = handleBuiltin(builtinNode, source, std::move(valuePtr), {});
-    } else {
-        condition = std::move(valuePtr);
-    }
+    std::unique_ptr<Rule> condition = builtinNode.isNull()
+                                          ? std::move(valuePtr)
+                                          : handleBuiltin(builtinNode, source, std::move(valuePtr), {});
+
 
     std::unique_ptr<Rule> target = std::make_unique<NameResolverRule>(targetContent);
 
-    std::unique_ptr<Rule> extendRule = std::make_unique<ExtendRule>(std::move(target), std::move(condition));
-
-    return extendRule;
+    return std::make_unique<ExtendRule>(std::move(target), std::move(condition));
 }
 
 
