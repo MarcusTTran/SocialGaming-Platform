@@ -796,7 +796,14 @@ public:
                 if (player_map.find(key) == player_map.end()) {
                     throw std::runtime_error("Key not found in player map");
                 }
-                scores.push_back(player_name + ": " + key + " " + player_map[key].asString());
+
+                if (player_map[key].getType() == "NUMBER") {
+                    scores.push_back(player_name + ": " + key + " " + std::to_string(player_map[key].asNumber()));
+                } else if (player_map[key].getType() == "STRING") {
+                    scores.push_back(player_name + ": " + key + " " + player_map[key].asString());
+                } else {
+                    throw std::runtime_error("Key value is not a number or string");
+                }
             }
         }
     }
