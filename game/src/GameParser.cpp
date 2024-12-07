@@ -736,7 +736,7 @@ std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, con
         } 
         else {
             // Recursively handle other types of rules
-            parseRuleSection(child, source);
+            parsedRule = parseRuleSection(child, source);
         }
 
         if (parsedRule) {
