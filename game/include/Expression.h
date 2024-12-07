@@ -186,6 +186,7 @@ private:
         listToExtendAsVec.reserve(listToExtendAsVec.size() + listToAddAsVec.size());
 
         std::copy(listToAddAsVec.begin(), listToAddAsVec.end(), std::back_inserter(listToExtendAsVec) );
+        return DataValue(listToExtendAsVec);
     }
     
     std::unique_ptr<Rule> original_list_maker;

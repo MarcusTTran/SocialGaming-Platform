@@ -96,6 +96,7 @@ private:
     std::unique_ptr<Rule> handleDiscard(const ts::Node &node, const std::string &source);
     std::unique_ptr<Rule> handleScore(const ts::Node &node, const std::string &source);
     std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
+    std::unique_ptr<Rule> handleExtend(const ts::Node &node, const std::string &source);
     string ruleTypeToString(RuleT::Type type);
     RuleT::Type getRuleType(const string &type);
 

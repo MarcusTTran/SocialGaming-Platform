@@ -395,11 +395,12 @@ std::unique_ptr<Rule> ParsedGameData::handleBuiltin(const ts::Node &node, const 
     } else if (content.find("collect") != std::string::npos) {
         std::cout << "THIS IS COLLECT" << std::endl;
         // TODO: Create and return CollectRule
+        // return std::make_unique<CollectRule>();
     } else {
         std::cout << "THIS IS SIZE" << std::endl;
         // TODO: Create and return SizeRule
         // TODO: add ListSizeRule for size checking
-        // return std::make_unique<ListSizeRule>(std::move(rule));
+        return std::make_unique<ListSizeRule>(std::move(rule));
     }
 
     return nullptr;
@@ -712,6 +713,52 @@ std::unique_ptr<Rule> ParsedGameData::handleScore(const ts::Node &node, const st
     std::unique_ptr<Rule> scoreRule = std::make_unique<ScoresRule>(keysContent, gameConnection, server);
     return scoreRule;
 }
+
+// extend winners with players.elements.collect(player, player.weapon = weapon.beats);
+std::unique_ptr<Rule> ParsedGameData::handleExtend(const ts::Node &node, const std::string &source) {
+    ts::Node targetNode = node.getChildByFieldName("target");
+    ts::Node valueNode = node.getChildByFieldName("value");
+    ts::Node builtinNode = valueNode.getChildByFieldName("builtin");
+
+    // Parse target and value content
+    std::vector<std::string> targetContent; // winners
+    std::vector<std::string> valueContent;  // players.elements
+    DFS(targetNode, source, targetContent);
+    DFS(valueNode, source, valueContent);
+
+    // Split elements if "elements" keyword is present
+    std::vector<std::string> splitElement; // players
+    std::unique_ptr<Rule> valuePtr; 
+
+    if (find(begin(valueContent), end(valueContent), "elements") != end(valueContent)) {
+        for (const auto &value : valueContent) {
+            splitElement.emplace_back(value); // Populate splitElement
+        }
+
+        // Create ElementsRule or NameResolverRule based on builtinNode
+        valuePtr = !builtinNode.isNull()
+            ? std::unique_ptr<Rule>(std::make_unique<ElementsRule>(
+                std::make_unique<NameResolverRule>(splitElement),
+                std::string(builtinNode.getSourceRange(source))))
+            : std::unique_ptr<Rule>(std::make_unique<NameResolverRule>(valueContent));
+    } else {
+        valuePtr = std::make_unique<NameResolverRule>(valueContent);
+    }
+
+    std::unique_ptr<Rule> condition;
+    if (!builtinNode.isNull()) {
+        condition = handleBuiltin(builtinNode, source, std::move(valuePtr), {});
+    } else {
+        condition = std::move(valuePtr);
+    }
+
+    std::unique_ptr<Rule> target = std::make_unique<NameResolverRule>(targetContent);
+
+    std::unique_ptr<Rule> extendRule = std::make_unique<ExtendRule>(std::move(target), std::move(condition));
+
+    return extendRule;
+}
+
 
 std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, const std::string &source) {
     std::unique_ptr<Rule> parsedRule = nullptr;
