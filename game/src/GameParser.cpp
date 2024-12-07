@@ -12,8 +12,7 @@ TSLanguage *tree_sitter_socialgaming();
 }
 
 ParsedGameData::ParsedGameData(const string &config, std::shared_ptr<IServer> server, networking::Connection connection)
-    : server(std::static_pointer_cast<Messenger>(server)), 
-      gameConnection(connection) {
+    : server(std::static_pointer_cast<Messenger>(server)), gameConnection(connection) {
     string fileContent = readFileContent(config);
     if (!fileContent.empty()) {
         parseConfig(fileContent);
@@ -293,6 +292,8 @@ void ParsedGameData::parseConfig(const string &fileContent) {
                 auto rule = parseRuleSection(child, fileContent);
                 if (rule) {
                     rules.emplace_back(std::move(rule));
+                } else {
+                    std::cerr << "Error: Rule is null" << std::endl;
                 }
             }
         }
@@ -375,8 +376,8 @@ std::unique_ptr<Rule> ParsedGameData::handleBuiltin(const ts::Node &node, const 
     if (content.find("upfrom") != std::string::npos) {
         std::string strVal = std::string(node.getNextSibling().getSourceRange(source));
         if (!strVal.empty() && strVal.front() == '(' && strVal.back() == ')') {
-            strVal.erase(strVal.begin());         
-            strVal.erase(strVal.end() - 1);      
+            strVal.erase(strVal.begin());
+            strVal.erase(strVal.end() - 1);
         }
         int value = std::stoi(strVal);
         return std::make_unique<UpfromRule>(std::move(rule), value);
@@ -384,8 +385,8 @@ std::unique_ptr<Rule> ParsedGameData::handleBuiltin(const ts::Node &node, const 
         std::cout << "THIS IS CONTAINS" << std::endl;
         std::string strVal = std::string(node.getNextSibling().getSourceRange(source));
         if (!strVal.empty() && strVal.front() == '(' && strVal.back() == ')') {
-            strVal.erase(strVal.begin());         
-            strVal.erase(strVal.end() - 1);      
+            strVal.erase(strVal.begin());
+            strVal.erase(strVal.end() - 1);
         }
         return std::make_unique<ContainsRule>(std::move(list), DataValue{strVal});
     } else if (content.find("collect") != std::string::npos) {
@@ -450,6 +451,8 @@ std::unique_ptr<Rule> ParsedGameData::handleForRule(const ts::Node &node, const 
             }
         }
     }
+
+    std::cout << "FOR RULE CONTENTS SIZE: " << content.size() << std::endl;
 
     auto forRule = std::make_unique<ForRule>(iteratorName, std::move(conditions), std::move(content));
     return forRule;
@@ -560,7 +563,7 @@ std::unique_ptr<Rule> ParsedGameData::handleMatchRule(const ts::Node &node, cons
     }
 
     auto hasBuiltin = targetNode.getChild(0);
-    while(hasBuiltin.getType() != "expression"){
+    while (hasBuiltin.getType() != "expression") {
         hasBuiltin = hasBuiltin.getNextSibling();
     }
     ts::Node builtInNode = hasBuiltin.getChildByFieldName("builtin");
@@ -575,10 +578,9 @@ std::unique_ptr<Rule> ParsedGameData::handleMatchRule(const ts::Node &node, cons
 
     // handle builtin like contains
     // this one will be called as condition_maker for MatchRule
-    if(!builtInNode.isNull()){
+    if (!builtInNode.isNull()) {
         conditions = handleBuiltin(builtInNode, source, std::move(temp), dataValues);
-    }
-    else{
+    } else {
         conditions = std::move(temp);
     }
     std::vector<std::unique_ptr<Rule>> checkCondition;
@@ -587,8 +589,8 @@ std::unique_ptr<Rule> ParsedGameData::handleMatchRule(const ts::Node &node, cons
         auto curr = node.getChild(i);
         traverseHelper(curr, source, checkCondition, scopedRule);
     }
-    std::unique_ptr<Rule> matchRule = std::make_unique<MatchRule>(std::move(conditions), 
-        std::move(checkCondition), std::move(scopedRule));
+    std::unique_ptr<Rule> matchRule =
+        std::make_unique<MatchRule>(std::move(conditions), std::move(checkCondition), std::move(scopedRule));
     return matchRule;
 }
 
@@ -668,7 +670,7 @@ std::unique_ptr<Rule> ParsedGameData::handelInputChoice(const ts::Node &node, co
 //     return nameResolverRule;
 // }
 
-std::unique_ptr<Rule> ParsedGameData::handleDiscard(const ts::Node &node, const std::string &source){
+std::unique_ptr<Rule> ParsedGameData::handleDiscard(const ts::Node &node, const std::string &source) {
     // discard winners.size() from winners
     ts::Node countNode = node.getChildByFieldName("count");
     ts::Node sourceNode = node.getChildByFieldName("source");
@@ -689,10 +691,9 @@ std::unique_ptr<Rule> ParsedGameData::handleDiscard(const ts::Node &node, const 
         dataValues.emplace_back(str);
     }
 
-    if(!builtinNode.isNull()){
+    if (!builtinNode.isNull()) {
         conditions = handleBuiltin(builtinNode, source, std::move(temp), dataValues);
-    }
-    else{
+    } else {
         conditions = std::move(temp);
     }
 
@@ -723,12 +724,11 @@ std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, con
             // outerRule.subRules.emplace_back(whileRule);
         } else if (ruleType == "input_choice") {
             parsedRule = handelInputChoice(child, source);
-        } else if (ruleType == "discard"){
+        } else if (ruleType == "discard") {
             parsedRule = handleDiscard(child, source);
-        } 
-        else {
+        } else {
             // Recursively handle other types of rules
-            parseRuleSection(child, source);
+            parsedRule = parseRuleSection(child, source);
         }
 
         if (parsedRule) {

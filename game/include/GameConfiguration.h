@@ -27,7 +27,7 @@ public:
         std::optional<std::pair<int, int>> range;
         std::optional<DataValue::EnumDescriptionType> choices;
         DataValue chosenValue;
-        int round;
+        int round = 3; // Default value
         std::optional<DataValue::OrderedMapType> defaultValue;
 
         std::optional<std::pair<int, int>> getRange() const;
@@ -44,7 +44,7 @@ public:
     GameName getGameName() const;
     std::pair<int, int> getPlayerRange() const;
     bool hasAudience() const;
-    std::vector<Setup>& getSetup();
+    std::vector<Setup> &getSetup();
     Setup *findSetupByName(const std::string &key);
     void setKind(const std::string &key, const std::string &kindValue);
     void setPrompt(const std::string &key, const std::string &promptValue);
