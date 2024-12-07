@@ -46,35 +46,20 @@ private:
 };
 
 
-    // BINARY EXPRESSION RULES
-// ex. +, -, *, /, assignment(x <- 5), ||, =(equality) 
-
-
-// takes 1) a list of maps map before the keyword ".elements." and 2) a string key after           
-//      -> returns a flat list containing the values within those maps 
-// INVARIANT: left operand is a Rule that MUST evaluate to a list of maps
-// class ElementsRule : public Rule {
-// public:
-//     ElementsRule(std::unique_ptr<Rule> list_of_maps_rule, std::string key)
-//         : list_of_maps{std::move(list_of_maps_rule)}, search_key(key) {}
-
-// private:
-//     void _handle_dependencies(NameResolver &name_resolver) {}
-//     DataValue _runBurst(NameResolver &name_resolver) {}
-
-//     std::unique_ptr<Rule> list_of_maps; // NameResolver rule?
-//     std::string search_key;
-//     DataValue result; // DataValue::Type::LIST
+// class AssignmentRule : public Rule {
+ // TODO: implement this
 // };
 
 
-
+    // BINARY EXPRESSION RULES
+// ex. +, -, *, /, assignment(x <- 5), ||, =(equality) 
 
 
 
 
 /*
 COLLECT RULE
+written by: dma122, mtt8
 
 for weapon in weapons {
     match !players.elements.weapon.contains(weapon.name) {
@@ -85,16 +70,68 @@ for weapon in weapons {
 }
 
 - 0th variable: list of DataValues from left-hand side -> NameResolverRule
-- first variable: fresh variable from left-hand side of collect() -> string
-- second variable: lambda that evaluates to true or false -> TODO: = equals rule and NameResolverRule on both sides
+- first variable: fresh variable from left-hand side of collect(). It is the thing we are collecting -> string
+- second variable: lambda that evaluates to true or false -> = equals rule and NameResolverRule on both sides
+
+winners [{name: Marcus .....}, {name:David ....}  + extend ... ]
+players [{name: Marcus .....}, {name:David ....}, ... ]
+
+winners.elements.name -> 
 
 */
 
+// class CollectRule : public Rule {
+// public:
+//     CollectRule(std::string fresh_variable, std::string left_operand_key, std::unique_ptr<Rule> right_operand_maker, std::unique_ptr<Rule> list_maker)
+//         : fresh_variable{fresh_variable}, left_operand_maker{std::move(left_operand_maker)}, right_operand_maker{std::move(right_operand_maker)}, 
+//             list_maker(std::move(list_maker)) {}
+
+// private:
+//     void _handle_dependencies(NameResolver &name_resolver) {
+//         //name resolver will find the list of player maps for us
+//         collected_maps = const_cast< std::vector<DataValue>& > (list_maker->runBurst(name_resolver).asList()); 
+//         left_operand = left_operand_maker->runBurst(name_resolver); 
+//         right_operand = right_operand_maker->runBurst(name_resolver);
+//     }    
+
+    
+//     DataValue _runBurst(NameResolver &name_resolver) { 
+//         current_map = collected_maps.begin();
+        
+//         while (current_map != collected_maps.end()){
+//             map = (*current_map)->runBurst(name_resolver);
+//             // left_operand = current_map.find(weapon)
+//             // compare (left_operand, right_operand)
+//             // if true, add to winners
+
+
+//             current_map++;   
+//         }
+//         return left_operand;
+//     }   
+
+
+
+//     std::string left_operand_key;
+//     std::unique_ptr<Rule> right_operand_maker;
+//     std::unique_ptr<Rule> equality_rule; // TODO: construct equality rule as we go
+
+//     //List of individual player maps that we need to return
+//     std::vector<DataValue> collected_maps;
+//     // DataValue collected_maps;
+//     std::vector<DataValue>::iterator current_map;
+//     // DataValue::OrderedMapType map;
+//     std::string fresh_variable; // What we want to collect into a list (ex. "Player" maps)
+//     std::unique_ptr<Rule> list_maker; // NameResolver
+//     DataValue left_operand; // String
+//     DataValue right_operand; // String
+// };
 
 
 
 /*
 EQUALS RULE
+written by: jrspence
 
 - INVARIANT: arguments are not collections, but singular values (like int, bool, string)
 */ 
@@ -149,11 +186,11 @@ private:
             return DataValue( {DataValue::RuleStatus::ERROR} );
         }
         // Reserve space for extended list
-        auto& listToExtendAsVec = listToExtend.asList();
+        auto& listToExtendAsVec = const_cast< std::vector<DataValue>& >(listToExtend.asList());
         auto& listToAddAsVec = listToAdd.asList();
         listToExtendAsVec.reserve(listToExtendAsVec.size() + listToAddAsVec.size());
 
-        std::copy(listToAddAsVec.begin(), listToAddAsVec.end(), listToExtendAsVec.back());
+        std::copy(listToAddAsVec.begin(), listToAddAsVec.end(), std::back_inserter(listToExtendAsVec) );
     }
     
     std::unique_ptr<Rule> original_list_maker;
