@@ -288,13 +288,16 @@ void ParsedGameData::parseConfig(const string &fileContent) {
         } else if (sectionType == "rules") {
 
             // Parse rules
-            for (const auto &child : ts::Children{curr}) {
+            ts::Node rulesNode = curr.getChildByFieldName("body");
+            for (const auto &child : ts::Children{rulesNode}) {
                 auto rule = parseRuleSection(child, fileContent);
                 if (rule) {
                     rules.emplace_back(std::move(rule));
+                    std::cout << "Rule added to top level rules" << std::endl;
                 } else {
                     std::cerr << "Error: Rule is null" << std::endl;
                 }
+                std::cout << "TEST" << std::endl;
             }
         }
     }
@@ -702,7 +705,7 @@ std::unique_ptr<Rule> ParsedGameData::handleDiscard(const ts::Node &node, const 
     return discardRule;
 }
 
-std::unique_ptr<Rule> ParsedGameData::handleScore(const ts::Node &node, const std::string &source){
+std::unique_ptr<Rule> ParsedGameData::handleScore(const ts::Node &node, const std::string &source) {
     ts::Node scoreNode = node.getChildByFieldName("keys");
     std::vector<std::string> keysContent;
     DFS(scoreNode, source, keysContent);
@@ -734,6 +737,9 @@ std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, con
             parsedRule = handelInputChoice(child, source);
         } else if (ruleType == "discard") {
             parsedRule = handleDiscard(child, source);
+        } else if (ruleType == "scores") {
+            std::cout << "handleScores function" << std::endl; // TODO: remove
+            parsedRule = handleScore(child, source);
         } else {
             // Recursively handle other types of rules
             parsedRule = parseRuleSection(child, source);
