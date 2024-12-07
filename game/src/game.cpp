@@ -1,9 +1,10 @@
 #include "game.h"
 #include <ranges>
 #include <string_view>
+#include "GameConfigEdit.h"
 
 // Calls the constructors for the API objects and initializes the game name
-Game::Game(std::shared_ptr<ParsedGameData> parserObject, const std::string &gameName, GameConfiguration &gameConfig)
+Game::Game(std::shared_ptr<ParsedGameData> parserObject, const std::string &gameName, GameConfiguration &gameConfig,GameCreators *currentGameCreator)
     : gameName(gameName), configuration(gameConfig), constants(*parserObject), variables(*parserObject),
       globalMap(std::make_shared<NameResolver>()), perPlayerMap(parserObject->getPerPlayer()),
       perAudienceMap(parserObject->getPerAudience()) {
@@ -39,7 +40,19 @@ Game::Game(std::shared_ptr<ParsedGameData> parserObject, const std::string &game
         std::cout << "Config Setup Names : " << i.name << '\n';
     }
 
-    configurationMap.emplace("rounds", DataValue(setups.at(0).round));
+    //populate rounds for either SAME case OR CHANGE Case.
+    for (auto &i : setups) {
+        if(i.kind == "integer" && currentGameCreator->choseDefaultSettings ){
+            configurationMap.emplace("rounds", DataValue(i.getRange().value().first));
+        }
+        else if(i.kind == "integer"){
+            // basically choosing first value of range which is smallest as default.
+            configurationMap.emplace("rounds", DataValue(i.round));
+        }
+    }
+
+
+    
 
     // Convert setup rules to a vector of DataValue
     std::vector<DataValue> setupData;
@@ -70,19 +83,19 @@ Game::Game(std::shared_ptr<ParsedGameData> parserObject, const std::string &game
 // Game::Game(const std::string &gameName, NameResolver &nameResolver)
 //     : gameName(gameName), nameResolver(std::make_unique<NameResolver>(nameResolver)) {}
 
-Game::Game(const std::string &gameName, std::shared_ptr<IServer> server)
-    : gameName(gameName), globalMap(std::make_shared<NameResolver>()) {
+// Game::Game(const std::string &gameName, std::shared_ptr<IServer> server)
+//     : gameName(gameName), globalMap(std::make_shared<NameResolver>()) {
 
-    // // Add a simple input rule to the game
-    // std::unique_ptr<Rule> rule = std::make_unique<SimpleInputRule>(server);
-    // std::unique_ptr<AllPlayersRule> allPlayersRule = std::make_unique<AllPlayersRule>();
-    // std::unique_ptr<StringRule> simpleStringRule = std::make_unique<StringRule>("Hello, World!");
-    // std::unique_ptr<Rule> rule2 =
-    //     std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(simpleStringRule));
-    // rules.push_back(std::move(rule));
-    // rules.push_back(std::move(rule2));
-    // currentRule = rules.begin();
-}
+//     // // Add a simple input rule to the game
+//     // std::unique_ptr<Rule> rule = std::make_unique<SimpleInputRule>(server);
+//     // std::unique_ptr<AllPlayersRule> allPlayersRule = std::make_unique<AllPlayersRule>();
+//     // std::unique_ptr<StringRule> simpleStringRule = std::make_unique<StringRule>("Hello, World!");
+//     // std::unique_ptr<Rule> rule2 =
+//     //     std::make_unique<MessageRule>(server, std::move(allPlayersRule), std::move(simpleStringRule));
+//     // rules.push_back(std::move(rule));
+//     // rules.push_back(std::move(rule2));
+//     // currentRule = rules.begin();
+// }
 
 std::string Game::getGameName() const { return gameName; }
 

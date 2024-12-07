@@ -56,9 +56,10 @@ void GameSetupManager::handleSetupMessage(const networking::Connection &connecti
             connection);
     } else if (currentGameCreator->chosenGameToEdit) {
         if (message == "SAME" || currentGameCreator->howManyGamesAdminHasToSet == 0) {
+            currentGameCreator->choseDefaultSettings = true;
             std::string gameName = currentGameCreator->adminGame.getGameName().getName();
             std::unique_ptr<Game> game =
-                std::make_unique<Game>(currentGameCreator->parserObject, gameName, currentGameCreator->adminGame);
+                std::make_unique<Game>(currentGameCreator->parserObject, gameName, currentGameCreator->adminGame,currentGameCreator);
             listOfGameCreators.erase(it);
             lobbyManager->createLobby(std::move(game), connection);
         } else if (message == "CHANGE" || currentGameCreator->chosenGameToEdit) {
@@ -75,7 +76,7 @@ void GameSetupManager::handleSetupMessage(const networking::Connection &connecti
                 currentGameCreator->gameConfigIterator >= currentGameCreator->howManyGamesAdminHasToSet) {
                 std::string gameName = currentGameCreator->adminGame.getGameName().getName();
                 std::unique_ptr<Game> game =
-                    std::make_unique<Game>(currentGameCreator->parserObject, gameName, currentGameCreator->adminGame);
+                    std::make_unique<Game>(currentGameCreator->parserObject, gameName, currentGameCreator->adminGame,currentGameCreator);
                 listOfGameCreators.erase(it);
                 lobbyManager->createLobby(std::move(game), connection);
             }

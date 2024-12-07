@@ -8,11 +8,13 @@
 #include "GameVariables.h"
 #include "NameResolver.h"
 #include "Player.h"
+//#include "GameConfigEdit.h"
 #include <map>
 #include <ranges>
 #include <string>
 #include <vector>
 
+class GameCreators;
 /*
   This game class holds a global_map which contains all of the variables our
   game will need to run, including constants, rules, fresh variables, etc. It is instantiated
@@ -27,7 +29,7 @@ class Game {
 public:
     // For compilation purposes (remove later)
 
-    Game(std::shared_ptr<ParsedGameData> parserObject, const std::string &gameName, GameConfiguration &);
+    Game(std::shared_ptr<ParsedGameData> parserObject, const std::string &gameName, GameConfiguration &,GameCreators *);
     Game(const std::string &gameName, std::shared_ptr<IServer> server);
     ~Game() = default;
 

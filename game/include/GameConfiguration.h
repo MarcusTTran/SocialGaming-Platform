@@ -27,7 +27,7 @@ public:
         std::optional<std::pair<int, int>> range;
         std::optional<DataValue::EnumDescriptionType> choices;
         DataValue chosenValue;
-        int round = 3; // Default value
+        int round = 0; // Default value
         std::optional<DataValue::OrderedMapType> defaultValue;
 
         std::optional<std::pair<int, int>> getRange() const;

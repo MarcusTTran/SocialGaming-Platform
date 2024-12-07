@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <random>
 
+class Game;
+
 void LobbyManager::createLobby(std::unique_ptr<Game> game, const networking::Connection &lobbyCreator) {
 
     // Check if the connection has already created a lobby

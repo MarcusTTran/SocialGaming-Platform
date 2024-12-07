@@ -2,6 +2,8 @@
 
 #include "Lobby.h"
 #include "Messenger.h"
+#include "game.h"
+
 
 /*
  *  The LobbyManager is responsible for managing the creation and deletion of
