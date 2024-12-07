@@ -3,9 +3,10 @@
 #include <string_view>
 
 // Calls the constructors for the API objects and initializes the game name
-Game::Game(std::shared_ptr<ParsedGameData>  parserObject, const std::string &gameName, GameConfiguration &gameConfig)
+Game::Game(std::shared_ptr<ParsedGameData> parserObject, const std::string &gameName, GameConfiguration &gameConfig)
     : gameName(gameName), configuration(gameConfig), constants(*parserObject), variables(*parserObject),
-      globalMap(std::make_shared<NameResolver>()), perPlayerMap(parserObject->getPerPlayer()) {
+      globalMap(std::make_shared<NameResolver>()), perPlayerMap(parserObject->getPerPlayer()),
+      perAudienceMap(parserObject->getPerAudience()) {
 
     rules = parserObject->moveRules();
     std::cout << "Rules size: " << rules.size() << std::endl;
@@ -29,13 +30,15 @@ Game::Game(std::shared_ptr<ParsedGameData>  parserObject, const std::string &gam
     configurationMap.emplace("player range", DataValue(configuration.getPlayerRange()));
     configurationMap.emplace("audience", DataValue(configuration.hasAudience()));
 
-    // NOTE: getSetup() for some reason always contains 1 empty setup at the end. Keep that in mind when accessing things.
-    auto &setups = configuration.getSetup();//configuration doesn't work, not sure why. So i'm passing in the edited game config object aswell so it works.
+    // NOTE: getSetup() for some reason always contains 1 empty setup at the end. Keep that in mind when accessing
+    // things.
+    auto &setups = configuration.getSetup(); // configuration doesn't work, not sure why. So i'm passing in the edited
+                                             // game config object aswell so it works.
 
-    for (auto i: setups){
-        std::cout<<"Config Setup Names : " << i.name << '\n';
+    for (auto i : setups) {
+        std::cout << "Config Setup Names : " << i.name << '\n';
     }
-    
+
     configurationMap.emplace("rounds", DataValue(setups.at(0).round));
 
     // Convert setup rules to a vector of DataValue

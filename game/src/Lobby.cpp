@@ -26,18 +26,43 @@ void Lobby::addPlayer(Player &player) {
         server->sendToConnection("The game has already started. Please try again later.", player.getConnection());
         return;
     }
-    sendWelcomeMessage(player);
 
-    player.addPerVariableMap(game->getPerPlayerMap(), true);
-    std::cout << "Per player map size : " << game->getPerPlayerMap().size() << std::endl;
+    auto maxPlayers = game->maxPlayers();
+    auto hasAudience = game->hasAudience();
 
-    // print out per player map
-    auto playerMap = player.getMap(true);
-    for (const auto &pair : playerMap) {
-        std::cout << pair.first << " : " << pair.second << std::endl;
+    if (players.size() >= maxPlayers && !hasAudience) {
+        server->sendToConnection("The lobby is full. Please try again later", player.getConnection());
+        return;
+    }
+
+    if (players.size() >= maxPlayers && hasAudience) {
+        server->sendToConnection("The lobby is full. Joining as an audience member", player.getConnection());
+        player.addPerVariableMap(game->getPerAudienceMap(), false);
+
+        // For testing purposes
+        std::cout << "Per audience map size : " << game->getPerAudienceMap().size() << std::endl;
+
+        // print out per audience map
+        auto audienceMap = player.getMap(false);
+        for (const auto &pair : audienceMap) {
+            std::cout << pair.first << " : " << pair.second << std::endl;
+        }
+
+    } else {
+        player.addPerVariableMap(game->getPerPlayerMap(), true);
+
+        // For testing purposes
+        std::cout << "Per player map size : " << game->getPerPlayerMap().size() << std::endl;
+
+        // print out per player map
+        auto playerMap = player.getMap(true);
+        for (const auto &pair : playerMap) {
+            std::cout << pair.first << " : " << pair.second << std::endl;
+        }
     }
 
     players.push_back(player);
+    sendWelcomeMessage(player);
     sendCurrentListOfPlayers();
 }
 
