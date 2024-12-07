@@ -26,7 +26,8 @@ public:
         std::optional<std::string> prompt;
         std::optional<std::pair<int, int>> range;
         std::optional<DataValue::EnumDescriptionType> choices;
-        DataValue chosenChoice;
+        DataValue chosenValue;
+        int round;
         std::optional<DataValue::OrderedMapType> defaultValue;
 
         std::optional<std::pair<int, int>> getRange() const;
@@ -35,7 +36,7 @@ public:
     };
 
     // Constructor
-    GameConfiguration(const ParsedGameData& parserObject);
+    GameConfiguration(std::shared_ptr<ParsedGameData> parserObject);
     GameConfiguration(); // Delete later (for mocking purposes)
     ~GameConfiguration() = default;
 
@@ -53,6 +54,7 @@ public:
 
 private:
     GameName gameName;
+    std::shared_ptr<ParsedGameData> parserObject;
     std::pair<int, int> playerRange;
     bool audience;
     std::vector<Setup> setup;

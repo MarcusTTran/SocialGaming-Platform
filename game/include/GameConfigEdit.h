@@ -55,5 +55,5 @@ private:
     LobbyManager *lobbyManager;
 
     ConfigEditResult editingGameConfig(GameConfiguration &, GameCreators *, std::string);
-    ParsedEditInput parsingEditInput(const std::string &, GameConfiguration::Setup &, GameConfiguration &);
+    ParsedEditInput parsingEditInput(const std::string &, GameConfiguration::Setup &, GameConfiguration &,GameCreators *currentGameCreator);
 };

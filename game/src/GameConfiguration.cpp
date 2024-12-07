@@ -9,17 +9,20 @@ std::optional<DataValue::EnumDescriptionType> GameConfiguration::Setup::getChoic
 
 std::optional<DataValue::OrderedMapType> GameConfiguration::Setup::getDefault() const { return defaultValue; }
 
-GameConfiguration::GameConfiguration(const ParsedGameData& parserObject)
-    : gameName(parserObject.getGameName()), 
-      playerRange(parserObject.getPlayerRange()),
-      audience(parserObject.hasAudience()) 
-{
 
-    const auto &setupData = parserObject.getSetup();
+GameConfiguration::GameConfiguration(std::shared_ptr<ParsedGameData> parserObject)
+    : parserObject(parserObject),
+      gameName(parserObject->getGameName()),  
+      playerRange(parserObject->getPlayerRange()),
+      audience(parserObject->hasAudience())
+{
+    const auto &setupData = parserObject->getSetup();
     for (const auto &orderedMap : setupData) {
         setup.push_back(extractSetupFromOrderedMap(orderedMap));
     }
+    std::cout << "POPULATING SETUP, SHOULD HAPPEN 1 TIME FOR SINGLE SETUP \n";
 }
+
 
 
 GameConfiguration::GameConfiguration() 

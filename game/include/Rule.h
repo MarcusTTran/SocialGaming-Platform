@@ -107,7 +107,7 @@ class StringRule : public Rule {
 public:
     StringRule(std::string_view string_literal,
                std::optional<std::vector<std::unique_ptr<Rule>>> nameResolverRules = std::nullopt)
-        : string(string_literal) {
+        : original_string(string_literal) {
         if (nameResolverRules.has_value()) {
             if (nameResolverRules.value().size() > 0) {
                 fresh_variables_maker = std::move(nameResolverRules.value());
@@ -138,30 +138,33 @@ private:
             }
         }
         std::cout << "Found names: " << found_names.size() << std::endl;
-        std::cout << "String: " << string << std::endl;
+        std::cout << "String: " << original_string << std::endl;
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
         if (!has_fresh_variables) {
-            return DataValue(string);
+            return DataValue(original_string);
         }
 
+        std::string updated_string = original_string;
+
         for (const std::string &name : found_names) {
-            size_t openBracketPos = string.find('{');
-            size_t closeBracketPos = string.find('}');
+            size_t openBracketPos = updated_string.find('{');
+            size_t closeBracketPos = updated_string.find('}');
             if (openBracketPos == std::string::npos || closeBracketPos == std::string::npos) {
                 return DataValue(DataValue::RuleStatus::ERROR);
             }
-            string.replace(openBracketPos, closeBracketPos - openBracketPos + 1, name);
+            updated_string.replace(openBracketPos, closeBracketPos - openBracketPos + 1, name);
         }
+        found_names.clear();
 
-        std::cout << "String after replacement: " << string << std::endl;
-        return DataValue(string);
+        std::cout << "String after replacement: " << updated_string << std::endl;
+        return DataValue(updated_string);
     }
 
     std::vector<std::unique_ptr<Rule>> fresh_variables_maker; // Holding fresh variables in brackets
     std::vector<std::string> found_names;                     // Names that will replace the brackets
-    std::string string;
+    std::string original_string;
     bool has_fresh_variables = false;
 };
 
@@ -315,6 +318,9 @@ private:
         // Update the pending connections in the global map
         name_resolver.setValue("pending_connections", DataValue(pending_connections_value));
 
+        // Clear the incoming messages after processing
+        name_resolver.setValue("incoming_messages", DataValue(DataValue::OrderedMapType{}));
+
         if (pending_connections_value.empty()) {
             return DataValue({DataValue::RuleStatus::DONE});
         }
@@ -407,28 +413,21 @@ private:
 
 class ScopeRule : public Rule {
 public:
-    ScopeRule(std::vector<std::unique_ptr<Rule>> contents)
-        : statement_list{std::move(contents)} {}
+    ScopeRule(std::vector<std::unique_ptr<Rule>> contents) : statement_list{std::move(contents)} {}
 
 private:
-    void _handle_dependencies(NameResolver &name_resolver) override {
-        current_statement = statement_list.begin();
-    }
+    void _handle_dependencies(NameResolver &name_resolver) override { current_statement = statement_list.begin(); }
 
-    DataValue _runBurst(NameResolver &name_resolver) override
-    {
+    DataValue _runBurst(NameResolver &name_resolver) override {
         // Check for early return
-        if (statement_list.empty())
-        {
+        if (statement_list.empty()) {
             return DataValue({DataValue::RuleStatus::DONE});
         }
 
         // Run remaining statements
-        while (current_statement != statement_list.end())
-        {
+        while (current_statement != statement_list.end()) {
             auto rule_state = (*current_statement)->runBurst(name_resolver);
-            if (!rule_state.isCompleted())
-            {
+            if (!rule_state.isCompleted()) {
                 return DataValue({DataValue::RuleStatus::NOTDONE});
             }
 
@@ -699,46 +698,50 @@ private:
         }
     }
 */
-class MatchRule : public Rule{
-  public:
-  MatchRule(std::unique_ptr<Rule> condition_maker, std::vector<std::unique_ptr<Rule>> check_condition, 
-  std::vector<std::unique_ptr<Rule>> scoped_rules)
-  : condition_maker{std::move(condition_maker)}, check_condition{std::move(check_condition)}, 
-  scoped_rules{std::move(scoped_rules)} {assert(check_condition.size() == scoped_rules.size() 
-  && "check conditions and amount of rules are not equal! (MatchRule)");} //each set of rules must have a condition
+class MatchRule : public Rule {
+public:
+    MatchRule(std::unique_ptr<Rule> condition_maker, std::vector<std::unique_ptr<Rule>> check_condition,
+              std::vector<std::unique_ptr<Rule>> scoped_rules)
+        : condition_maker{std::move(condition_maker)}, check_condition{std::move(check_condition)},
+          scoped_rules{std::move(scoped_rules)} {
+        assert(check_condition.size() == scoped_rules.size() &&
+               "check conditions and amount of rules are not equal! (MatchRule)");
+    } // each set of rules must have a condition
 
-  private:
+private:
     void _handle_dependencies(NameResolver &name_resolver) override {
-        //its this part match !players.elements.weapon.contains(weapon.name)
+        // its this part match !players.elements.weapon.contains(weapon.name)
         condition = condition_maker->runBurst(name_resolver);
-        //since check_condition and scope_rules are same size and we need to access the same index for both vector,
-        // we can use an integer instead for the iterator
+        // since check_condition and scope_rules are same size and we need to access the same index for both vector,
+        //  we can use an integer instead for the iterator
         it = 0;
     }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        /* 
+        /*
             go through all of the different statements and check if they match the condition we evaluated earlier
             true => {
                 extend winners with players.elements.collect(player, player.weapon = weapon.beats);\
             }
-        */ 
-        while(it < check_condition.size()){
-            //this would be this part: true =>, but can also be a more sophisticated rule in the future (currently just boolean, string or number)
-            // and will need error checking to see if the rule is done or not
+        */
+        while (it < check_condition.size()) {
+            // this would be this part: true =>, but can also be a more sophisticated rule in the future (currently just
+            // boolean, string or number)
+            //  and will need error checking to see if the rule is done or not
             check = (*check_condition[it]).runBurst(name_resolver);
-            //check if they are same type and can be evaluated
-            if(condition.checkIfMatch(check)){
-                //scoped_rules list (may contain multiple rules such as in the example)
-                //extend winners with players.elements.collect(player, player.weapon = weapon.beats);
-                //they are same type and are equal then we can run the rules since we found a match
+            // check if they are same type and can be evaluated
+            if (condition.checkIfMatch(check)) {
+                // scoped_rules list (may contain multiple rules such as in the example)
+                // extend winners with players.elements.collect(player, player.weapon = weapon.beats);
+                // they are same type and are equal then we can run the rules since we found a match
                 DataValue returnValue = (*scoped_rules[it]).runBurst(name_resolver);
-                if (!returnValue.isCompleted()){
-                    //return not done and then have this be recalled later since the iterator will stay the same we can instantly return back to where we were
+                if (!returnValue.isCompleted()) {
+                    // return not done and then have this be recalled later since the iterator will stay the same we can
+                    // instantly return back to where we were
                     return DataValue(DataValue::RuleStatus::NOTDONE);
                 }
             }
-            //iterate through to the next group of statements to check
+            // iterate through to the next group of statements to check
             it++;
         }
         return DataValue(DataValue::RuleStatus::DONE);
@@ -752,20 +755,18 @@ class MatchRule : public Rule{
     std::vector<std::unique_ptr<Rule>> scoped_rules;
 };
 
-//!players.elements.weapon.contains(weapon.name)
-class ContainsRule : public Rule{
-    public:
+//! players.elements.weapon.contains(weapon.name)
+class ContainsRule : public Rule {
+public:
     ContainsRule(std::vector<DataValue> item_list, DataValue item)
-    : item_list{std::move(item_list)}, item{std::move(item)} {} 
+        : item_list{std::move(item_list)}, item{std::move(item)} {}
 
-  private:
-    void _handle_dependencies(NameResolver &name_resolver) override {
-        current_item = item_list.begin();
-    }
+private:
+    void _handle_dependencies(NameResolver &name_resolver) override { current_item = item_list.begin(); }
 
     DataValue _runBurst(NameResolver &name_resolver) override {
-        while(current_item != item_list.end()){
-            if((*current_item).checkIfMatch(item)){
+        while (current_item != item_list.end()) {
+            if ((*current_item).checkIfMatch(item)) {
                 return DataValue(true);
             }
             current_item++;
@@ -776,3 +777,57 @@ class ContainsRule : public Rule{
     std::vector<DataValue> item_list;
     std::vector<DataValue>::iterator current_item;
 };
+
+// Prints a score board of the players given a list of keys to look for in the player map
+class ScoresRule : public Rule {
+
+public:
+    ScoresRule(std::vector<std::string> keys, networking::Connection main_display, std::shared_ptr<IServer> messenger)
+        : keys(keys), main_display(main_display), messenger(messenger) {}
+
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        players = name_resolver.getValue("players").value().asList();
+
+        for (const auto &player : players) {
+            auto player_map = player.asOrderedMap();
+            std::string player_name = player_map["name"].asString();
+
+            for (const auto &key : keys) {
+                if (player_map.find(key) == player_map.end()) {
+                    throw std::runtime_error("Key not found in player map");
+                }
+
+                if (player_map[key].getType() == "NUMBER") {
+                    scores.push_back(player_name + ": " + key + " " + std::to_string(player_map[key].asNumber()));
+                } else if (player_map[key].getType() == "STRING") {
+                    scores.push_back(player_name + ": " + key + " " + player_map[key].asString());
+                } else {
+                    throw std::runtime_error("Key value is not a number or string");
+                }
+            }
+        }
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        auto score_board = getScores();
+
+        messenger->sendToConnection(score_board, main_display);
+        return DataValue(DataValue::RuleStatus::DONE);
+    }
+
+    std::string getScores() {
+        std::string score_board;
+        for (const auto &score : scores) {
+            score_board += score + "\n";
+        }
+        return score_board;
+    }
+
+private:
+    std::vector<std::string> keys;
+    std::vector<DataValue> players;
+    std::vector<std::string> scores;
+    std::shared_ptr<IServer> messenger;
+    networking::Connection main_display;
+};
+
