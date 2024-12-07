@@ -33,7 +33,8 @@ using std::vector;
 
 class ParsedGameData {
 public:
-    ParsedGameData(const string &configFileContent, std::shared_ptr<IServer> server);
+    ParsedGameData(const string &configFileContent, std::shared_ptr<IServer> server,
+        networking::Connection connection);
 
     string getGameName() const;
     pair<int, int> getPlayerRange() const;
@@ -63,6 +64,7 @@ private:
     bool audience;
     Configuration configuration;
     std::shared_ptr<IServer> server; // For constructing messaging rules
+    networking::Connection gameConnection;
 
     // using variant types to do a map-like data structure while preserving data order
     DataValue::OrderedMapType variables;
@@ -85,11 +87,14 @@ private:
     std::unique_ptr<Rule> handleMessageSection(const ts::Node &node, const string &source);
     void traverseHelper(const ts::Node &node, const string &source, std::vector<std::unique_ptr<Rule>> &checkCondition,
                         std::vector<std::unique_ptr<Rule>> &scopedRule);
-    void handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule);
+    std::unique_ptr<Rule> handleMatchRule(const ts::Node &node, const string &source);
     void handleWhileSection(const ts::Node &node, const string &source, Rule &outerRule);
     std::unique_ptr<Rule> handelInputChoice(const ts::Node &node, const std::string &source);
     // void handleNameResolverRule(const ts::Node &node, const string &source, Rule &outerRule);
-    std::unique_ptr<Rule> handleBuiltin(const ts::Node &node, const std::string &source, std::unique_ptr<Rule> rule);
+    std::unique_ptr<Rule> handleBuiltin(const ts::Node &node, const std::string &source, std::unique_ptr<Rule> rule
+        , std::vector<DataValue> list);
+    std::unique_ptr<Rule> handleDiscard(const ts::Node &node, const std::string &source);
+    std::unique_ptr<Rule> handleScore(const ts::Node &node, const std::string &source);
     std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
     string ruleTypeToString(RuleT::Type type);
     RuleT::Type getRuleType(const string &type);

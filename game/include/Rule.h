@@ -777,3 +777,57 @@ private:
     std::vector<DataValue> item_list;
     std::vector<DataValue>::iterator current_item;
 };
+
+// Prints a score board of the players given a list of keys to look for in the player map
+class ScoresRule : public Rule {
+
+public:
+    ScoresRule(std::vector<std::string> keys, networking::Connection main_display, std::shared_ptr<IServer> messenger)
+        : keys(keys), main_display(main_display), messenger(messenger) {}
+
+    void _handle_dependencies(NameResolver &name_resolver) override {
+        players = name_resolver.getValue("players").value().asList();
+
+        for (const auto &player : players) {
+            auto player_map = player.asOrderedMap();
+            std::string player_name = player_map["name"].asString();
+
+            for (const auto &key : keys) {
+                if (player_map.find(key) == player_map.end()) {
+                    throw std::runtime_error("Key not found in player map");
+                }
+
+                if (player_map[key].getType() == "NUMBER") {
+                    scores.push_back(player_name + ": " + key + " " + std::to_string(player_map[key].asNumber()));
+                } else if (player_map[key].getType() == "STRING") {
+                    scores.push_back(player_name + ": " + key + " " + player_map[key].asString());
+                } else {
+                    throw std::runtime_error("Key value is not a number or string");
+                }
+            }
+        }
+    }
+
+    DataValue _runBurst(NameResolver &name_resolver) override {
+        auto score_board = getScores();
+
+        messenger->sendToConnection(score_board, main_display);
+        return DataValue(DataValue::RuleStatus::DONE);
+    }
+
+    std::string getScores() {
+        std::string score_board;
+        for (const auto &score : scores) {
+            score_board += score + "\n";
+        }
+        return score_board;
+    }
+
+private:
+    std::vector<std::string> keys;
+    std::vector<DataValue> players;
+    std::vector<std::string> scores;
+    std::shared_ptr<IServer> messenger;
+    networking::Connection main_display;
+};
+
