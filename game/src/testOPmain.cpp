@@ -31,8 +31,9 @@ public:
 int main()
 {   
     // TODO: fix this it is not useable right now
+    networking::Connection connection;
     std::shared_ptr<MockMessenger> mockMessenger = std::make_shared <MockMessenger>();
-    ParsedGameData parser = ParsedGameData("../373-24-fahsa/config/config.game", mockMessenger);
+    ParsedGameData parser = ParsedGameData("../373-24-fahsa/config/config.game", mockMessenger, connection);
     // Call methods on the parser as needed
     std::string gameName = parser.getGameName();
     std::cout << "Game name: " << gameName << std::endl;

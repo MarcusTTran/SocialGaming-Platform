@@ -13,7 +13,7 @@
 class DataValue {
 
 public:
-    enum RuleStatus { DONE, NOTDONE, ERROR}; // TODO: add more this
+    enum RuleStatus { DONE, NOTDONE, ERROR }; // TODO: add more this
 
     using OrderedMapType = std::map<std::string, DataValue>;                    // Swapped
     using EnumDescriptionType = std::vector<std::pair<std::string, DataValue>>; // Swapped
@@ -85,7 +85,7 @@ public:
     const std::string &asString() const { return std::get<std::string>(value); }
     int asNumber() const { return std::get<int>(value); }
     bool asBoolean() const { return std::get<bool>(value); }
-    const std::vector<DataValue> &asList() const { return std::get<std::vector<DataValue>>(value); } 
+    const std::vector<DataValue> &asList() const { return std::get<std::vector<DataValue>>(value); }
     const OrderedMapType &asOrderedMap() const { return std::get<OrderedMapType>(value); } // Updated type
     const EnumDescriptionType &asEnumDescription() const {
         return std::get<EnumDescriptionType>(value);
@@ -147,7 +147,7 @@ public:
             os << indent << (asBoolean() ? "true" : "false");
         } else if (std::holds_alternative<std::vector<DataValue>>(value)) {
             os << indent << "[\n";
-            for (const auto &item : asList()) { 
+            for (const auto &item : asList()) {
                 item.print(os, indentLevel + 2);
                 os << "\n";
             }
@@ -188,6 +188,8 @@ public:
 
         return true;
     }
+
+    bool operator==(const DataValue &other) const { return value == other.value; }
 
 private:
     ValueType value;

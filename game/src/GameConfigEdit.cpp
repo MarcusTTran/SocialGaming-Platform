@@ -25,25 +25,29 @@ void GameSetupManager::handleSetupMessage(const networking::Connection &connecti
         int number;
         try {
             number = std::stoi(message);
+            std::cout << "Number: " << number << std::endl;
             if (getConfigMap().find(number) == getConfigMap().end()) {
                 messenger->sendToConnection(
                     "Error, invalid entry, please enter an integer that exists within list of games.", connection);
                 return;
             } else {
                 gameConfigPath = getConfigMap().at(number);
+                std::cout << "Game Config Path: " << gameConfigPath << std::endl;
             }
         } catch (const std::exception &e) {
+            std::cerr << "Error parsing message: " << e.what() << std::endl;
             messenger->sendToConnection("Error, invalid entry, please enter an integer: " + std::string(e.what()),
                                         connection);
             return;
         }
 
-        std::shared_ptr<ParsedGameData> parser = std::make_shared<ParsedGameData>(gameConfigPath, messenger);
-        GameConfiguration config(*parser);
+        std::shared_ptr<ParsedGameData> parser =
+            std::make_shared<ParsedGameData>(gameConfigPath, messenger, connection);
         currentGameCreator->chosenGameToEdit = true;
-        currentGameCreator->adminGame = config;
+        currentGameCreator->adminGame = GameConfiguration(parser);
         currentGameCreator->parserObject = parser;
-        currentGameCreator->howManyGamesAdminHasToSet = config.getSetup().size() - 1;
+        currentGameCreator->howManyGamesAdminHasToSet =
+            currentGameCreator->adminGame.getSetup().size(); // for some reason getSetup contains an empty setup.
         messenger->sendToConnection(
             "You have chosen game " + message + " with config path: " + getConfigMap().at(number), connection);
         messenger->sendToConnection(
@@ -52,8 +56,10 @@ void GameSetupManager::handleSetupMessage(const networking::Connection &connecti
             connection);
     } else if (currentGameCreator->chosenGameToEdit) {
         if (message == "SAME" || currentGameCreator->howManyGamesAdminHasToSet == 0) {
+            currentGameCreator->choseDefaultSettings = true;
             std::string gameName = currentGameCreator->adminGame.getGameName().getName();
-            std::unique_ptr<Game> game = std::make_unique<Game>(*currentGameCreator->parserObject, gameName);
+            std::unique_ptr<Game> game =
+                std::make_unique<Game>(currentGameCreator->parserObject, gameName, currentGameCreator->adminGame,currentGameCreator);
             listOfGameCreators.erase(it);
             lobbyManager->createLobby(std::move(game), connection);
         } else if (message == "CHANGE" || currentGameCreator->chosenGameToEdit) {
@@ -69,7 +75,8 @@ void GameSetupManager::handleSetupMessage(const networking::Connection &connecti
             if (configStatusResult.status == EditState::Done ||
                 currentGameCreator->gameConfigIterator >= currentGameCreator->howManyGamesAdminHasToSet) {
                 std::string gameName = currentGameCreator->adminGame.getGameName().getName();
-                std::unique_ptr<Game> game = std::make_unique<Game>(*currentGameCreator->parserObject, gameName);
+                std::unique_ptr<Game> game =
+                    std::make_unique<Game>(currentGameCreator->parserObject, gameName, currentGameCreator->adminGame,currentGameCreator);
                 listOfGameCreators.erase(it);
                 lobbyManager->createLobby(std::move(game), connection);
             }
@@ -131,17 +138,29 @@ ConfigEditResult GameSetupManager::editingGameConfig(GameConfiguration &config, 
                 result << "  " << key << ": " << value.getType() << '\n';
             }
         }
-        result << "Please enter kind and your desired configuration (I.e for range 'integer 1-3', for choice 'enum 1(1 "
-                  "stands for first game starting from top to bottom.):', for true/false 'boolean false', for prompt "
-                  "'prompt messageyouwanthere') : \n";
+        if (setup.kind == "integer") {
+            result << "Please enter kind and your desired configuration: For range 'integer 1-3' OR for a single "
+                      "integer 'integer 11' \n";
+        } else if (setup.kind == "enum") {
+            result << "Please enter kind and your desired configuration: For choice 'enum 1(1 stands for first game "
+                      "starting from top to bottom.):'\n";
+        } else if (setup.kind == "boolean") {
+            result << "Please enter kind and your desired configuration: For true/false 'boolean false'\n";
+        } else if (setup.kind == "prompt") {
+            result << "Please enter kind and your desired configuration: For prompt 'prompt messageyouwanthere') : \n";
+        } else {
+            result << "Please enter kind and your desired configuration: ";
+        }
+
         currentGameCreator->editingSetup = true;
         result << " \n";
+        messenger->sendToConnection(result.str(), networking::Connection{currentGameCreator->connectionID});
         ConfigEditResult msg;
         msg.message = result.str();
         msg.status = EditState::Success;
         return msg;
     } else if (currentGameCreator->editingSetup) {
-        auto editResult = parsingEditInput(adminMessage, setup, config);
+        auto editResult = parsingEditInput(adminMessage, setup, config, currentGameCreator);
         ConfigEditResult msg;
         msg.message = result.str();
         if (editResult.editSuccessValue) {
@@ -161,19 +180,29 @@ ConfigEditResult GameSetupManager::editingGameConfig(GameConfiguration &config, 
 }
 
 ParsedEditInput GameSetupManager::parsingEditInput(const std::string &message, GameConfiguration::Setup &setup,
-                                                   GameConfiguration &config) {
+                                                   GameConfiguration &config, GameCreators *currentGameCreator) {
     ParsedEditInput result;
     std::istringstream stream(message);
     stream >> result.kind;
     std::getline(stream, result.value);
+    std::cout << "VALUE EDITING : " << result.value << '\n';
+    std::cout << "VALUE EDIT KIND : " << result.kind << '\n';
     if (result.kind == "integer") {
         if (result.value.find('-') == std::string::npos) {
+            std::cout << "VALUE EDITING single integer default : " << result.value << '\n';
             if (setup.getDefault().has_value()) {
                 auto defaultValue = setup.getDefault().value();
                 for (auto &[key, value] : defaultValue) {
                     value = result.value;
                     std::cout << "SET DEFAULT VALUE TO NOW BE : " << value << '\n';
                 }
+                return result;
+            } else { // default doesn't exist. So we must set it.
+                auto &setups = config.getSetup();
+                auto &setupR = setups.at(currentGameCreator->gameConfigIterator);
+                setupR.round = std::stoi(result.value);
+                std::cout << "SET DEFAULT VALUE TO NOW BE default : " << setupR.round << '\n';
+                return result;
             }
         } else {
             char dash = '-';
@@ -190,7 +219,7 @@ ParsedEditInput GameSetupManager::parsingEditInput(const std::string &message, G
     } else if (result.kind == "enum") {
         int index = std::stoi(result.value) - 1;
         auto &holder = setup.choices.value().at(index);
-        setup.chosenChoice = holder.second;
+        setup.chosenValue = holder.second;
         return result;
     } else if (result.kind == "boolean") {
     } else if (result.kind == "prompt") {
@@ -198,4 +227,6 @@ ParsedEditInput GameSetupManager::parsingEditInput(const std::string &message, G
         result.editSuccessValue = false;
         return result;
     }
+    result.editSuccessValue = false;
+    return result;
 }
