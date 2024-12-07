@@ -85,12 +85,13 @@ private:
     std::unique_ptr<Rule> handleMessageSection(const ts::Node &node, const string &source);
     void traverseHelper(const ts::Node &node, const string &source, std::vector<std::unique_ptr<Rule>> &checkCondition,
                         std::vector<std::unique_ptr<Rule>> &scopedRule);
-    void handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule);
+    std::unique_ptr<Rule> handleMatchRule(const ts::Node &node, const string &source);
     void handleWhileSection(const ts::Node &node, const string &source, Rule &outerRule);
     std::unique_ptr<Rule> handelInputChoice(const ts::Node &node, const std::string &source);
     // void handleNameResolverRule(const ts::Node &node, const string &source, Rule &outerRule);
     std::unique_ptr<Rule> handleBuiltin(const ts::Node &node, const std::string &source, std::unique_ptr<Rule> rule
         , std::vector<DataValue> list);
+    std::unique_ptr<Rule> handleDiscard(const ts::Node &node, const std::string &source);
     std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
     string ruleTypeToString(RuleT::Type type);
     RuleT::Type getRuleType(const string &type);
