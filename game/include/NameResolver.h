@@ -1,17 +1,28 @@
 #pragma once
 
 #include "CommonVariantTypes.h"
+#include <optional>
 #include <string>
 #include <unordered_map>
-#include <optional>
 
 using Map = std::unordered_map<std::string, DataValue>;
-// std::optional<DataValue> findInMap(const DataValue::OrderedMapType &map, const std::vector<std::string>& search_keys);
+// std::optional<DataValue> findInMap(const DataValue::OrderedMapType &map, const std::vector<std::string>&
+// search_keys);
 
 class NameResolver {
 public:
     void addInnerScope() { full_scope.push_back({}); }
     void removeInnerScope() { full_scope.pop_back(); }
+
+    bool addToGlobalScope(const std::string &key, const DataValue &value) {
+        // return false if the key already exists in the global scope
+        if (full_scope[0].find(key) != full_scope[0].end()) {
+            return false;
+        }
+        // add new key/value pair to global scope
+        full_scope[0][key] = value;
+        return true;
+    }
 
     bool addNewValue(const std::string &key, const DataValue &value) {
         // Create top level scope if empty
@@ -38,8 +49,14 @@ public:
                 return true;
             }
         }
+        // If the key is not found in any scope, add it to the innermost scope
+        if (!full_scope.empty()) {
+            full_scope.back()[key] = value;
+            return true;
+        }
         return false;
     }
+
     // Returns a nullopt if value is not found.
     std::optional<DataValue> getValue(const std::string &key) {
         for (auto it = full_scope.rbegin(); it != full_scope.rend(); ++it) {
@@ -54,51 +71,54 @@ public:
     }
 
     // Returns a nullopt if value is not found. Returns a DataValue from a nested structure of maps.
-    std::optional<DataValue> getNestedValue(const std::vector<std::string>& search_keys) {
+    std::optional<DataValue> getNestedValue(std::vector<std::string> &search_keys) {
         auto valueInTopScope = getValue(search_keys[0]);
         if (valueInTopScope == std::nullopt) {
             return DataValue("ERROR");
         }
-        
-        std::vector<std::string> nestedKeys(search_keys);
-        nestedKeys.erase(search_keys.begin());
-        const auto& result = findInMap(valueInTopScope->asOrderedMap(), search_keys);
+
+        if (search_keys.size() == 1) {
+            return valueInTopScope;
+        }
+        search_keys.erase(search_keys.begin());
+        const auto &result = findInMap(valueInTopScope->asOrderedMap(), search_keys);
         return result;
     }
 
-    // std::optional<DataValue> findInList(const std::vector<DataValue>& list, const std::vector<std::string>& search_keys) {
-        
+    // std::optional<DataValue> findInList(const std::vector<DataValue>& list, const std::vector<std::string>&
+    // search_keys) {
+
     //     // TODO: impl this for contains rule
     // }
 
 private:
-    // INVARIANT: key-value pair cannot be contained in any nested structure that is a list. 
+    // INVARIANT: key-value pair cannot be contained in any nested structure that is a list.
     //            Must be made of maps only.
-    std::optional<DataValue> findInMap(const DataValue::OrderedMapType &map, const std::vector<std::string>& search_keys) {
-        const DataValue::OrderedMapType* current_map_level = &map;
+    std::optional<DataValue> findInMap(const DataValue::OrderedMapType &map,
+                                       const std::vector<std::string> &search_keys) {
+        const DataValue::OrderedMapType *current_map_level = &map;
         for (size_t i = 0; i < search_keys.size(); ++i) {
-            // Keep searching through the levels of each map equal to the number of search key terms
-            const auto& key = search_keys[i];
+            const auto &key = search_keys[i];
             auto it = current_map_level->find(key);
-            
+
             // Did not find the next key:map pair when we have not reached the last level of nesting
-            if (i < (search_keys.size() - 1) && it == current_map_level->end()) {
+            if (it == current_map_level->end()) {
                 return std::nullopt;
             }
+
             // Terminate loop if we found the key-value pair at the last level of nesting
-            if (i == (search_keys.size() - 1) && it != current_map_level->end()) {
+            if (i == (search_keys.size() - 1)) {
                 return it->second;
             }
 
-            // Otherwise continue searching
+            // Otherwise continue searching through the nested map
             current_map_level = &it->second.asOrderedMap();
         }
 
         // Should not reach this point!
-        std::cerr << "Reach end of non-void function in findInMap()." << std::endl;
+        std::cerr << "Reached end of non-void function in findInMap()." << std::endl;
         return std::nullopt;
     }
 
-
-    std::vector<Map> full_scope; 
+    std::vector<Map> full_scope;
 };

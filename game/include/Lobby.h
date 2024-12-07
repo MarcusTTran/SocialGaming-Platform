@@ -22,7 +22,7 @@ public:
     Lobby(std::unique_ptr<Game>, std::shared_ptr<IServer> server, std::shared_ptr<networking::Connection> lobbyCreator,
           std::string lobbyCode);
     ~Lobby() = default;
-    void addPlayer(const Player &player);
+    void addPlayer(Player &player);
     void removePlayer(const Player &player);
     void sendToAll(const std::string &message);
     void sendToPlayer(const Player &player, const std::string &message);

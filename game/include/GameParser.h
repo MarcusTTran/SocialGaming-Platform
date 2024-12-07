@@ -2,10 +2,10 @@
 #pragma once
 
 #include "CommonVariantTypes.h"
+#include "Expression.h"
 #include "Messenger.h"
 #include "Rule.h"
 #include "RuleTypes.h"
-#include "Expression.h"
 #include "tree_sitter/api.h"
 #include <algorithm>
 #include <cpp-tree-sitter.h>
@@ -19,6 +19,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+
 
 /*
     This is game parser class, which is responsible for parsing data from txt input file
@@ -82,21 +83,19 @@ private:
     void DFS(const ts::Node &node, const string &source, std::vector<std::string> &str);
     std::unique_ptr<Rule> handleForRule(const ts::Node &node, const string &source);
     std::unique_ptr<Rule> handleMessageSection(const ts::Node &node, const string &source);
-    void traverseHelper(const ts::Node &node, const string &source, 
-    std::vector<std::unique_ptr<Rule>> &checkCondition, 
-    std::vector<std::unique_ptr<Rule>> &scopedRule);
+    void traverseHelper(const ts::Node &node, const string &source, std::vector<std::unique_ptr<Rule>> &checkCondition,
+                        std::vector<std::unique_ptr<Rule>> &scopedRule);
     void handleMatchRule(const ts::Node &node, const string &source, Rule &outerRule);
     void handleWhileSection(const ts::Node &node, const string &source, Rule &outerRule);
-    void handelInputChoice(const ts::Node &node, const std::string &source);
+    std::unique_ptr<Rule> handelInputChoice(const ts::Node &node, const std::string &source);
     // void handleNameResolverRule(const ts::Node &node, const string &source, Rule &outerRule);
     std::unique_ptr<Rule> handleBuiltin(const ts::Node &node, const std::string &source, std::unique_ptr<Rule> rule);
     std::unique_ptr<Rule> parseRuleSection(const ts::Node &node, const string &source);
     string ruleTypeToString(RuleT::Type type);
     RuleT::Type getRuleType(const string &type);
 
-    std::string extractAndReplacePlaceholders(const std::string& contentStr,
-        std::vector<std::string>& variables);
-    void splitString(const std::string& str, char delimiter, std::vector<std::string>& parts);
+    std::string extractAndReplacePlaceholders(const std::string &contentStr, std::vector<std::string> &variables);
+    void splitString(const std::string &str, char delimiter, std::vector<std::string> &parts);
     // print tree strucutre to console for debugging
     void printTree(const ts::Node &node, const string &source, int indent = 0);
     void printSingleDataValue(const DataValue &value, int indent);

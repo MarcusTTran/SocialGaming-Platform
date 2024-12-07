@@ -1,7 +1,7 @@
 // These are examples of core properties of a game that might be
 // configured when setting up an instance or lobby for a game.
 configuration {
-  name: "Rock, Paper, Scissors"
+  name: "InputGame"
   player range: (2, 4)
   audience: false
   setup: {
@@ -31,7 +31,7 @@ variables {
 // initializing `wins` below to 0 creates a counter for each player and
 // initializes it to 0.
 per-player {
-  weapon: "Rock"
+  weapon: "Rock",
   wins: 0
 }
 
@@ -43,41 +43,34 @@ per-audience {}
 // Finally, the rules of the game execute as previously described after the
 // game has been started.
 rules {
+ 
   for round in configuration.rounds.upfrom(1) {
 
-    discard winners.size() from winners;
 
     message all "Round {round}. Choose your weapon!";
 
-    parallel for player in players {
-      input choice to player {
-        prompt: "{player.name}, choose your weapon!"
+    
+  
+      input choice to all {
+        prompt: "choose your weapon!"
         choices: weapons.elements.name
-        target: player.weapon
+        target: weapon
         timeout: 10
       }
-    }
 
-    for weapon in weapons {
-      match !players.elements.weapon.contains(weapon.name) {
-        true => {
-          extend winners with players.collect(player, player.weapon = weapon.beats);
-        }
-      }
-    }
 
-    match true {
-      winners.size() = players.size() || winners.size() = 0 => {
-        message all "Tie game!";
-      }
-      true => {
-        message all "Winners: {winners.elements.name}";
-        for winner in winners {
-          winner.wins <- winner.wins + 1;
-        }
-      }
-    }
+
+
   }
+   
+    
+ 
+    
+    
+ 
+
+   
+
 
   // Report the final scores!
   scores ["wins"];

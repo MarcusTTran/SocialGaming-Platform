@@ -27,7 +27,7 @@ class Game {
 public:
     // For compilation purposes (remove later)
 
-    Game(ParsedGameData &parserObject, const std::string &gameName);
+    Game(std::shared_ptr<ParsedGameData> parserObject, const std::string &gameName, GameConfiguration &);
     Game(const std::string &gameName, std::shared_ptr<IServer> server);
     ~Game() = default;
 
@@ -39,6 +39,10 @@ public:
     void insertIncomingMessages(const std::deque<networking::Message> &incomingMessages);
     void addObjectToGlobalMap(const std::string &key, const DataValue &value, NameResolver &globalMap);
     bool isGameDone() const { return isDone; }
+    int maxPlayers() const { return configuration.getPlayerRange().second; }
+    bool hasAudience() const { return configuration.hasAudience(); }
+    DataValue::OrderedMapType getPerAudienceMap() const { return perAudienceMap; }
+    DataValue::OrderedMapType getPerPlayerMap() const { return perPlayerMap; }
 
 private:
     std::shared_ptr<NameResolver> globalMap;
@@ -51,6 +55,8 @@ private:
     GameConstants constants;
     GameVariables variables;
     std::vector<std::unique_ptr<Rule>> rules;
+    DataValue::OrderedMapType perPlayerMap;
+    DataValue::OrderedMapType perAudienceMap;
 
     std::vector<std::unique_ptr<Rule>>::iterator currentRule;
 };

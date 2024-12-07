@@ -373,11 +373,11 @@ std::unique_ptr<Rule> ParsedGameData::handleBuiltin(const ts::Node &node, const 
         std::cout << "handle builtin function" << std::endl; // TODO: remove
         std::string strVal = std::string(node.getNextSibling().getSourceRange(source));
         if (!strVal.empty() && strVal.front() == '(' && strVal.back() == ')') {
-            strVal.erase(strVal.begin());         
-            strVal.erase(strVal.end() - 1);      
+            strVal.erase(strVal.begin());
+            strVal.erase(strVal.end() - 1);
         }
         int value = std::stoi(strVal);
-        return std::make_unique<UpfromRule>(*rule, value);
+        return std::make_unique<UpfromRule>(std::move(rule), value);
     } else if (content.find("contains") != std::string::npos) {
         std::cout << "THIS IS CONTAINS" << std::endl;
         // TODO: Create and return ContainsRule
@@ -444,10 +444,8 @@ std::unique_ptr<Rule> ParsedGameData::handleForRule(const ts::Node &node, const 
     return forRule;
 }
 
-std::string ParsedGameData::extractAndReplacePlaceholders(
-    const std::string& contentStr,
-    std::vector<std::string>& variables
-) {
+std::string ParsedGameData::extractAndReplacePlaceholders(const std::string &contentStr,
+                                                          std::vector<std::string> &variables) {
     std::regex placeholderRegex(R"(\{([^}]+)\})");
     std::ostringstream result;
 
@@ -474,7 +472,7 @@ std::string ParsedGameData::extractAndReplacePlaceholders(
     return result.str();
 }
 
-void ParsedGameData::splitString(const std::string& str, char delimiter, std::vector<std::string>& parts) {
+void ParsedGameData::splitString(const std::string &str, char delimiter, std::vector<std::string> &parts) {
     std::istringstream ss(str);
     std::string part;
     while (std::getline(ss, part, delimiter)) {
@@ -483,16 +481,17 @@ void ParsedGameData::splitString(const std::string& str, char delimiter, std::ve
 }
 
 std::unique_ptr<Rule> ParsedGameData::handleMessageSection(const ts::Node &node, const std::string &source) {
+    std::cout << "handleMessageSection function" << std::endl;                        // TODO: remove
     auto playersKeyword = node.getChildByFieldName("players").getSourceRange(source); // Keyword indicating players
     auto content = node.getChildByFieldName("content").getSourceRange(source);        // Message content
     std::string contentStr = std::string(content);
     // Fix formatting of quoted strings
     if (!contentStr.empty() && contentStr.front() == '"' && contentStr.back() == '"') {
-        contentStr.erase(contentStr.begin());  
-        contentStr.erase(contentStr.end() - 1); 
+        contentStr.erase(contentStr.begin());
+        contentStr.erase(contentStr.end() - 1);
     }
 
-    // 
+    //
     std::unique_ptr<Rule> recipientRule = nullptr;
     std::cout << "Players keyword: " << playersKeyword << std::endl;
     if (playersKeyword == "all") {
@@ -508,6 +507,7 @@ std::unique_ptr<Rule> ParsedGameData::handleMessageSection(const ts::Node &node,
     // Process content and replace placeholders with {}
     std::vector<std::string> variables;
     std::string updatedContent = extractAndReplacePlaceholders(contentStr, variables);
+    std::cout << "Variablies.size() " << variables.size() << std::endl;
     std::unique_ptr<Rule> nameResolver = std::make_unique<NameResolverRule>(variables);
     // auto allPlayersRule = std::make_unique<AllPlayersRule>();
     std::vector<std::unique_ptr<Rule>> nameResolvers;
@@ -520,18 +520,18 @@ std::unique_ptr<Rule> ParsedGameData::handleMessageSection(const ts::Node &node,
 }
 
 // TODO: will have to modify logic for future rule object
-void ParsedGameData::traverseHelper(const ts::Node &node, const string &source, 
-    std::vector<std::unique_ptr<Rule>> &checkCondition, 
-    std::vector<std::unique_ptr<Rule>> &scopedRule) {
-    if(node.getType() == "match_entry"){
+void ParsedGameData::traverseHelper(const ts::Node &node, const string &source,
+                                    std::vector<std::unique_ptr<Rule>> &checkCondition,
+                                    std::vector<std::unique_ptr<Rule>> &scopedRule) {
+    if (node.getType() == "match_entry") {
         ts::Node guard = node.getChildByFieldName("guard");
         vector<std::string> condition;
         DFS(guard, source, condition);
-        if(condition.size() == 1 && (condition.back() == "true" || condition.back() == "false")){
+        if (condition.size() == 1 && (condition.back() == "true" || condition.back() == "false")) {
             bool boolean = condition.back() == "true" ? true : false;
             std::unique_ptr<Rule> conditionPtr = std::make_unique<BooleanRule>(boolean);
             checkCondition.emplace_back(std::move(conditionPtr));
-        } else{
+        } else {
             // TODO: adding more condition rules
         }
         ts::Node body = node.getChildByFieldName("body");
@@ -553,7 +553,7 @@ void ParsedGameData::handleMatchRule(const ts::Node &node, const string &source,
     }
 
     auto hasBuiltin = targetNode.getChild(0);
-    while(hasBuiltin.getType() != "expression"){
+    while (hasBuiltin.getType() != "expression") {
         hasBuiltin = hasBuiltin.getNextSibling();
     }
     ts::Node builtInNode = hasBuiltin.getChildByFieldName("builtin");
@@ -561,10 +561,9 @@ void ParsedGameData::handleMatchRule(const ts::Node &node, const string &source,
     std::unique_ptr<Rule> conditions;
     // handle builtin like contains
     // this one will be called as condition_maker for MatchRule
-    if(!builtInNode.isNull()){
+    if (!builtInNode.isNull()) {
         conditions = handleBuiltin(builtInNode, source, std::move(temp));
-    }
-    else{
+    } else {
         conditions = std::move(temp);
     }
     std::vector<std::unique_ptr<Rule>> checkCondition;
@@ -574,7 +573,7 @@ void ParsedGameData::handleMatchRule(const ts::Node &node, const string &source,
         traverseHelper(curr, source, checkCondition, scopedRule);
     }
     // TODO: uncomment once the latest version rule.h has been merged into main branch
-    // std::unique_ptr<Rule> matchRule = std::make_unique<MatchRule>(std::move(conditions), 
+    // std::unique_ptr<Rule> matchRule = std::make_unique<MatchRule>(std::move(conditions),
     //     std::move(checkCondition), std::move(scopedRule));
     // rules.emplace_back(std::move(matchRule));
 }
@@ -597,8 +596,8 @@ void ParsedGameData::handleWhileSection(const ts::Node &node, const std::string 
     // }
 }
 
-void ParsedGameData::handelInputChoice(const ts::Node &node, const std::string &source){
-    std::cout << "THIS IS INPUT CHOICE" << std::endl; 
+std::unique_ptr<Rule> ParsedGameData::handelInputChoice(const ts::Node &node, const std::string &source) {
+    std::cout << "THIS IS INPUT CHOICE" << std::endl;
     std::string_view player = node.getChildByFieldName("player").getSourceRange(source);
     std::string_view prompt = node.getChildByFieldName("prompt").getSourceRange(source);
     std::string_view choices = node.getChildByFieldName("choices").getSourceRange(source);
@@ -618,11 +617,22 @@ void ParsedGameData::handelInputChoice(const ts::Node &node, const std::string &
     std::cout << "Timeout: " << timeout << std::endl;
 
     // dealing with {}
-    std::vector<std::string> promptVariables;  
+    std::vector<std::string> promptVariables;
     promptStr = extractAndReplacePlaceholders(promptStr, promptVariables);
 
+    std::unique_ptr<Rule> nameResolver = std::make_unique<NameResolverRule>(promptVariables);
+    std::vector<std::unique_ptr<Rule>> nameResolvers;
+    nameResolvers.emplace_back(std::move(nameResolver));
+
+    std::vector<std::string> recipientList{"player"};
+    auto playerRule = std::make_unique<NameResolverRule>(recipientList);
+
     // TODO: as messageRule, need stringRule to accept one more vec or nameResolver
-    auto stringRule = std::make_unique<StringRule>(promptStr);
+    // auto stringRule = std::make_unique<StringRule>(promptStr, std::move(nameResolvers));
+    // auto messageRule = std::make_unique<MessageRule>(server, std::make_unique<AllPlayersRule>(),
+    // std::move(stringRule)); return messageRule;
+    auto simpleInputRule = std::make_unique<SimpleInputRule>(server, target, promptStr);
+    return simpleInputRule;
     // TODO: the following logic needs to fit in rule.h implemetation design
 }
 
@@ -669,9 +679,8 @@ std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, con
             // handleWhileSection(child, source, outerRule);
             // outerRule.subRules.emplace_back(whileRule);
         } else if (ruleType == "input_choice") {
-            handelInputChoice(child, source);
-        }
-        else {
+            parsedRule = handelInputChoice(child, source);
+        } else {
             // Recursively handle other types of rules
             parsedRule = parseRuleSection(child, source);
         }
