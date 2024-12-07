@@ -785,9 +785,11 @@ std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, con
         } else if (ruleType == "discard") {
             parsedRule = handleDiscard(child, source);
         } else if (ruleType == "scores") {
-            std::cout << "handleScores function" << std::endl; // TODO: remove
             parsedRule = handleScore(child, source);
-        } else {
+        } else if (ruleType == "extend"){
+            parsedRule = handleExtend(child, source);
+        }
+        else {
             // Recursively handle other types of rules
             parsedRule = parseRuleSection(child, source);
         }
