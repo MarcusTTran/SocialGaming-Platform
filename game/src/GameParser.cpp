@@ -702,6 +702,14 @@ std::unique_ptr<Rule> ParsedGameData::handleDiscard(const ts::Node &node, const 
     return discardRule;
 }
 
+std::unique_ptr<Rule> ParsedGameData::handleScore(const ts::Node &node, const std::string &source){
+    ts::Node scoreNode = node.getChildByFieldName("keys");
+    std::vector<std::string> keysContent;
+    DFS(scoreNode, source, keysContent);
+    std::unique_ptr<Rule> scoreRule = std::make_unique<ScoresRule>(keysContent, gameConnection, server);
+    return scoreRule;
+}
+
 std::unique_ptr<Rule> ParsedGameData::parseRuleSection(const ts::Node &node, const std::string &source) {
     std::unique_ptr<Rule> parsedRule = nullptr;
 
