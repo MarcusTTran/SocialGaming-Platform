@@ -1,5 +1,12 @@
 # SocialGaming scripts
 
+All game scripts are stored in the [config](./config/) folder.
+
+Example scripts:
+- [Empty](./config/empty.game)
+- [Minimal](./config/minimal.game) (prints output to all players)
+- [Rock Paper Scissors](./config/rockPaperScissors.game) (full game)
+
 ## Data and Variables
 
 All game-time information is of one of the following forms:
