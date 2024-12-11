@@ -79,7 +79,41 @@ http://localhost:8000/
 
 See the [SocialGaming README](./SocialGaming.md)
 
-## Implementation Details
+## Development Details
+
+### Using Linux in Windows
+
+#### Connecting to CSIL at SFU
+
+A special Python virtual environment can be used to automatically enable and disable access to additional software by default that does not come by default with a CSIL connection.
+
+To start the virtual environment from within CSIL, run:
+
+`source /usr/shared/CMPT/faculty/wsumner/base/env373/bin/activate`
+
+This activates the underlying virtual environment thats makes more recent software for the game platform available. You can exit the virtual environment by running:
+
+`deactivate`
+
+You can add the source line to the end of your ~/.bashrc configuration file to enable the environment automatically when you log in.
+
+#### Working within Docker
+
+A docker container provides the required versions of all software that are used in this project. It is possible to connect IDEs like VS Code to an appropriate docker image.
+
+To pull the latest version of the docker image for the class, you can use:
+
+`docker pull nsumner/cmpt373:fall2024`
+
+You can start a container with this image and access files on your filesystem using a command like:
+
+`docker run -ti --name=socialGame --ulimit='stack=-1:-1' -v << path on your system >>:/opt/work nsumner/cmpt373:fall2024`
+
+For instance, this maps the given `<< path on your system >>` to the location `/opt/work` in the container.
+
+If you exit from the container, you can restart it again later with:
+
+`docker start -ai socialGame`
 
 ### Data and Variables
 
